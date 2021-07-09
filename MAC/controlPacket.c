@@ -22,7 +22,7 @@ uint8_t getNumberBytes(uint8_t n)
     return (n + add) / 8;
 }
 
-void init(ControlPacket_t **pkt, uint8_t nSlots, uint8_t nChannels)
+void initCP(ControlPacket_t **pkt, uint8_t nSlots, uint8_t nChannels)
 {
     ControlPacket_t *pktA = NULL;
     pktA = (ControlPacket_t *)malloc(sizeof(ControlPacket_t));
@@ -39,7 +39,7 @@ void init(ControlPacket_t **pkt, uint8_t nSlots, uint8_t nChannels)
     *pkt = pktA;
 }
 
-void destroyPacket(ControlPacket_t **pkt)
+void destroyPacketCP(ControlPacket_t **pkt)
 {
     assert(pkt != NULL);
     assert(*pkt != NULL);
@@ -52,7 +52,7 @@ void destroyPacket(ControlPacket_t **pkt)
 }
 
 // Fill the packet with the given parameters
-void createPacket(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlot, uint32_t collisionFrequency, uint8_t hopCount, uint8_t ack)
+void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlot, uint32_t collisionFrequency, uint8_t hopCount, uint8_t ack)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
@@ -68,7 +68,7 @@ void createPacket(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, 
 }
 
 // Set all values of the packet to zero, and free the arrays
-void clearPackt(ControlPacket_t *pkt)
+void clearPacktCP(ControlPacket_t *pkt)
 {
     pkt->nodeID = 0;
     free(pkt->occupiedSlots);
@@ -80,7 +80,7 @@ void clearPackt(ControlPacket_t *pkt)
     pkt->_nSlots = 0;
 }
 
-void setNodeID(ControlPacket_t *pkt, uint8_t nodeID)
+void setNodeIDCP(ControlPacket_t *pkt, uint8_t nodeID)
 {
     assert(pkt != NULL);
     assert(0 <= nodeID && nodeID <= 255);
@@ -88,28 +88,28 @@ void setNodeID(ControlPacket_t *pkt, uint8_t nodeID)
     pkt->nodeID = nodeID;
 }
 
-uint8_t getNodeID(ControlPacket_t *pkt)
+uint8_t getNodeIDCP(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
     
     return pkt->nodeID;
 }
 
-void setCollisionSlot(ControlPacket_t *pkt, uint8_t slot)
+void setCollisionSlotCP(ControlPacket_t *pkt, uint8_t slot)
 {
     assert(pkt != NULL);
 
     pkt->collisionSlot = slot;
 }
 
-uint8_t getCollisionSlot(ControlPacket_t *pkt)
+uint8_t getCollisionSlotCP(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     return pkt->collisionSlot;
 }
 
-void setOccupiedSlots(ControlPacket_t *pkt, uint8_t *occupiedSlots)
+void setOccupiedSlotsCP(ControlPacket_t *pkt, uint8_t *occupiedSlots)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
@@ -117,7 +117,7 @@ void setOccupiedSlots(ControlPacket_t *pkt, uint8_t *occupiedSlots)
     memcpy(pkt->occupiedSlots, occupiedSlots, getNumberBytes(pkt->_nChannels * pkt->_nSlots));
 }
 
-void getOccupiedSlots(ControlPacket_t *pkt, uint8_t *occupiedSlots)
+void getOccupiedSlotsCP(ControlPacket_t *pkt, uint8_t *occupiedSlots)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
@@ -126,26 +126,26 @@ void getOccupiedSlots(ControlPacket_t *pkt, uint8_t *occupiedSlots)
     memcpy(occupiedSlots, pkt->occupiedSlots, getNumberBytes(pkt->_nChannels * pkt->_nSlots));
 }
 
-void setCollisionFrequency(ControlPacket_t *pkt, uint32_t frequency)
+void setCollisionFrequencyCP(ControlPacket_t *pkt, uint32_t frequency)
 {
     assert(pkt != NULL);
 
     pkt->collisionFrequency = frequency;
 }
 
-uint32_t getColissionFrequency(ControlPacket_t *pkt)
+uint32_t getColissionFrequencyCP(ControlPacket_t *pkt)
 {
     uint32_t freq = pkt->collisionFrequency;
     return freq;
 }
 
-void setHopCount(ControlPacket_t *pkt, uint8_t count)
+void setHopCountCP(ControlPacket_t *pkt, uint8_t count)
 {
     assert(pkt != NULL);
     pkt->hopCount = count;
 }
 
-uint8_t getHopCount(ControlPacket_t *pkt)
+uint8_t getHopCountCP(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
     uint8_t hops = pkt->hopCount;
@@ -153,14 +153,14 @@ uint8_t getHopCount(ControlPacket_t *pkt)
     return hops;
 }
 
-void setACK(ControlPacket_t *pkt, uint8_t ack)
+void setACKCP(ControlPacket_t *pkt, uint8_t ack)
 {
     assert(pkt != NULL);
 
     pkt->ack = ack;
 }
 
-uint8_t getACK(ControlPacket_t *pkt)
+uint8_t getACKCP(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
@@ -168,20 +168,20 @@ uint8_t getACK(ControlPacket_t *pkt)
     return ack;
 }
 
-void getPacketByteString(ControlPacket_t *pkt, uint8_t **byteStr)
+void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size)
 {
     assert(pkt != NULL);
     // Get string size and allocate memory
-    size_t size = 0;
+    size_t size1 = 0;
     uint8_t bytes = getNumberBytes(pkt->_nSlots * pkt->_nChannels);
-    size += sizeof(pkt->nodeID),
-    size += (size_t)bytes;
-    size += sizeof(pkt->collisionSlot);
-    size += sizeof(pkt->collisionFrequency);
-    size += sizeof(pkt->hopCount);
-    size += sizeof(pkt->ack);
+    size1 += sizeof(pkt->nodeID),
+    size1 += (size_t)bytes;
+    size1 += sizeof(pkt->collisionSlot);
+    size1 += sizeof(pkt->collisionFrequency);
+    size1 += sizeof(pkt->hopCount);
+    size1 += sizeof(pkt->ack);
 
-    uint8_t *byteStrA = (uint8_t *)malloc(size * sizeof(uint8_t));
+    uint8_t *byteStrA = (uint8_t *)malloc(size1 * sizeof(uint8_t));
 
     // Copy the fields
     byteStrA[0] = pkt->nodeID;
@@ -198,9 +198,10 @@ void getPacketByteString(ControlPacket_t *pkt, uint8_t **byteStr)
     byteStrA[i + 7] = pkt->hopCount;
     byteStrA[i + 8] = pkt->ack;
     *byteStr = byteStrA;
+    *size = size1;
 }
 
-void consturctPacketFromByteString(ControlPacket_t *pkt, uint8_t *byteString, size_t size)
+void constructPacketFromByteStringCP(ControlPacket_t *pkt, uint8_t *byteString, size_t size)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);

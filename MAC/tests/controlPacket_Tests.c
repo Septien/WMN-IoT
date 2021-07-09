@@ -9,23 +9,23 @@ void testInit()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     assert(pkt != NULL);
     assert(pkt->occupiedSlots != NULL);
     assert(pkt->_nSlots == slots);
     assert(pkt->_nChannels == channels);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testDestroyPacket()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 
     assert(pkt == NULL);
 }
@@ -34,7 +34,7 @@ void testCreatePacket(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t nodeID = 1;
     uint8_t bytes = getNumberBytes(slots * channels);
@@ -46,7 +46,7 @@ void testCreatePacket(void)
     uint8_t hopCount = 3;
     uint8_t ack = 0;
 
-    createPacket(pkt, nodeID, occupiedSlots, collisionSlot, collisionFrequency, hopCount, ack);
+    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlot, collisionFrequency, hopCount, ack);
 
     assert(pkt != NULL);
     assert(pkt->occupiedSlots != NULL && sizeof(pkt->occupiedSlots) == slots);
@@ -58,14 +58,14 @@ void testCreatePacket(void)
     assert(pkt->ack == ack);
 
     free(occupiedSlots);
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testClearPacket()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t nodeID = 1;
     uint8_t *occupiedSlots = (uint8_t *)malloc(sizeof(uint8_t) * slots);
@@ -76,9 +76,9 @@ void testClearPacket()
     uint8_t hopCount = 3;
     uint8_t ack = 1;
 
-    createPacket(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, ack);
+    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, ack);
 
-    clearPackt(pkt);
+    clearPacktCP(pkt);
 
     assert(pkt->nodeID == 0);
     assert(pkt->occupiedSlots == NULL);
@@ -89,205 +89,205 @@ void testClearPacket()
     assert(pkt->_nSlots == 0);
 
     free(occupiedSlots);
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testsetNodeID()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     for (uint8_t i = 0; i < 255; i++)
     {
-        setNodeID(pkt, i);
+        setNodeIDCP(pkt, i);
         assert(pkt->nodeID == i);
     }
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetNodeID()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t nodeid = 0;
     for (uint8_t i = 0; i < 255; i++)
     {
-        setNodeID(pkt, i);
-        nodeid = getNodeID(pkt);
+        setNodeIDCP(pkt, i);
+        nodeid = getNodeIDCP(pkt);
         assert(nodeid == i);
     }
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testsetCollisionSlot()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t slot = 10;
-    setCollisionSlot(pkt, slot);
+    setCollisionSlotCP(pkt, slot);
 
     assert(pkt->collisionSlot == slot);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetCollisionSlot()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t slot = 10;
-    setCollisionSlot(pkt, slot);
+    setCollisionSlotCP(pkt, slot);
 
-    slot = getCollisionSlot(pkt);
+    slot = getCollisionSlotCP(pkt);
     assert(slot == pkt->collisionSlot);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testsetOccupiedSlots()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t bytes = getNumberBytes(slots * channels);
     uint8_t *occSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
     uint8_t i;
     for (i = 0; i < bytes; i++)
         occSlots[i] = 0xff;
-    setOccupiedSlots(pkt, occSlots);
+    setOccupiedSlotsCP(pkt, occSlots);
 
     for (i = 0; i < bytes; i++)
         assert(pkt->occupiedSlots[i] == occSlots[i]);
 
     free(occSlots);
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetOccupiedSlots()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t bytes = getNumberBytes(slots * channels);
     uint8_t *occSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
     uint8_t i;
     for (i = 0; i < bytes; i++)
         occSlots[i] = 0xff;
-    setOccupiedSlots(pkt, occSlots);
+    setOccupiedSlotsCP(pkt, occSlots);
 
     uint8_t *occSlots2 = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-    getOccupiedSlots(pkt, occSlots2);
+    getOccupiedSlotsCP(pkt, occSlots2);
     for (uint8_t i = 0; i < bytes; i++)
         assert(occSlots2[i] == pkt->occupiedSlots[i]);
 
     free(occSlots);
     free(occSlots2);
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testsetCollisionFrequency()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint32_t freq = 915;
-    setCollisionFrequency(pkt, freq);
+    setCollisionFrequencyCP(pkt, freq);
     assert(pkt->collisionFrequency == freq);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetCollisionFrequency()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint32_t freq = 915;
-    setCollisionFrequency(pkt, freq);
+    setCollisionFrequencyCP(pkt, freq);
     
-    uint32_t freqr = getColissionFrequency(pkt);
+    uint32_t freqr = getColissionFrequencyCP(pkt);
     assert(freqr == pkt->collisionFrequency);
     assert(freqr == freq);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testsetHopCount()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t hops = 8;
-    setHopCount(pkt, hops);
+    setHopCountCP(pkt, hops);
     assert(pkt->hopCount == hops);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetHopCount()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t hops = 8;
-    setHopCount(pkt, hops);
+    setHopCountCP(pkt, hops);
     
-    uint8_t hops2 = getHopCount(pkt);
+    uint8_t hops2 = getHopCountCP(pkt);
     assert(hops2 == pkt->hopCount);
     assert(hops2 == hops);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testsetACK()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t ack = 1;
-    setACK(pkt, ack);
+    setACKCP(pkt, ack);
     assert(pkt->ack == ack);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetACK()
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     uint8_t ack = 1;
-    setACK(pkt, ack);
+    setACKCP(pkt, ack);
     
-    uint8_t ack2 = getACK(pkt);
+    uint8_t ack2 = getACKCP(pkt);
     assert(ack2 == pkt->ack);
     assert(ack2 == ack);
 
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testgetByteString()
 {
     ControlPacket_t *pkt;
     size_t slots = 9, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     int i;
     uint8_t bytes = getNumberBytes(slots * channels);
@@ -301,14 +301,15 @@ void testgetByteString()
     uint8_t hopCount = 3;
     uint8_t ack = 0;
 
-    createPacket(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, ack);
+    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, ack);
 
     freq[0] = (collisionFrequency & 0xff000000) >> 24;
     freq[1] = (collisionFrequency & 0x00ff0000) >> 16;
     freq[2] = (collisionFrequency & 0x0000ff00) >> 8;
     freq[3] = (collisionFrequency & 0x000000ff);
     uint8_t *byteStr;
-    getPacketByteString(pkt, &byteStr);
+    size_t size;
+    getPacketByteStringCP(pkt, &byteStr, &size);
     assert(byteStr[0] == nodeID);
     for (i = 0; i < bytes; i++)
         assert(byteStr[i+1] == occupiedSlots[i]);
@@ -320,15 +321,16 @@ void testgetByteString()
     assert(byteStr[bytes+7] == hopCount);
     assert(byteStr[bytes+8] == ack);
 
+    free(byteStr);
     free(occupiedSlots);
-    destroyPacket(&pkt);
+    destroyPacketCP(&pkt);
 }
 
 void testconstructPacketFromByteString()
 {
     ControlPacket_t *pkt;
     size_t slots = 9, channels = 17;
-    init(&pkt, slots, channels);
+    initCP(&pkt, slots, channels);
 
     int i;
     uint8_t bytes = getNumberBytes(slots * channels);
@@ -361,7 +363,7 @@ void testconstructPacketFromByteString()
     byteStr[bytes + 7] = hopCount;
     byteStr[bytes + 8] = ack;
 
-    consturctPacketFromByteString(pkt, byteStr, size);
+    constructPacketFromByteStringCP(pkt, byteStr, size);
 
     assert(pkt->nodeID == byteStr[0]);
     for (i = 0; i < bytes; i++)
@@ -370,6 +372,10 @@ void testconstructPacketFromByteString()
     assert(pkt->collisionFrequency == collisionFrequency);
     assert(pkt->hopCount == byteStr[bytes + 7]);
     assert(pkt->ack == byteStr[bytes + 8]);
+
+    free(byteStr);
+    free(occupiedSlots);
+    destroyPacketCP(&pkt);
 }
 
 void executeTests()
@@ -438,7 +444,7 @@ void executeTests()
     testgetACK();
     printf("Test passed.\n");
 
-    printf("Testing getPacketBytString function.\n");
+    printf("Testing getPacketByteString function.\n");
     testgetByteString();
     printf("Test passed.\n");
 
