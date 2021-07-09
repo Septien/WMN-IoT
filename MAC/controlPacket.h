@@ -1,3 +1,13 @@
+/**
+ * @ingroup     MAC
+ * @{
+ * @file
+ * @brief       The control packet implementation required by the selected MAC protocol
+ * 
+ * @author      José Antonio Septién Hernández.
+ * @}
+ */
+
 #ifndef CTRLPKT_H
 #define CTRLPKT_H
 

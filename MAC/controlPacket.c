@@ -1,13 +1,3 @@
-/**
- * @ingroup     MAC
- * @{
- * @file
- * @brief       The control packet implementation required by the selected MAC protocol
- * 
- * @author      José Antonio Septién Hernández.
- * @}
- */
-
 #include "controlPacket.h"
 #include <assert.h>
 #include <string.h>

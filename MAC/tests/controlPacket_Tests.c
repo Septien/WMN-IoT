@@ -378,7 +378,7 @@ void testconstructPacketFromByteString()
     destroyPacketCP(&pkt);
 }
 
-void executeTests()
+void executeTestsCP()
 {
         printf("Testing init function.\n");
     testInit();

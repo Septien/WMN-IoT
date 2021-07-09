@@ -2,6 +2,6 @@
 #ifndef EXECPKT_H
 #define EXECPKT_H
 
-extern void executeTests();
+extern void executeTestsCP();
 
 #endif  // EXECPKT_H
