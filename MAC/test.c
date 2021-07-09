@@ -8,12 +8,18 @@
 #include <assert.h>
 
 #include "controlPacket.h"
+#include "CFPacket.h"
+
 #include "tests/controlPacket_Tests.h"
+#include "tests/CFPacket_Tests.h"
 
 int main(void)
 {
-    printf("Testing the implementation of the packet control structure.\n\n");
-    executeTests();
+    printf("Testing the implementation of the packet control structure.\n");
+    executeTestsCP();
+
+    printf("\nTesting the implementation of the CF packet structure.\n");
+    executeTestsCF();
 
     return 0;
 }
