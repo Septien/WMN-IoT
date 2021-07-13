@@ -12,6 +12,7 @@
 
 #include "tests/controlPacket_Tests.h"
 #include "tests/CFPacket_Tests.h"
+#include "tests/DataPacket_Tests.h"
 
 int main(void)
 {
@@ -20,6 +21,9 @@ int main(void)
 
     printf("\nTesting the implementation of the CF packet structure.\n");
     executeTestsCF();
+
+    printf("\nTesting the implementation of the DataPacket structure.\n");
+    executeTestsDP();
 
     return 0;
 }
