@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "../controlPacket.h"
+#include "../ControlPacket.h"
 
 void testInit()
 {

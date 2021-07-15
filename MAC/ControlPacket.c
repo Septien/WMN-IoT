@@ -1,4 +1,4 @@
-#include "controlPacket.h"
+#include "ControlPacket.h"
 #include <assert.h>
 #include <string.h>
 
