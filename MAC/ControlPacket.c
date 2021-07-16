@@ -35,6 +35,7 @@ void destroyPacketCP(ControlPacket_t **pkt)
     assert(*pkt != NULL);
 
     free((*pkt)->occupiedSlots);
+    (*pkt)->occupiedSlots = NULL;
     free(*pkt);
 
     *pkt = NULL;
@@ -170,6 +171,7 @@ void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size
     size1 += sizeof(pkt->collisionFrequency);
     size1 += sizeof(pkt->hopCount);
     size1 += sizeof(pkt->ack);
+    size1 += 1;
 
     uint8_t *byteStrA = (uint8_t *)malloc(size1 * sizeof(uint8_t));
 
@@ -199,7 +201,6 @@ void constructPacketFromByteStringCP(ControlPacket_t *pkt, uint8_t *byteString, 
 
     // Get size of collisionSlots array and initialize array
     uint8_t bytes = getNumberBytes(pkt->_nSlots * pkt->_nChannels);
-    pkt->occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
     
     // Fill the content of the packet
     pkt->nodeID = byteString[0];

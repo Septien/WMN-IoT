@@ -38,7 +38,7 @@ void testCreatePacket(void)
 
     uint8_t nodeID = 1;
     uint8_t bytes = getNumberBytes(slots * channels);
-    uint8_t *occupiedSlots = (uint8_t *)malloc(sizeof(uint8_t) * bytes);
+    uint8_t *occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
     for (int i = 0; i < bytes; i++)
         occupiedSlots[i] = 0xf0;
     uint8_t collisionSlot = 10;
@@ -68,7 +68,8 @@ void testClearPacket()
     initCP(&pkt, slots, channels);
 
     uint8_t nodeID = 1;
-    uint8_t *occupiedSlots = (uint8_t *)malloc(sizeof(uint8_t) * slots);
+    uint8_t bytes = getNumberBytes(pkt->_nChannels * pkt->_nSlots);
+    uint8_t *occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
     for (int i = 0; i < slots; i++)
         occupiedSlots[i] = 0xf0;
     uint8_t collisionSlots = 0x01;
@@ -340,7 +341,6 @@ void testconstructPacketFromByteString()
         occupiedSlots[i] = 0xff;
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 0xf0f0f0f0;
-    uint8_t freq[4];
     uint8_t hopCount = 3;
     uint8_t ack = 0;
 
@@ -350,6 +350,7 @@ void testconstructPacketFromByteString()
     size += sizeof(collisionFrequency);
     size += sizeof(hopCount);
     size += sizeof(ack);
+    size += 1;
     uint8_t *byteStr = (uint8_t *)malloc(size * sizeof(uint8_t));
 
     byteStr[0] = nodeID;
@@ -380,7 +381,7 @@ void testconstructPacketFromByteString()
 
 void executeTestsCP()
 {
-        printf("Testing init function.\n");
+    printf("Testing init function.\n");
     testInit();
     printf("Test passed\n");
 
