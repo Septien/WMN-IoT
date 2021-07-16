@@ -7,12 +7,15 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "controlPacket.h"
+#include "ControlPacket.h"
 #include "CFPacket.h"
+#include "DataPacket.h"
+#include "MAC_Internals.h"
 
-#include "tests/controlPacket_Tests.h"
+#include "tests/ControlPacket_Tests.h"
 #include "tests/CFPacket_Tests.h"
 #include "tests/DataPacket_Tests.h"
+#include "tests/MAC_Internals_Tests.h"
 
 int main(void)
 {
@@ -24,6 +27,9 @@ int main(void)
 
     printf("\nTesting the implementation of the DataPacket structure.\n");
     executeTestsDP();
+
+    printf("\nTesting the implementation of the MAC_Internals structure.\n");
+    executeTestsMACInternals();
 
     return 0;
 }
