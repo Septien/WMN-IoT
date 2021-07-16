@@ -335,18 +335,18 @@ void testconstructPktFromByteStringDP()
     DataPacket_t *datapkt;
     initDP(&datapkt);
 
-    size_t pSize = 255;
+    size_t pSize = 256;
     uint8_t *byteString = (uint8_t *)malloc(pSize * sizeof(uint8_t));
     uint8_t size = 249;
     int i;
     byteString[0] = 1;
-    byteString[1] = rand() % 255;
-    byteString[2] = rand() % 255;
+    byteString[1] = rand() % 256;
+    byteString[2] = rand() % 256;
     byteString[3] = size;
-    for (i = 4; i < size; i++)
-        byteString[i] = rand() % 255;
-    byteString[i + 4] = 0xff;
-    byteString[i + 5] = 0xff;
+    for (i = 4; i < size + 4; i++)
+        byteString[i] = rand() % 256;
+    byteString[i] = 0xff;
+    byteString[i + 1] = 0xff;
     
     constructPktFromByteStringDP(datapkt, byteString, pSize);
     assert(datapkt->packetLength == pSize);

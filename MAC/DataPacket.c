@@ -171,7 +171,7 @@ void constructPktFromByteStringDP(DataPacket_t *pkt, uint8_t *byteString, size_t
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
-    assert(size >= 6 && size < 256);
+    assert(size >= 6 && size <= 256);
 
     pkt->packetLength = size;
     pkt->isFragment = byteString[0];
