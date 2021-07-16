@@ -12,6 +12,8 @@ void testinitCF()
     initCF(&cfpkt);
 
     assert(cfpkt != NULL);
+
+    destroyPacketCF(&cfpkt);
 }
 
 void testdestroyPacketCF()
@@ -131,6 +133,7 @@ void testgetPacketByteString()
     assert(byteString[1] == destinationID);
     assert(size2 == size);
 
+    free(byteString);
     destroyPacketCF(&cfpkt);
 }
 
@@ -148,6 +151,7 @@ void testconstructPktFromByteString()
     assert(cfpkt->nodeID == byteString[0]);
     assert(cfpkt->destinationID == byteString[1]);
 
+    free(byteString);
     destroyPacketCF(&cfpkt);
 }
 
