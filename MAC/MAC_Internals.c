@@ -40,9 +40,8 @@ void destroyMAC(MAC_Internals_t **mac)
 
 void clearMAC(MAC_Internals_t *mac)
 {
+    // Keep radio, it is not physically possible to change the radio once deployed.
     assert(mac != NULL);
-    // TODO: Modify with proper free function
-    mac->radio = NULL;
     //--
     if (mac->channels != NULL)
         free(mac->channels);

@@ -42,7 +42,6 @@ void testclearMAC()
     mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
 
     clearMAC(mac);
-    assert(mac->radio == NULL);
     assert(mac->channels == NULL);
     assert(mac->slots == NULL);
     assert(mac->numberChannels == 0);
