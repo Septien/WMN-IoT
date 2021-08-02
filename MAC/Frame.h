@@ -19,7 +19,7 @@
 #ifdef __LINUX__
 #include <unistd.h>
 #include <signal.h>
-#include <time.h>
+#include <sys/time.h>
 #endif
 
 #ifdef __RIOT__
