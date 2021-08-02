@@ -16,6 +16,7 @@
 #include "tests/CFPacket_Tests.h"
 #include "tests/DataPacket_Tests.h"
 #include "tests/MAC_Internals_Tests.h"
+#include "tests/MCLMAC_Tests.h"
 
 int main(void)
 {
@@ -30,6 +31,9 @@ int main(void)
 
     printf("\nTesting the implementation of the MAC_Internals structure.\n");
     executeTestsMACInternals();
+
+    printf("\nTesting the implementation of the MCLMAC structure.\n");
+    executeTestsMCLMAC();
 
     return 0;
 }
