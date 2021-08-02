@@ -52,7 +52,9 @@ void clearMAC(MAC_Internals_t *mac)
     mac->slots = NULL;
     mac->numberSlots = 0;
     mac->nodeID = 0;
-    mac->selectedChannel = 0;
+    mac->transmitChannel = 0;
+    mac->cfChannel = 0;
+    mac->receiveChannel = 0;
     mac->selectedSlot = 0;
     mac->hopCount = 0;
 }

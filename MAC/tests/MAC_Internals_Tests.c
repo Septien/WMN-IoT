@@ -48,7 +48,9 @@ void testclearMAC()
     assert(mac->numberSlots == 0);
     assert(mac->nodeID == 0);
     assert(mac->selectedSlot == 0);
-    assert(mac->selectedChannel == 0);
+    assert(mac->transmitChannel == 0);
+    assert(mac->cfChannel == 0);
+    assert(mac->cfChannel == 0);
     assert(mac->hopCount == 0);
 
     destroyMAC(&mac);

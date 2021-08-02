@@ -46,7 +46,8 @@ typedef struct MAC_Internals
     uint32_t *channels;
     uint8_t nodeID;
     uint8_t selectedSlot;
-    uint8_t selectedChannel;
+    uint32_t transmitChannel;
+    uint32_t receiveChannel;
     uint32_t cfChannel;
     uint8_t *slots;
     uint8_t numberSlots;
