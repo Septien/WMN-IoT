@@ -466,6 +466,423 @@ void testgetAvailableChannels()
         assert(channelS[i] == channels[i]);
 
     free(channels);
+    free(channelS);
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetNodeIDMCL()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t nodeid;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        nodeid = (uint8_t)rand();
+        setNodeIDMCL(mclmac, nodeid);
+        assert(mclmac->mac->nodeID == nodeid);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testgetNodeIDMCL()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t nodeid, nodeidR;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        nodeid = (uint8_t)rand();
+        setNodeIDMCL(mclmac, nodeid);
+        nodeidR = getNodeIDMCL(mclmac);
+        assert(nodeidR == nodeid);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetSelectedSlot()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t slot;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        slot = (uint8_t) rand() % 256;
+        setSelectedSlot(mclmac, slot);
+        assert(mclmac->mac->selectedSlot == slot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testgetSelectedSlot()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t slot, slotR;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        slot = (uint8_t) rand() % 256;
+        setSelectedSlot(mclmac, slot);
+        slotR = getSelectedSlot(mclmac);
+        assert(slotR == slot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetNumberOfHops()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t hops;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        hops = (uint8_t)rand() % 256;
+        setNumberOfHops(mclmac, hops);
+        assert(mclmac->mac->hopCount == hops);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testgetNumberOfHops()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t hops, hopsR;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        hops = (uint8_t)rand();
+        setNumberOfHops(mclmac, hops);
+        hopsR = getNumberOfHops(mclmac);
+        assert(hopsR == hops);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetCurrentFrame()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint32_t frame;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        frame = (uint32_t)rand();
+        setCurrentFrame(mclmac, frame);
+        assert(mclmac->frame->currentFrame);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testincreaseFrame()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint32_t frame = rand() % 1000;
+    setCurrentFrame(mclmac, frame);
+
+    for (int i = 0; i < 1e6; i++)
+    {
+        increaseFrame(mclmac);
+        frame++;
+        assert(mclmac->frame->currentFrame == frame);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetCurrentSlot()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t slot;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        slot = (uint8_t)rand() % 256;
+        setCurrentSlot(mclmac, slot);
+        assert(mclmac->frame->currentSlot == slot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testincreaseSlot()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t slot = 0;
+    setCurrentSlot(mclmac, slot);
+    int n = rand() % 512;
+    for (int i = 0; i < n; i++)
+    {
+        increaseSlot(mclmac);
+        slot++;
+        assert(mclmac->frame->currentSlot == slot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetSlotsNumber()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t nSlots;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        nSlots = (uint8_t) rand();
+        setSlotsNumber(mclmac, nSlots);
+        assert(mclmac->frame->slotsNumber == nSlots);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetCurrentCFSlot()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t nCFslot;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        nCFslot = (uint8_t) rand() % 256;
+        setCurrentCFSlot(mclmac, nCFslot);
+        assert(mclmac->frame->currentCFSlot == nCFslot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testincreaseCFSlot()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    
+    uint8_t nCFSlot = 0;
+    setCurrentCFSlot(mclmac, nCFSlot);
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        increaseCFSlot(mclmac);
+        nCFSlot++;
+        assert(mclmac->frame->currentCFSlot == nCFSlot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testrecordCollision()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint32_t freq;
+    uint8_t slot;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        freq = (uint32_t)rand();
+        slot = (uint8_t)rand();
+        recordCollision(mclmac, slot, freq);
+        assert(mclmac->mac->ctrlpkt->collisionSlot == slot);
+        assert(mclmac->mac->ctrlpkt->collisionFrequency == freq);
+        assert(mclmac->_collisionDetected == true);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetDestinationID()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    /* TODO: Change the type of detinationID in CF packet: uint8_t -> uint16_t*/
+    uint8_t destinationID;
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        destinationID = (uint8_t) rand();
+        setDestinationID(mclmac, destinationID);
+        assert(mclmac->mac->cfpkt->destinationID == destinationID);
+    }
+
     destroyMCLMAC(&mclmac);
 }
 
@@ -530,6 +947,66 @@ void executeTestsMCLMAC()
 
     printf("Test getAvailableChannels function.\n");
     testgetAvailableChannels();
+    printf("Test passed.\n");
+
+    printf("Testing setNodeIDMCL function.\n");
+    testsetNodeIDMCL();
+    printf("Test passed.\n");
+
+    printf("Testing getNodeIDMCL function.\n");
+    testgetNodeIDMCL();
+    printf("Test passed.\n");
+
+    printf("Test setSelectedSlot function.\n");
+    testsetSelectedSlot();
+    printf("Test passed.\n");
+
+    printf("Testing getSelectedSlot function.\n");
+    testgetSelectedSlot();
+    printf("Test passed.\n");
+
+    printf("Testing setNumberOfHops function.\n");
+    testsetNumberOfHops();
+    printf("Test passed.\n");
+
+    printf("Testing getNumberOfHops function.\n");
+    testgetNumberOfHops();
+    printf("Test passed.\n");
+
+    printf("Testing setCurrentFrame function.\n");
+    testsetCurrentFrame();
+    printf("Test passed.\n");
+
+    printf("Test increaseFrame function.\n");
+    testincreaseFrame();
+    printf("Test passed.\n");
+
+    printf("Testing setCurrentSlot function.\n");
+    testsetCurrentSlot();
+    printf("Test passed.\n");
+
+    printf("Testing increaseSlot function.\n");
+    testincreaseSlot();
+    printf("Test passed.\n");
+
+    printf("Test setSlotsNumber function.\n");
+    testsetSlotsNumber();
+    printf("Test passed.\n");
+
+    printf("Testing setCurrentCFSlot function.\n");
+    testsetCurrentCFSlot();
+    printf("Test passed.\n");
+
+    printf("Testing increaseCFSlot function.\n");
+    testincreaseCFSlot();
+    printf("Test passed.\n");
+
+    printf("Testing recordCollision function.\n");
+    testrecordCollision();
+    printf("Test passed.\n");
+
+    printf("Testing setDestinationID function.\n");
+    testsetDestinationID();
     printf("Test passed.\n");
 
     return;

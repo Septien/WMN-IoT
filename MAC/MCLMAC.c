@@ -170,6 +170,138 @@ void getAvailableChannels(MCLMAC_t *mclmac, uint32_t **channels, uint8_t *nChann
         (*channels)[i] = mclmac->mac->channels[i];
 }
 
+void setNodeIDMCL(MCLMAC_t *mclmac, uint8_t id)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(id >= 0);
+
+    mclmac->mac->nodeID = id;
+}
+
+uint8_t getNodeIDMCL(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+
+    return mclmac->mac->nodeID;
+}
+
+void setSelectedSlot(MCLMAC_t *mclmac, uint8_t selectedSlot)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(selectedSlot >= 0);
+
+    mclmac->mac->selectedSlot = selectedSlot;
+
+}
+
+uint8_t getSelectedSlot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    
+    return mclmac->mac->selectedSlot;
+}
+
+void setNumberOfHops(MCLMAC_t *mclmac, uint8_t hops)
+{
+    assert(mclmac != NULL),
+    assert(mclmac->mac != NULL);
+    assert(hops >= 0);
+
+    mclmac->mac->hopCount = hops;
+}
+
+uint8_t getNumberOfHops(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+
+    return mclmac->mac->hopCount;
+}
+
+void setCurrentFrame(MCLMAC_t *mclmac, uint32_t frame)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+
+    mclmac->frame->currentFrame = frame;
+}
+
+void increaseFrame(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(mclmac->frame->currentFrame >= 0);
+
+    mclmac->frame->currentFrame++;
+}
+
+void setCurrentSlot(MCLMAC_t *mclmac, uint8_t slot)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+
+    mclmac->frame->currentSlot = slot;
+}
+
+void increaseSlot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+
+    mclmac->frame->currentSlot++;
+}
+
+void setSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+
+    mclmac->frame->slotsNumber = nSlots;
+}
+
+void setCurrentCFSlot(MCLMAC_t *mclmac, uint8_t nCFSlot)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+
+    mclmac->frame->currentCFSlot = nCFSlot;
+}
+
+void increaseCFSlot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(mclmac->frame->currentCFSlot >= 0);
+
+    mclmac->frame->currentCFSlot++;
+}
+
+void recordCollision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->ctrlpkt != NULL);
+    assert(collisionFrequency > 0);
+    assert(collisionSlot >= 0);
+
+    mclmac->_collisionDetected = true;
+    setCollisionSlotCP(mclmac->mac->ctrlpkt, collisionSlot);
+    setCollisionFrequencyCP(mclmac->mac->ctrlpkt, collisionFrequency);
+}
+
+void setDestinationID(MCLMAC_t *mclmac, uint8_t destinationID)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->cfpkt != NULL);
+
+    setDestinationIDCF(mclmac->mac->cfpkt, destinationID);
+}
+
 void startCADMode(MCLMAC_t *mclmac)
 {
     // TO DO

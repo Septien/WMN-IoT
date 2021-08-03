@@ -82,32 +82,24 @@ uint32_t getReceptionChannel(MCLMAC_t *mclmac);
 void setAvailableChannels(MCLMAC_t *mclmac, uint32_t *channels, uint8_t nChannels);
 void getAvailableChannels(MCLMAC_t *mclmac, uint32_t **channels, uint8_t *nChannels);
 
-// Channel selection
-void changeToTransmitChannel(MCLMAC_t *mclmac);
-void changeToReceiveChannel(MCLMAC_t *mclmac);
-void chanteToCFChannel(MCLMAC_t *mclmac);
-
-// Radio modes
-void startCADMode(MCLMAC_t *mclmac);
-void startSplitPhase(MCLMAC_t *mclmac);
-void startCFPhase(MCLMAC_t *mclmac);
-bool CADDetected(MCLMAC_t *mclmac);
-
 // Properties and configuration
-void setNodeID(MCLMAC_t *mclmac, uint8_t id);
-uint8_t getNodeID(MCLMAC_t *mclmac);
+void setNodeIDMCL(MCLMAC_t *mclmac, uint8_t id);
+uint8_t getNodeIDMCL(MCLMAC_t *mclmac);
 void setSelectedSlot(MCLMAC_t *mclmac, uint8_t selectedSlot);
 uint8_t getSelectedSlot(MCLMAC_t *mclmac);
 void setNumberOfHops(MCLMAC_t *mclmac, uint8_t hops);
 uint8_t getNumberOfHops(MCLMAC_t *mclmac);
+// ------>
 void computeFreeSlotsAndChannels(MCLMAC_t *mclmac);
-void setCurrentFrame(MCLMAC_t *mclmac, uint8_t frame);
+// <-----
+void setCurrentFrame(MCLMAC_t *mclmac, uint32_t frame);
 void increaseFrame(MCLMAC_t *mclmac);
 void setCurrentSlot(MCLMAC_t *mclmac, uint8_t slot);
 void increaseSlot(MCLMAC_t *mclmac);
-void setSlotNumbers(MCLMAC_t *mclmac, uint8_t nSlots);
+void setSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots);
 void setCurrentCFSlot(MCLMAC_t *mclmac, uint8_t nCFSlot);
 void increaseCFSlot(MCLMAC_t *mclmac);
+// ------>
 void setSlotDuration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
 struct itimerval slotDuration
@@ -131,7 +123,8 @@ struct itimerval cfDuration
 #ifdef __RIOT__
 uint32_t setCFDuration 
 #endif
-);
+); 
+// <---
 void recordCollision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency);
 void setDestinationID(MCLMAC_t *mclmac, uint8_t id);
 uint8_t getDestinationID(MCLMAC_t *mclmac);
@@ -148,6 +141,17 @@ void sendDataPacket(MCLMAC_t *mclmac);
 void getControlMessage(MCLMAC_t *mclmac);
 void getCFMessage(MCLMAC_t *mclmac);
 void getDataMessage(MCLMAC_t *mclmac);
+
+// Channel selection
+void changeToTransmitChannel(MCLMAC_t *mclmac);
+void changeToReceiveChannel(MCLMAC_t *mclmac);
+void chanteToCFChannel(MCLMAC_t *mclmac);
+
+// Radio modes
+void startCADMode(MCLMAC_t *mclmac);
+void startSplitPhase(MCLMAC_t *mclmac);
+void startCFPhase(MCLMAC_t *mclmac);
+bool CADDetected(MCLMAC_t *mclmac);
 
 
 /* Private functions */
