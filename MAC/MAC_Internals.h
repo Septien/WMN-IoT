@@ -45,6 +45,7 @@ typedef struct MAC_Internals
     uint8_t numberChannels;
     uint32_t *channels;
     uint8_t nodeID;
+    uint8_t destinationID;
     uint8_t selectedSlot;
     uint32_t transmitChannel;
     uint32_t receiveChannel;
@@ -54,7 +55,7 @@ typedef struct MAC_Internals
     uint8_t hopCount;
 }MAC_Internals_t;
 
-void initMACIn(MAC_Internals_t **mac, uint8_t _nSlots, uint8_t _nChannels);
+void initMACIn(MAC_Internals_t **mac);
 void clearMAC(MAC_Internals_t *mac);
 void destroyMAC(MAC_Internals_t **mac);
 

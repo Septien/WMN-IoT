@@ -2,15 +2,15 @@
 #include <assert.h>
 #include <string.h>
 
-void initMACIn(MAC_Internals_t **mac, uint8_t _nSlots, uint8_t _nChannels)
+void initMACIn(MAC_Internals_t **mac)
 {
     *mac = NULL;
     MAC_Internals_t *macA;
     macA = (MAC_Internals_t *)malloc(sizeof(MAC_Internals_t));
     macA->radio = NULL;
-    initCP(&macA->ctrlpkt, _nSlots, -_nChannels);
-    initCF(&macA->cfpkt);
-    initDP(&macA->datapkt);
+    macA->cfpkt = NULL;
+    macA->ctrlpkt = NULL;
+    macA->datapkt = NULL;
     macA->channels = NULL;
     macA->slots = NULL;
     *mac = macA;

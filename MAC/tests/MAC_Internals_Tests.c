@@ -10,13 +10,13 @@
 void testinitMACIn()
 {
     MAC_Internals_t *mac;
-    uint8_t slots = 8, channels = 17;
-    initMACIn(&mac, slots, channels);
+    initMACIn(&mac);
 
     assert(mac != NULL);
-    assert(mac->ctrlpkt != NULL);
-    assert(mac->cfpkt != NULL);
-    assert(mac->datapkt != NULL);
+    // Create these packets until necessary
+    assert(mac->cfpkt == NULL);
+    assert(mac->datapkt == NULL);
+    assert(mac->cfpkt == NULL);
 
     destroyMAC(&mac);
 }
@@ -24,8 +24,7 @@ void testinitMACIn()
 void testdestroyMAC()
 {
     MAC_Internals_t *mac;
-    uint8_t slots = 8, channels = 17;
-    initMACIn(&mac, slots, channels);
+    initMACIn(&mac);
     mac->channels = (uint32_t *)malloc(32 * sizeof(uint32_t));
     mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
 
@@ -36,8 +35,7 @@ void testdestroyMAC()
 void testclearMAC()
 {
     MAC_Internals_t *mac;
-    uint8_t slots = 8, channels = 17;
-    initMACIn(&mac, slots, channels);
+    initMACIn(&mac);
     mac->channels = (uint32_t *)malloc(32 * sizeof(uint32_t));
     mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
 
