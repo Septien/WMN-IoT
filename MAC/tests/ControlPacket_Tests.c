@@ -48,8 +48,9 @@ void testCreatePacket(void)
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
     uint8_t ack = 0;
+    uint32_t netTime = rand();
 
-    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlot, collisionFrequency, hopCount, ack);
+    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlot, collisionFrequency, hopCount, netTime, ack);
 
     assert(pkt != NULL);
     assert(pkt->occupiedSlots != NULL && sizeof(pkt->occupiedSlots) == slots);
@@ -58,6 +59,7 @@ void testCreatePacket(void)
     assert(pkt->collisionSlot == collisionSlot);
     assert(pkt->collisionFrequency == collisionFrequency);
     assert(pkt->hopCount == hopCount);
+    assert(pkt->networkTime == netTime);
     assert(pkt->ack == ack);
 
     free(occupiedSlots);
@@ -78,9 +80,10 @@ void testClearPacket()
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
+    uint32_t netTime = rand();
     uint8_t ack = 1;
 
-    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, ack);
+    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, netTime, ack);
 
     clearPacktCP(pkt);
 
@@ -340,14 +343,20 @@ void testgetByteString()
     uint32_t collisionFrequency = 0xf0f0f0f0;
     uint8_t freq[4];
     uint8_t hopCount = 3;
+    uint32_t netTime = rand();
+    uint8_t time[4];
     uint8_t ack = 0;
 
-    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, ack);
+    createPacketCP(pkt, nodeID, occupiedSlots, collisionSlots, collisionFrequency, hopCount, netTime, ack);
 
     freq[0] = (collisionFrequency & 0xff000000) >> 24;
     freq[1] = (collisionFrequency & 0x00ff0000) >> 16;
     freq[2] = (collisionFrequency & 0x0000ff00) >> 8;
     freq[3] = (collisionFrequency & 0x000000ff);
+    time[0] = (netTime & 0xff000000) >> 24;
+    time[1] = (netTime & 0x00ff0000) >> 16;
+    time[2] = (netTime & 0x0000ff00) >> 8;
+    time[3] = (netTime & 0x000000ff);
     uint8_t *byteStr;
     size_t size;
     getPacketByteStringCP(pkt, &byteStr, &size);
@@ -360,7 +369,11 @@ void testgetByteString()
     assert(byteStr[bytes+5] == freq[2]);
     assert(byteStr[bytes+6] == freq[3]);
     assert(byteStr[bytes+7] == hopCount);
-    assert(byteStr[bytes+8] == ack);
+    assert(byteStr[bytes+8] == time[0]);
+    assert(byteStr[bytes+9] == time[1]);
+    assert(byteStr[bytes+10] == time[2]);
+    assert(byteStr[bytes+11] == time[3]);
+    assert(byteStr[bytes+12] == ack);
 
     free(byteStr);
     free(occupiedSlots);

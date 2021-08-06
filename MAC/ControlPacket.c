@@ -43,7 +43,7 @@ void destroyPacketCP(ControlPacket_t **pkt)
 }
 
 // Fill the packet with the given parameters
-void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlot, uint32_t collisionFrequency, uint8_t hopCount, uint8_t ack)
+void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlot, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
@@ -55,6 +55,7 @@ void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots
     pkt->collisionSlot = collisionSlot;
     pkt->collisionFrequency = collisionFrequency;
     pkt->hopCount = hopCount;
+    pkt->networkTime = netTime;
     pkt->ack = ack;
 }
 
@@ -67,6 +68,7 @@ void clearPacktCP(ControlPacket_t *pkt)
     pkt->collisionSlot = 0;
     pkt->collisionFrequency = 0;
     pkt->hopCount = 0;
+    pkt->networkTime = 0;
     pkt->ack = 0;
     pkt->_nSlots = 0;
 }
@@ -185,6 +187,7 @@ void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size
     size1 += sizeof(pkt->collisionSlot);
     size1 += sizeof(pkt->collisionFrequency);
     size1 += sizeof(pkt->hopCount);
+    size1 += sizeof(pkt->networkTime);
     size1 += sizeof(pkt->ack);
     size1 += 1;
 
@@ -203,7 +206,11 @@ void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size
     byteStrA[i + 5] = (pkt->collisionFrequency & 0x0000ff00) >> 8;
     byteStrA[i + 6] = (pkt->collisionFrequency & 0x000000ff);
     byteStrA[i + 7] = pkt->hopCount;
-    byteStrA[i + 8] = pkt->ack;
+    byteStrA[i + 8] = (pkt->networkTime & 0xff000000) >> 24;
+    byteStrA[i + 9] = (pkt->networkTime & 0x00ff0000) >> 16;
+    byteStrA[i + 10] = (pkt->networkTime & 0x0000ff00) >> 8;
+    byteStrA[i + 11] = (pkt->networkTime & 0x000000ff);
+    byteStrA[i + 12] = pkt->ack;
     *byteStr = byteStrA;
     *size = size1;
 }

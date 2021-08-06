@@ -30,7 +30,7 @@ typedef struct
 
 void initCP(ControlPacket_t **pkt, uint8_t nSlots, uint8_t nChannels);
 void destroyPacketCP(ControlPacket_t **pkt);
-void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint8_t ack);
+void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack);
 void clearPacktCP(ControlPacket_t *pkt);
 void setNodeIDCP(ControlPacket_t *pkt, uint8_t nodeID);
 uint8_t getNodeIDCP(ControlPacket_t *pkt);
