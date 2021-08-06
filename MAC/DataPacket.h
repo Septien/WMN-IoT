@@ -22,7 +22,6 @@ typedef struct {
     size_t   packetLength;
     uint8_t   dataLength;
     uint8_t  *data;
-    uint16_t crc;
 }DataPacket_t;
 
 void initDP(DataPacket_t **pkt);

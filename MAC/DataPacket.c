@@ -38,7 +38,6 @@ void createPacketDP(DataPacket_t *pkt, bool isFragment, uint8_t totalFragments, 
     pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
     for (int i = 0; i < pkt->dataLength; i++)
         pkt->data[i] = dataA[i];
-    pkt->crc = 0;
 }
 
 void clearPacketDP(DataPacket_t *pkt)
@@ -52,7 +51,6 @@ void clearPacketDP(DataPacket_t *pkt)
     free(pkt->data);
     pkt->data = NULL;
     pkt->dataLength = 0;
-    pkt->crc = 0;
 }
 
 void setIsFragmentDP(DataPacket_t *pkt, bool isFragment)
@@ -139,7 +137,6 @@ size_t getPacketLengthDP(DataPacket_t *pkt)
     size += sizeof(pkt->totalFragments);
     size += sizeof(pkt->fragmentNumber);
     size += sizeof(pkt->dataLength);
-    size += sizeof(pkt->crc);
     size += pkt->dataLength;
 
     pkt->packetLength = size;
@@ -160,8 +157,6 @@ void getPacketByteStringDP(DataPacket_t *pkt, uint8_t **byteString, size_t *size
     int i;
     for (i = 4; i < pkt->dataLength + 4; i++)
         byteStringA[i] = pkt->data[i - 4];
-    byteStringA[i] = ((pkt->crc & 0xff00) >> 8);
-    byteStringA[i + 1] = (pkt->crc & 0x00ff);
 
     *byteString = byteStringA;
     *size = sizeA;
@@ -182,5 +177,4 @@ void constructPktFromByteStringDP(DataPacket_t *pkt, uint8_t *byteString, size_t
     int i;
     for (i = 0; i < pkt->dataLength; i++)
         pkt->data[i] = byteString[i + 4];
-    pkt->crc = (byteString[i + 4] << 8) | byteString[i + 5];
 }

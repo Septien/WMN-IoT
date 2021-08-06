@@ -218,7 +218,6 @@ void testcreatePacketDP()
     {
         assert(datapkt->data[i] == data[i]);
     }
-    assert(datapkt->crc == 0);
 
     free(data);
     destroyPacketDP(&datapkt);
@@ -248,7 +247,6 @@ void testclearPacketDP()
     assert(datapkt->fragmentNumber == 0);
     assert(datapkt->dataLength == 0);
     assert(datapkt->data == NULL);
-    assert(datapkt->crc == 0);
 
     free(data);
     destroyPacketDP(&datapkt);
@@ -268,12 +266,10 @@ void testgetPacketLengthDP()
     bool isFragment = true;
     uint8_t totalFragments = rand() % 256;
     uint8_t fragmentNumber = rand() % 256;
-    uint16_t crc = 0;
 
     size_t sizeP = sizeof(isFragment);
     sizeP +=sizeof(totalFragments);
     sizeP += sizeof(fragmentNumber);
-    sizeP += sizeof(crc);
     sizeP += sizeof(size);
     sizeP += size;
 
@@ -307,12 +303,8 @@ void testgetPacketByteStringDP()
 
     uint8_t *byteString;
     size_t bsSize;
-    datapkt->crc = 0xf0f0;
 
     size_t pSize = getPacketLengthDP(datapkt);
-    uint8_t crc1, crc2;
-    crc1 = (datapkt->crc & 0xff00) >> 8;
-    crc2 = (datapkt->crc & 0x00ff);
 
     getPacketByteStringDP(datapkt, &byteString, &bsSize);
     assert(bsSize == pSize);
@@ -322,8 +314,6 @@ void testgetPacketByteStringDP()
     assert(byteString[3] == size);
     for (i = 0; i < size; i++)
         assert(byteString[i + 4] == data[i]);
-    assert(byteString[i + 4] == crc1);
-    assert(byteString[i + 5] == crc2);
 
     free(data);
     free(byteString);
@@ -356,8 +346,6 @@ void testconstructPktFromByteStringDP()
     assert(datapkt->dataLength == byteString[3]);
     for (i = 0; i < size; i++)
         assert(datapkt->data[i] == byteString[i + 4]);
-    uint16_t crc = (byteString[i + 4] << 8) | byteString[i + 5];
-    assert(datapkt->crc == crc);
 
     free(byteString);
     destroyPacketDP(&datapkt);
