@@ -21,7 +21,7 @@ void destroyPacketCF(CFPacket_t **pkt)
 void createPacketCF(CFPacket_t *pkt, uint8_t nodeID, uint8_t destinationID)
 {
     assert(pkt != NULL);
-    assert(nodeID > 0 && destinationID > 0);
+    assert(nodeID > 0 && destinationID >= 0);
 
     pkt->nodeID = nodeID;
     pkt->destinationID = destinationID;
