@@ -27,17 +27,18 @@ void destroyPacketDP(DataPacket_t **pkt)
 void createPacketDP(DataPacket_t *pkt, bool isFragment, uint8_t totalFragments, uint8_t fragmentNumber, void **data, size_t size)
 {
     assert(pkt != NULL);
-    assert(data != NULL);
-    assert(*data != NULL);
 
-    uint8_t *dataA = ((uint8_t *)*data);
     pkt->isFragment = isFragment;
     pkt->totalFragments = totalFragments;
     pkt->fragmentNumber = fragmentNumber;
     pkt->dataLength = size;
-    pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
-    for (int i = 0; i < pkt->dataLength; i++)
-        pkt->data[i] = dataA[i];
+    if (size > 0)
+    {
+        uint8_t *dataA = ((uint8_t *)*data);
+        pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
+        for (int i = 0; i < pkt->dataLength; i++)
+            pkt->data[i] = dataA[i];
+    }
 }
 
 void clearPacketDP(DataPacket_t *pkt)
@@ -98,6 +99,13 @@ void setPacketDataDP(DataPacket_t *pkt, void **data, uint8_t size)
     assert(pkt != NULL);
     assert(data != NULL);
     assert(size > 0 && size < 250);
+
+    // if packet already contains data, delete it
+    if (pkt->data != NULL)
+    {
+        free(pkt->data);
+        pkt->data = NULL;
+    }
 
     uint8_t *dataA = ((uint8_t *)*data);
     pkt->dataLength = size;
