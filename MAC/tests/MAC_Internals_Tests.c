@@ -17,6 +17,8 @@ void testinitMACIn()
     assert(mac->cfpkt == NULL);
     assert(mac->datapkt == NULL);
     assert(mac->cfpkt == NULL);
+    assert(mac->nodeID == 1);
+    assert(mac->destinationID == 0);
 
     destroyMAC(&mac);
 }

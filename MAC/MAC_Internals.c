@@ -7,12 +7,15 @@ void initMACIn(MAC_Internals_t **mac)
     *mac = NULL;
     MAC_Internals_t *macA;
     macA = (MAC_Internals_t *)malloc(sizeof(MAC_Internals_t));
+    memset(macA, 0, sizeof(MAC_Internals_t));
     macA->radio = NULL;
     macA->cfpkt = NULL;
     macA->ctrlpkt = NULL;
     macA->datapkt = NULL;
     macA->channels = NULL;
     macA->slots = NULL;
+    // Set to one so other parts of the code (during testing) can run, if not previously initialize
+    macA->nodeID = 1;
     *mac = macA;
 }
 
