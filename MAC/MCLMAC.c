@@ -21,19 +21,20 @@ void macInit(MCLMAC_t **mclmac,
     if (frame == NULL)
         return;
 
-    initMACIn(&mclmacA->mac, _nSlots, _nChannels);
+    memset(mclmacA, 0, sizeof(MCLMAC_t));
+    memset(frame, 0, sizeof(frame));
+    initMACIn(&mclmacA->mac);
     mclmacA->_dataQSize = dataQSize;
     mclmacA->dataQueue = (uint8_t *)malloc(mclmacA->_dataQSize * sizeof(uint8_t));
-    mclmacA->_collisionDetected = 0; // No collision
-    frame->currentSlot = 0;
-    frame->currentFrame = 0;
-    frame->currentCFSlot = 0;
-    frame->cfSlotsNumber = 0;
-    frame->slotsNumber = 0;
     mclmacA->frame = frame;
     mclmacA->state = START;
     mclmacA->powerMode = PASSIVE;
-    mclmacA->_networkTime = 0;
+    mclmacA->_nChannels = _nChannels;
+    mclmacA->_nSlots = _nSlots;
+
+    int bytes = getNumberBytes(_nChannels * _nSlots);
+    mclmacA->_occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
+    memset(mclmacA->_occupiedSlots, 0, bytes);
     *mclmac = mclmacA;
 }
 
@@ -45,6 +46,7 @@ void destroyMCLMAC(MCLMAC_t **mclmac)
     destroyMAC(&(*mclmac)->mac);
     free((*mclmac)->dataQueue);
     free((*mclmac)->frame);
+    free((*mclmac)->_occupiedSlots);
     free((*mclmac));
     *mclmac = NULL;
 }
@@ -280,26 +282,146 @@ void increaseCFSlot(MCLMAC_t *mclmac)
     mclmac->frame->currentCFSlot++;
 }
 
+void setSlotDuration(MCLMAC_t *mclmac,
+#ifdef __LINUX__
+struct itimerval *slotDuration
+#endif
+#ifdef __RIOT__
+uint32_t *slotDuration
+#endif
+)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(slotDuration != NULL);
+#ifdef __LINUX__
+    assert((*slotDuration).it_value.tv_usec > 0);
+    assert((*slotDuration).it_value.tv_sec >= 0);
+    mclmac->frame->slotDuration.it_value.tv_usec = (*slotDuration).it_value.tv_usec;
+    mclmac->frame->slotDuration.it_value.tv_sec = (*slotDuration).it_value.tv_sec;
+#endif
+#ifdef __RIOT__
+    assert(slotDuration > 0);
+    mclmac->frame->slotDuration = *slotDuration:
+#endif
+}
+
+void setFrameDuration(MCLMAC_t *mclmac,
+#ifdef __LINUX__
+struct itimerval *frameDuration
+#endif
+#ifdef __RIOT__
+uint32_t *frameDuration
+#endif
+)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(frameDuration != NULL);
+#ifdef __LINUX__
+    assert((*frameDuration).it_value.tv_usec > 0);
+    assert((*frameDuration).it_value.tv_usec >= 0);
+    mclmac->frame->frameDuration.it_value.tv_usec = (*frameDuration).it_value.tv_usec;
+    mclmac->frame->frameDuration.it_value.tv_sec = (*frameDuration).it_value.tv_sec;
+#endif
+#ifdef __RIOT__
+    assert(frameDuration > 0);
+    mclmac->frame->frameDuration = *frameDuration;
+#endif
+}
+
+void setCFDuration(MCLMAC_t *mclmac,
+#ifdef __LINUX__
+struct itimerval *cfDuration
+#endif
+#ifdef __RIOT__
+uint32_t *cFDuration 
+#endif
+)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(cfDuration != NULL);
+#ifdef __LINUX__
+    assert((*cfDuration).it_value.tv_usec > 0);
+    assert((*cfDuration).it_value.tv_sec >= 0);
+    mclmac->frame->cfDuration.it_value.tv_usec = (*cfDuration).it_value.tv_usec;
+    mclmac->frame->cfDuration.it_value.tv_sec = (*cfDuration).it_value.tv_sec;
+#endif
+#ifdef __RIOT__
+    assert((*cfDuration) > 0);
+    mclmac->frame->cfDuration = *cfDuration;
+#endif
+}
+
 void recordCollision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency)
 {
     assert(mclmac != NULL);
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->ctrlpkt != NULL);
     assert(collisionFrequency > 0);
     assert(collisionSlot >= 0);
 
     mclmac->_collisionDetected = true;
-    setCollisionSlotCP(mclmac->mac->ctrlpkt, collisionSlot);
-    setCollisionFrequencyCP(mclmac->mac->ctrlpkt, collisionFrequency);
+    mclmac->_collisionSlot = collisionSlot;
+    mclmac->_collisionFrequency = collisionFrequency;
 }
 
 void setDestinationID(MCLMAC_t *mclmac, uint8_t destinationID)
 {
     assert(mclmac != NULL);
     assert(mclmac->mac != NULL);
-    assert(mclmac->mac->cfpkt != NULL);
 
-    setDestinationIDCF(mclmac->mac->cfpkt, destinationID);
+    mclmac->mac->destinationID = destinationID;
+}
+
+void setNetworkTime(MCLMAC_t *mclmac, uint32_t time)
+{
+    assert(mclmac != NULL);
+    assert(time >= 0);
+
+    mclmac->_networkTime = time;
+}
+
+uint32_t getNetworkTime(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    return mclmac->_networkTime;
+}
+
+void createCFPacket(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->nodeID > 0);
+    assert(mclmac->mac->destinationID >= 0);
+
+    CFPacket_t *cfA;
+    initCF(&cfA);
+    createPacketCF(cfA, mclmac->mac->nodeID, mclmac->mac->destinationID);
+    mclmac->mac->cfpkt = cfA;
+}
+
+void createControlPacket(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+
+    ControlPacket_t *ctrlpkt;
+    initCP(&ctrlpkt, mclmac->_nSlots, mclmac->_nChannels);
+    createPacketCP(ctrlpkt, mclmac->mac->nodeID, mclmac->_occupiedSlots, mclmac->_collisionSlot, 
+                    mclmac->_collisionFrequency, mclmac->mac->hopCount, mclmac->_networkTime, mclmac->_ack);
+    mclmac->mac->ctrlpkt = ctrlpkt;
+}
+
+void createDataPacket(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+
+    DataPacket_t *datapkt;
+    initDP(&datapkt);
+    createPacketDP(datapkt, mclmac->_isFragment, mclmac->_numberFragments, mclmac->_fragmentNumber, NULL, 0);
+    mclmac->mac->datapkt = datapkt;
 }
 
 void startCADMode(MCLMAC_t *mclmac)

@@ -50,8 +50,17 @@ typedef struct MCLMAC
 
     // Private members
     bool _collisionDetected;
+    uint8_t _collisionSlot;
+    uint32_t _collisionFrequency;
     uint32_t _networkTime;
     size_t _dataQSize;
+    uint8_t _nSlots;
+    uint8_t _nChannels;
+    uint8_t _ack;
+    uint8_t *_occupiedSlots;
+    bool _isFragment;
+    uint8_t _numberFragments;
+    uint8_t _fragmentNumber;
 }MCLMAC_t;
 
 void macInit(MCLMAC_t **mclmac, 
@@ -99,32 +108,30 @@ void increaseSlot(MCLMAC_t *mclmac);
 void setSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots);
 void setCurrentCFSlot(MCLMAC_t *mclmac, uint8_t nCFSlot);
 void increaseCFSlot(MCLMAC_t *mclmac);
-// ------>
 void setSlotDuration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval slotDuration
+struct itimerval *slotDuration
 #endif
 #ifdef __RIOT__
-uint32_t slotDuration
+uint32_t *slotDuration
 #endif
 );
 void setFrameDuration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval frameDuration
+struct itimerval *frameDuration
 #endif
 #ifdef __RIOT__
-uint32_t frameDuration
+uint32_t *frameDuration
 #endif
 );
 void setCFDuration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval cfDuration
+struct itimerval *cfDuration
 #endif
 #ifdef __RIOT__
-uint32_t setCFDuration 
+uint32_t *cFDuration 
 #endif
 ); 
-// <---
 void recordCollision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency);
 void setDestinationID(MCLMAC_t *mclmac, uint8_t id);
 uint8_t getDestinationID(MCLMAC_t *mclmac);
@@ -132,15 +139,16 @@ void setNetworkTime(MCLMAC_t *mclmac, uint32_t time);
 uint32_t getNetworkTime(MCLMAC_t *mclmac);
 
 // Packet functions
+void createCFPacket(MCLMAC_t *mclmac);
 void createControlPacket(MCLMAC_t *mclmac);
 void createDataPacket(MCLMAC_t *mclmac);
 void setPacketData(MCLMAC_t *mclmac, uint8_t *data, uint8_t size);
 void sendControlPacket(MCLMAC_t *mclmac);
 void sendCFPacket(MCLMAC_t *mclmac);
 void sendDataPacket(MCLMAC_t *mclmac);
-void getControlMessage(MCLMAC_t *mclmac);
-void getCFMessage(MCLMAC_t *mclmac);
-void getDataMessage(MCLMAC_t *mclmac);
+void receiveControlMessage(MCLMAC_t *mclmac);
+void receiveCFMessage(MCLMAC_t *mclmac);
+void receiveDataMessage(MCLMAC_t *mclmac);
 
 // Channel selection
 void changeToTransmitChannel(MCLMAC_t *mclmac);

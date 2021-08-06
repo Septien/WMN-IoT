@@ -7,6 +7,8 @@
 
 #include "../include/MCLMAC.h"
 
+#define ITERATIONS 1000
+
 void testmacInit()
 {
     MCLMAC_t *mclmac;
@@ -35,6 +37,10 @@ void testmacInit()
     assert(mclmac->_dataQSize == dataQsize);
     assert(mclmac->_collisionDetected == 0);
     assert(mclmac->_networkTime == 0);
+    assert(mclmac->_collisionFrequency == 0);
+    assert(mclmac->_collisionSlot == 0);
+    assert(mclmac->_nSlots == _nSlots);
+    assert(mclmac->_nChannels == _nChannels);
 
     destroyMCLMAC(&mclmac);
 }
@@ -254,7 +260,7 @@ void testsetCFChannel()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t cfchannel;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         cfchannel = (uint32_t)rand();
@@ -281,7 +287,7 @@ void testgetCFChannel()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t cfchannel, cfchannelS;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         cfchannel = (uint32_t)rand();
@@ -309,7 +315,7 @@ void testsetSelectedChannel()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
@@ -336,7 +342,7 @@ void testgetSelectedChannel()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel, channelS;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
@@ -364,7 +370,7 @@ void testsetReceptionChannel()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
@@ -391,7 +397,7 @@ void testgetReceptionChannel()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel, channelS;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
@@ -486,7 +492,7 @@ void testsetNodeIDMCL()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t nodeid;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         nodeid = (uint8_t)rand();
@@ -513,7 +519,7 @@ void testgetNodeIDMCL()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t nodeid, nodeidR;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         nodeid = (uint8_t)rand();
@@ -541,7 +547,7 @@ void testsetSelectedSlot()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t slot;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         slot = (uint8_t) rand() % 256;
@@ -568,7 +574,7 @@ void testgetSelectedSlot()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t slot, slotR;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         slot = (uint8_t) rand() % 256;
@@ -596,7 +602,7 @@ void testsetNumberOfHops()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t hops;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         hops = (uint8_t)rand() % 256;
@@ -623,7 +629,7 @@ void testgetNumberOfHops()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t hops, hopsR;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         hops = (uint8_t)rand();
@@ -651,7 +657,7 @@ void testsetCurrentFrame()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t frame;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         frame = (uint32_t)rand();
@@ -677,7 +683,7 @@ void testincreaseFrame()
 
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t frame = rand() % 1000;
+    uint32_t frame = rand() % ITERATIONS;
     setCurrentFrame(mclmac, frame);
 
     for (int i = 0; i < 1e6; i++)
@@ -706,7 +712,7 @@ void testsetCurrentSlot()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t slot;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         slot = (uint8_t)rand() % 256;
@@ -761,7 +767,7 @@ void testsetSlotsNumber()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t nSlots;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         nSlots = (uint8_t) rand();
@@ -788,7 +794,7 @@ void testsetCurrentCFSlot()
     macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t nCFslot;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         nCFslot = (uint8_t) rand() % 256;
@@ -816,12 +822,125 @@ void testincreaseCFSlot()
     
     uint8_t nCFSlot = 0;
     setCurrentCFSlot(mclmac, nCFSlot);
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         increaseCFSlot(mclmac);
         nCFSlot++;
         assert(mclmac->frame->currentCFSlot == nCFSlot);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetSlotDuration()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+    struct itimerval slotDuration;
+    // Use only it_value field
+    slotDuration.it_value.tv_usec = rand() % 1000000;
+    slotDuration.it_value.tv_sec = 0;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+    uint32_t slotDuration = random();
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        setSlotDuration(mclmac, &slotDuration);
+#ifdef __LINUX__
+        assert(mclmac->frame->slotDuration.it_value.tv_usec == slotDuration.it_value.tv_usec);
+        assert(mclmac->frame->slotDuration.it_value.tv_sec == slotDuration.it_value.tv_sec);
+#endif
+#ifdef __RIOT__
+        assert(mclmac->frame->slotDuration == slotDuration);
+#endif
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetFrameDuration()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+    struct itimerval frameDuration;
+    // Use only it_value field
+    frameDuration.it_value.tv_usec = rand() % 1000000;
+    frameDuration.it_value.tv_sec = rand() % 10;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+    uint32_t frameDuration = random();
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        setFrameDuration(mclmac, &frameDuration);
+#ifdef __LINUX__
+        assert(mclmac->frame->frameDuration.it_value.tv_usec == frameDuration.it_value.tv_usec);
+        assert(mclmac->frame->frameDuration.it_value.tv_sec == frameDuration.it_value.tv_sec);
+        frameDuration.it_value.tv_usec = rand() % 1000000;
+        frameDuration.it_value.tv_sec = rand() % 10;
+#endif
+#ifdef __RIOT__
+        assert(mclmac->frame->frameDuration == frameDuration);
+        frameDuration = random();
+#endif
+    }
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetCFDuration()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+    struct itimerval cfDuration;
+    // Use only it_value field
+    cfDuration.it_value.tv_usec = rand() % 1000000;
+    cfDuration.it_value.tv_sec = rand() % 10;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+    uint32_t cfDuration = random();
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    int n = rand() % 1000;
+    for (int i = 0; i < n; i++)
+    {
+        setCFDuration(mclmac, &cfDuration);
+#ifdef __LINUX__
+        assert(mclmac->frame->cfDuration.it_value.tv_usec == cfDuration.it_value.tv_usec);
+        assert(mclmac->frame->cfDuration.it_value.tv_sec == cfDuration.it_value.tv_sec);
+        cfDuration.it_value.tv_usec = rand() % 1000000;
+        cfDuration.it_value.tv_sec = rand() % 10;
+#endif
+#ifdef __RIOT__
+        assert(mclmac->frame->cfDuration == cfDuration);
+        cfDuration = random();
+#endif
     }
 
     destroyMCLMAC(&mclmac);
@@ -844,14 +963,14 @@ void testrecordCollision()
 
     uint32_t freq;
     uint8_t slot;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         freq = (uint32_t)rand();
         slot = (uint8_t)rand();
         recordCollision(mclmac, slot, freq);
-        assert(mclmac->mac->ctrlpkt->collisionSlot == slot);
-        assert(mclmac->mac->ctrlpkt->collisionFrequency == freq);
+        assert(mclmac->_collisionSlot == slot);
+        assert(mclmac->_collisionFrequency == freq);
         assert(mclmac->_collisionDetected == true);
     }
 
@@ -875,13 +994,142 @@ void testsetDestinationID()
 
     /* TODO: Change the type of detinationID in CF packet: uint8_t -> uint16_t*/
     uint8_t destinationID;
-    int n = rand() % 1000;
+    int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         destinationID = (uint8_t) rand();
         setDestinationID(mclmac, destinationID);
-        assert(mclmac->mac->cfpkt->destinationID == destinationID);
+        assert(mclmac->mac->destinationID == destinationID);
     }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetNetworkTime()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint32_t netTime;
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        netTime = (uint32_t)rand();
+        setNetworkTime(mclmac, netTime);
+        assert(mclmac->_networkTime == netTime);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testgetNetworkTime()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint32_t netTime, netTimeA;
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        netTime = rand();
+        setNetworkTime(mclmac, netTime);
+        netTimeA = getNetworkTime(mclmac);
+        assert(netTimeA == netTime);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testcreateCFPacket()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    createCFPacket(mclmac);
+    assert(mclmac->mac->cfpkt != NULL);
+    assert(mclmac->mac->cfpkt->nodeID > 0);
+    assert(mclmac->mac->cfpkt->destinationID >= 0);
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testcreateControlPacket()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    createControlPacket(mclmac);
+    assert(mclmac->mac->ctrlpkt != NULL);
+    assert(mclmac->mac->ctrlpkt->nodeID == mclmac->mac->nodeID);
+    assert(mclmac->mac->ctrlpkt->collisionSlot == mclmac->_collisionSlot);
+    assert(mclmac->mac->ctrlpkt->collisionFrequency == mclmac->_collisionFrequency);
+    assert(mclmac->mac->ctrlpkt->hopCount == mclmac->mac->hopCount);
+    assert(mclmac->mac->ctrlpkt->ack == mclmac->_ack);
+    assert(mclmac->mac->ctrlpkt->networkTime == mclmac->_networkTime);
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testcreateDataPacket()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    createDataPacket(mclmac);
+    assert(mclmac->mac->datapkt != NULL);
+    assert(mclmac->mac->datapkt->isFragment == mclmac->_isFragment);
+    assert(mclmac->mac->datapkt->totalFragments == mclmac->_numberFragments);
+    assert(mclmac->mac->datapkt->fragmentNumber == mclmac->_fragmentNumber);
 
     destroyMCLMAC(&mclmac);
 }
@@ -989,6 +1237,18 @@ void executeTestsMCLMAC()
     testincreaseSlot();
     printf("Test passed.\n");
 
+    printf("Testing setSlotDuration function.\n");
+    testsetSlotDuration();  
+    printf("Test passed.\n");
+
+    printf("Testing setFrameDuration function.\n");
+    testsetFrameDuration();
+    printf("Test passed.\n");
+
+    printf("Testing setCFDuration function.\n");
+    testsetCFDuration();
+    printf("Test passed.\n");
+
     printf("Test setSlotsNumber function.\n");
     testsetSlotsNumber();
     printf("Test passed.\n");
@@ -1007,6 +1267,26 @@ void executeTestsMCLMAC()
 
     printf("Testing setDestinationID function.\n");
     testsetDestinationID();
+    printf("Test passed.\n");
+
+    printf("Testing setNetworkTime function.\n");
+    testsetNetworkTime();
+    printf("Test passed.\n");
+
+    printf("Testing getNetworkTime function.\n");
+    testgetNetworkTime();
+    printf("Test passed.\n");
+
+    printf("Testing createCFPacket function.\n");
+    testcreateCFPacket();
+    printf("Test passed.\n");
+
+    printf("Testing createControlPacket function.\n");
+    testcreateControlPacket();
+    printf("Test passed.\n");
+
+    printf("Testing createDataPacket function.\n");
+    testcreateDataPacket();
     printf("Test passed.\n");
 
     return;
