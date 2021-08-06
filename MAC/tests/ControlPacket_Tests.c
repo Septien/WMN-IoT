@@ -268,6 +268,7 @@ void testsetNetworkTimeCP()
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
+        netTime = rand();
         setNetworkTimeCP(pkt, netTime);
         assert(pkt->networkTime == netTime);
     }
