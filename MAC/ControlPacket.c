@@ -144,6 +144,21 @@ uint8_t getHopCountCP(ControlPacket_t *pkt)
     return hops;
 }
 
+void setNetworkTimeCP(ControlPacket_t *pkt, uint32_t time)
+{
+    assert(pkt != NULL);
+    assert(time > 0);
+
+    pkt->networkTime = time;
+}
+
+uint32_t getNetworkTimeCP(ControlPacket_t *pkt)
+{
+    assert(pkt != NULL);
+
+    return pkt->networkTime;
+}
+
 void setACKCP(ControlPacket_t *pkt, uint8_t ack)
 {
     assert(pkt != NULL);
@@ -212,6 +227,11 @@ void constructPacketFromByteStringCP(ControlPacket_t *pkt, uint8_t *byteString, 
     pkt->collisionFrequency |= byteString[bytes + 4] << 16;
     pkt->collisionFrequency |= byteString[bytes + 5] << 8;
     pkt->collisionFrequency |= byteString[bytes + 6];
-    pkt->hopCount = byteString[bytes + 7];
-    pkt->ack = byteString[bytes + 8];
+    pkt->networkTime = 0;
+    pkt->networkTime |= byteString[bytes + 7] << 24;
+    pkt->networkTime |= byteString[bytes + 8] << 16;
+    pkt->networkTime |= byteString[bytes + 9] << 8;
+    pkt->networkTime |= byteString[bytes + 10];
+    pkt->hopCount = byteString[bytes + 11];
+    pkt->ack = byteString[bytes + 12];
 }

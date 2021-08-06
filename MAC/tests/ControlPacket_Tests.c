@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <time.h>
 
 #include "../ControlPacket.h"
+
+#define ITERATIONS 1000
 
 void testInit()
 {
@@ -255,6 +258,42 @@ void testgetHopCount()
     destroyPacketCP(&pkt);
 }
 
+void testsetNetworkTimeCP()
+{
+    ControlPacket_t *pkt;
+    size_t slots = 8, channels = 17;
+    initCP(&pkt, slots, channels);
+
+    uint32_t netTime;
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        setNetworkTimeCP(pkt, netTime);
+        assert(pkt->networkTime == netTime);
+    }
+
+    destroyPacketCP(&pkt);
+}
+
+void testgetNetworkTimeCP()
+{
+    ControlPacket_t *pkt;
+    size_t slots = 8, channels = 17;
+    initCP(&pkt, slots, channels);
+
+    uint32_t time, timeA;
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        time = (uint32_t)rand();
+        setNetworkTimeCP(pkt, time);
+        timeA = getNetworkTimeCP(pkt);
+        assert(timeA == time);
+    }
+
+    destroyPacketCP(&pkt);
+}
+
 void testsetACK()
 {
     ControlPacket_t *pkt;
@@ -342,6 +381,7 @@ void testconstructPacketFromByteString()
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 0xf0f0f0f0;
     uint8_t hopCount = 3;
+    uint32_t netTime = (uint32_t)rand();
     uint8_t ack = 0;
 
     size_t size = sizeof(nodeID);
@@ -349,6 +389,7 @@ void testconstructPacketFromByteString()
     size += sizeof(collisionSlots);
     size += sizeof(collisionFrequency);
     size += sizeof(hopCount);
+    size += sizeof(netTime);
     size += sizeof(ack);
     size += 1;
     uint8_t *byteStr = (uint8_t *)malloc(size * sizeof(uint8_t));
@@ -361,8 +402,12 @@ void testconstructPacketFromByteString()
     byteStr[bytes + 4] = (collisionFrequency & 0x00ff0000) >> 16;
     byteStr[bytes + 5] = (collisionFrequency & 0x0000ff00) >> 8;
     byteStr[bytes + 6] = (collisionFrequency & 0x000000ff);
-    byteStr[bytes + 7] = hopCount;
-    byteStr[bytes + 8] = ack;
+    byteStr[bytes + 7] = (netTime & 0xff000000) >> 24;
+    byteStr[bytes + 8] = (netTime & 0x00ff0000) >> 16;
+    byteStr[bytes + 9] = (netTime & 0x0000ff00) >> 8;
+    byteStr[bytes + 10] = (netTime & 0x000000ff);
+    byteStr[bytes + 11] = hopCount;
+    byteStr[bytes + 12] = ack;
 
     constructPacketFromByteStringCP(pkt, byteStr, size);
 
@@ -371,8 +416,9 @@ void testconstructPacketFromByteString()
         assert(pkt->occupiedSlots[i] == byteStr[i + 1]);
     assert(pkt->collisionSlot == byteStr[bytes + 2]);
     assert(pkt->collisionFrequency == collisionFrequency);
-    assert(pkt->hopCount == byteStr[bytes + 7]);
-    assert(pkt->ack == byteStr[bytes + 8]);
+    assert(pkt->hopCount == hopCount);
+    assert(pkt->networkTime == netTime);
+    assert(pkt->ack == ack);
 
     free(byteStr);
     free(occupiedSlots);
@@ -381,6 +427,8 @@ void testconstructPacketFromByteString()
 
 void executeTestsCP()
 {
+    srand(time(NULL));
+
     printf("Testing init function.\n");
     testInit();
     printf("Test passed\n");
@@ -435,6 +483,14 @@ void executeTestsCP()
 
     printf("Testing getHopCount function.\n");
     testgetHopCount();
+    printf("Test passed.\n");
+
+    printf("Testing setNetworkTimeCP function.\n");
+    testsetNetworkTimeCP();
+    printf("Test passed.\n");
+
+    printf("Testing getNetworkTimeCP function.\n");
+    testgetNetworkTimeCP();
     printf("Test passed.\n");
 
     printf("Testing setACK function.\n");

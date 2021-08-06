@@ -22,6 +22,7 @@ typedef struct
     uint8_t collisionSlot;
     uint32_t collisionFrequency;
     uint8_t hopCount;
+    uint32_t networkTime;
     uint8_t ack;
     uint8_t _nSlots;
     uint8_t _nChannels;
@@ -41,6 +42,8 @@ void setCollisionFrequencyCP(ControlPacket_t *pkt, uint32_t frequency);
 uint32_t getColissionFrequencyCP(ControlPacket_t *pkt);
 void setHopCountCP(ControlPacket_t *pkt, uint8_t count);
 uint8_t getHopCountCP(ControlPacket_t *pkt);
+void setNetworkTimeCP(ControlPacket_t *pkt, uint32_t time);
+uint32_t getNetworkTimeCP(ControlPacket_t *pkt);
 void setACKCP(ControlPacket_t *pkt, uint8_t ack);
 uint8_t getACKCP(ControlPacket_t *pkt);
 void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size);
