@@ -32,8 +32,8 @@ void testmacInit()
     assert(mclmac->frame->cfSlotsNumber == 0);
     assert(mclmac->frame->slotsNumber == 0);
     assert(mclmac->dataQueue != NULL);
-    assert(mclmac->powerMode == PASSIVE);
-    assert(mclmac->state == START);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(mclmac->macState.currentState == START);
     assert(mclmac->_dataQSize == dataQsize);
     assert(mclmac->_collisionDetected == 0);
     assert(mclmac->_networkTime == 0);
@@ -87,8 +87,8 @@ void testclearMCLMAC()
     assert(mclmac->frame->slotsNumber == 0);
     assert(mclmac->dataQueue == NULL);
     assert(mclmac->_dataQSize == 0);
-    assert(mclmac->powerMode == PASSIVE);
-    assert(mclmac->state == START);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(mclmac->macState.currentState == START);
     assert(mclmac->_collisionDetected == 0);
     assert(mclmac->_networkTime == 0);
 
@@ -112,19 +112,50 @@ void testsetMACState()
 
     state_t state = START;
     setMACState(mclmac, state);
-    assert(mclmac->state == state);
+    assert(mclmac->macState.currentState == state);
     state = INITIALIZATION;
     setMACState(mclmac, state);
-    assert(mclmac->state == state);
+    assert(mclmac->macState.currentState == state);
     state = SYNCHRONIZATION;
     setMACState(mclmac, state);
-    assert(mclmac->state == state);
+    assert(mclmac->macState.currentState == state);
     state = DISCOVERY_AND_SELECTION;
     setMACState(mclmac, state);
-    assert(mclmac->state == state);
+    assert(mclmac->macState.currentState == state);
     state = MEDIUMACCESS;
     setMACState(mclmac, state);
-    assert(mclmac->state == state);
+    assert(mclmac->macState.currentState == state);
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetNextMACState()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    state_t state = INITIALIZATION;
+    setNextMACState(mclmac, state);
+    assert(mclmac->macState.nextState == state);
+    state = SYNCHRONIZATION;
+    setNextMACState(mclmac, state);
+    assert(mclmac->macState.nextState == state);
+    state = DISCOVERY_AND_SELECTION;
+    setNextMACState(mclmac, state);
+    assert(mclmac->macState.nextState == state);
+    state = MEDIUMACCESS;
+    setNextMACState(mclmac, state);
+    assert(mclmac->macState.nextState == state);
 
     destroyMCLMAC(&mclmac);
 }
@@ -189,19 +220,49 @@ void testsetPowerModeState()
 
     PowerMode_t mode = PASSIVE;
     setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode == mode);
+    assert(mclmac->powerMode.currentState == mode);
 
     mode = ACTIVE;
     setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode == mode);
+    assert(mclmac->powerMode.currentState == mode);
 
     mode = TRANSMIT;
     setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode == mode);
+    assert(mclmac->powerMode.currentState == mode);
 
     mode = RECEIVE;
     setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode == mode);
+    assert(mclmac->powerMode.currentState == mode);
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testsetNextPowerModeState()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    PowerMode_t mode = ACTIVE;
+    setNextPowerModeState(mclmac, mode);
+    assert(mclmac->powerMode.nextState == mode);
+
+    mode = TRANSMIT;
+    setNextPowerModeState(mclmac, mode);
+    assert(mclmac->powerMode.nextState == mode);
+
+    mode = RECEIVE;
+    setNextPowerModeState(mclmac, mode);
+    assert(mclmac->powerMode.nextState == mode);
 
     destroyMCLMAC(&mclmac);
 }
@@ -1404,6 +1465,14 @@ void executeTestsMCLMAC()
 
     printf("Testing clearDataFromPacket function.\n");
     testclearDataFromPacket();
+    printf("Test passed.\n");
+
+    printf("Testing setNextMACState funtion.\n");
+    testsetNextMACState();
+    printf("Test passed.\n");
+
+    printf("Testing setNextPowerModeState function.\n");
+    testsetNextPowerModeState();
     printf("Test passed.\n");
 
     return;

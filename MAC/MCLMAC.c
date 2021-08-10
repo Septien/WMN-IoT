@@ -27,8 +27,8 @@ void macInit(MCLMAC_t **mclmac,
     mclmacA->_dataQSize = dataQSize;
     mclmacA->dataQueue = (uint8_t *)malloc(mclmacA->_dataQSize * sizeof(uint8_t));
     mclmacA->frame = frame;
-    mclmacA->state = START;
-    mclmacA->powerMode = PASSIVE;
+    mclmacA->macState.currentState = START;
+    mclmacA->powerMode.currentState = PASSIVE;
     mclmacA->_nChannels = _nChannels;
     mclmacA->_nSlots = _nSlots;
 
@@ -64,8 +64,8 @@ void clearMCLMAC(MCLMAC_t *mclmac)
     mclmac->_dataQSize = 0;
     free(mclmac->dataQueue);
     mclmac->dataQueue = NULL;
-    mclmac->state = START;
-    mclmac->powerMode    = PASSIVE;
+    mclmac->macState.currentState = START;
+    mclmac->powerMode.currentState = PASSIVE;
     mclmac->_collisionDetected = 0;
     mclmac->_networkTime = 0;
 }
@@ -73,26 +73,46 @@ void clearMCLMAC(MCLMAC_t *mclmac)
 void setMACState(MCLMAC_t *mclmac, state_t state)
 {
     assert(mclmac != NULL);
-    mclmac->state = state;
+    assert(state != NONE);
+    mclmac->macState.currentState = state;
+}
+
+void setNextMACState(MCLMAC_t *mclmac, state_t next)
+{
+    assert(mclmac != NULL);
+    assert(next != NONE);
+    assert(next != START);
+
+    mclmac->macState.nextState = next;
 }
 
 state_t getMACState(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    return mclmac->state;
+    return mclmac->macState.currentState;
 }
 
 void setPowerModeState(MCLMAC_t *mclmac, PowerMode_t mode)
 {
     assert(mclmac != NULL);
-    mclmac->powerMode = mode;
+    assert(mode != NONE);
+    mclmac->powerMode.currentState = mode;
+}
+
+void setNextPowerModeState(MCLMAC_t *mclmac, PowerMode_t next)
+{
+    assert(mclmac != NULL);
+    assert(mode != NONEP);
+    assert(mode != START);
+
+    mclmac->powerMode.nextState = next;
 }
 
 PowerMode_t getPowerModeState(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    return mclmac->powerMode;
+    return mclmac->powerMode.currentState;
 }
 
 void setCFChannel(MCLMAC_t *mclmac, uint32_t cfchannel)

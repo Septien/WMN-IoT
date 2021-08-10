@@ -34,9 +34,22 @@
 #include "sx127x_registers.h"
 #endif
 
-typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY_AND_SELECTION, MEDIUMACCESS} state_t;
+typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY_AND_SELECTION, MEDIUMACCESS, NONE} state_t;
 
-typedef enum POWERMODE {PASSIVE, ACTIVE, TRANSMIT, RECEIVE} PowerMode_t;
+typedef enum POWERMODE {PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP} PowerMode_t;
+
+typedef struct State
+{
+    state_t currentState;
+    state_t nextState;
+}MACState_t;
+
+typedef struct RadioState
+{
+    PowerMode_t currentState;
+    PowerMode_t nextState;
+}RadioPowerMode_t;
+
 
 typedef struct MCLMAC
 {
@@ -45,8 +58,8 @@ typedef struct MCLMAC
     // For communicating with other layers
     uint8_t *dataQueue;
     Frame_t *frame;
-    state_t state;
-    PowerMode_t powerMode;
+    MACState_t macState;
+    RadioPowerMode_t powerMode;
 
     // Private members
     bool _collisionDetected;
@@ -77,8 +90,10 @@ void clearMCLMAC(MCLMAC_t *mclmac);
 
 // State machines
 void setMACState(MCLMAC_t *mclmac, state_t state);
+void setNextMACState(MCLMAC_t *mclmac, state_t next);
 state_t getMACState(MCLMAC_t *mclmac);
 void setPowerModeState(MCLMAC_t *mclmac, PowerMode_t mode);
+void setNextPowerModeState(MCLMAC_t *mclmac, PowerMode_t next);
 PowerMode_t getPowerModeState(MCLMAC_t *mclmac);
 
 // Channels
