@@ -142,6 +142,49 @@ void testsetPacketDataDP()
     destroyPacketDP(&datapkt);
 }
 
+void testdeleteDataDP()
+{
+    DataPacket_t *datapkt;
+    initDP(&datapkt);
+
+    uint8_t size = 249, i;
+    uint8_t *data = malloc(size * sizeof(void));
+    for (i = 0; i < size; i++)
+    {
+        data[i] = rand();
+    }
+    setPacketDataDP(datapkt, (void **)&data, size);
+    
+    deleteDataDP(datapkt);
+    assert(datapkt->dataLength == 0);
+    assert(datapkt->data == NULL);
+
+    free(data);
+    destroyPacketDP(&datapkt);
+}
+
+void testclearDataDP()
+{
+    DataPacket_t *datapkt;
+    initDP(&datapkt);
+
+    uint8_t size = 249, i;
+    uint8_t *data = malloc(size * sizeof(void));
+    for (i = 0; i < size; i++)
+    {
+        data[i] = rand();
+    }
+    setPacketDataDP(datapkt, (void **)&data, size);
+    
+    clearDataDP(datapkt);
+    assert(datapkt->dataLength == size);
+    for (i = 0; i < size; i++)
+        assert(datapkt->data[i] == 0);
+
+    free(data);
+    destroyPacketDP(&datapkt);
+}
+
 void testgetPacketDataDP()
 {
     DataPacket_t *datapkt;
@@ -218,6 +261,12 @@ void testcreatePacketDP()
     {
         assert(datapkt->data[i] == data[i]);
     }
+
+    free(datapkt->data);
+    size = 0;
+    createPacketDP(datapkt, isFragment, totalFragments, fragmentNumber, NULL, size);
+    assert(datapkt->data == NULL);
+
 
     free(data);
     destroyPacketDP(&datapkt);
@@ -388,6 +437,14 @@ void executeTestsDP()
 
     printf("Testing setPacketDataDP function.\n");
     testsetPacketDataDP();
+    printf("Test passed.\n");
+
+    printf("Testing deleteDataDP function.\n");
+    testdeleteDataDP();
+    printf("Test passed.\n");
+
+    printf("Testing clearDataDP function.\n");
+    testclearDataDP();
     printf("Test passed.\n");
 
     printf("Testing getPacketDataDP function.\n");

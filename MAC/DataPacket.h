@@ -20,7 +20,7 @@ typedef struct {
     uint8_t  totalFragments;
     uint8_t  fragmentNumber;
     size_t   packetLength;
-    uint8_t   dataLength;
+    uint8_t  dataLength;
     uint8_t  *data;
 }DataPacket_t;
 
@@ -35,6 +35,8 @@ uint8_t getTotalFragmentsDP(DataPacket_t *pkt);
 void setFragmentNumberDP(DataPacket_t *pkt, uint8_t fragmentNumber);
 uint8_t getFragmentNumberDP(DataPacket_t *pkt);
 void setPacketDataDP(DataPacket_t *pkt, void **data, uint8_t size);
+void deleteDataDP(DataPacket_t *pkt);
+void clearDataDP(DataPacket_t *pkt);
 void getPacketDataDP(DataPacket_t *pkt, void **data, uint8_t *size);
 uint8_t getDataLengthDP(DataPacket_t *pkt);
 size_t getPacketLengthDP(DataPacket_t *pkt);

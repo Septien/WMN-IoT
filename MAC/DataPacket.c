@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void initDP(DataPacket_t **pkt)
 {
@@ -39,6 +40,8 @@ void createPacketDP(DataPacket_t *pkt, bool isFragment, uint8_t totalFragments, 
         for (int i = 0; i < pkt->dataLength; i++)
             pkt->data[i] = dataA[i];
     }
+    else
+        pkt->data = NULL;
 }
 
 void clearPacketDP(DataPacket_t *pkt)
@@ -112,6 +115,26 @@ void setPacketDataDP(DataPacket_t *pkt, void **data, uint8_t size)
     pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
     for (int i = 0; i < size; i++)
         pkt->data[i] = dataA[i];
+}
+
+void deleteDataDP(DataPacket_t *pkt)
+{
+    assert(pkt != NULL);
+    assert(pkt->dataLength > 0);
+    assert(pkt->data != NULL);
+
+    pkt->dataLength = 0;
+    free(pkt->data);
+    pkt->data = NULL;
+}
+
+void clearDataDP(DataPacket_t *pkt)
+{
+    assert(pkt != NULL);
+    assert(pkt->data != NULL);
+    assert(pkt->dataLength > 0);
+
+    memset(pkt->data, 0, pkt->dataLength);
 }
 
 void getPacketDataDP(DataPacket_t *pkt, void **data, uint8_t *size)
