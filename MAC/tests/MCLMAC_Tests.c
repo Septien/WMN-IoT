@@ -1134,6 +1134,111 @@ void testcreateDataPacket()
     destroyMCLMAC(&mclmac);
 }
 
+void testsetPacketData()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    createDataPacket(mclmac);
+
+    // The total length of the data packet, including the fields, should not exceed 256 bytes. This as the
+    // maximum buffer size for the SX1276 modem is 256 bytes.
+    uint8_t size;
+   int n = rand() % 1000;
+    int j;
+    for (int i = 0; i < n; i++)
+    {
+        size = 1 + rand() % 201;
+        uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t));
+        for (j = 0; j < size; j++)
+            data[j] = rand();
+        setPacketData(mclmac, data, size);
+
+        assert(mclmac->mac->datapkt->dataLength == size);
+        assert(mclmac->mac->datapkt->data != NULL);
+        for (j = 0; j < size; j++)
+        {
+            assert(mclmac->mac->datapkt->data[j] == data[j]);
+        }
+
+        deleteDataFromPacket(mclmac);
+        free(data);
+        data = NULL;
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testdeleteDataFromPacket()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    createDataPacket(mclmac);
+    uint8_t size = 1 + rand() % 201;
+    uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    for (int i = 0; i < size; i++)
+        data[i] = rand();
+    setPacketData(mclmac, data, size);
+
+    deleteDataFromPacket(mclmac);
+    assert(mclmac->mac->datapkt->dataLength == 0);
+    assert(mclmac->mac->datapkt->data == NULL);
+
+    free(data);
+    destroyMCLMAC(&mclmac);
+}
+
+void testclearDataFromPacket()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    createDataPacket(mclmac);
+    uint8_t size = 1 + rand() % 201;
+    uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    for (int i = 0; i < size; i++)
+        data[i] = rand();
+    setPacketData(mclmac, data, size);
+    clearDataFromPacket(mclmac);
+    assert(mclmac->mac->datapkt->dataLength == size);
+    for (int i = 0; i < size; i++)
+        assert(mclmac->mac->datapkt->data[i] == 0);
+
+    free(data);
+    destroyMCLMAC(&mclmac);
+}
+
 void executeTestsMCLMAC()
 {
     srand(time(NULL));
@@ -1287,6 +1392,18 @@ void executeTestsMCLMAC()
 
     printf("Testing createDataPacket function.\n");
     testcreateDataPacket();
+    printf("Test passed.\n");
+
+    printf("Testing setPacketData function.\n");
+    testsetPacketData();
+    printf("Test passed.\n");
+
+    printf("Testing deleteDataFromPacket function.\n");
+    testdeleteDataFromPacket();
+    printf("Test passed.\n");
+
+    printf("Testing clearDataFromPacket function.\n");
+    testclearDataFromPacket();
     printf("Test passed.\n");
 
     return;

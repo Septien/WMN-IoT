@@ -424,6 +424,45 @@ void createDataPacket(MCLMAC_t *mclmac)
     mclmac->mac->datapkt = datapkt;
 }
 
+void setPacketData(MCLMAC_t *mclmac, const uint8_t *data, uint8_t size)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->datapkt != NULL);
+
+    // If size is zero and data array is already initialized, set to zero
+    if (size == 0 && mclmac->mac->datapkt->data != NULL)
+    {
+        memset(mclmac->mac->datapkt->data, 0, mclmac->mac->datapkt->dataLength);
+        return;
+    }
+
+    mclmac->mac->datapkt->dataLength = size;
+    mclmac->mac->datapkt->data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    for (int i = 0; i < size; i++)
+    {
+        mclmac->mac->datapkt->data[i] = data[i];
+    }
+}
+
+void deleteDataFromPacket(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->datapkt != NULL);
+
+    deleteDataDP(mclmac->mac->datapkt);
+}
+
+void clearDataFromPacket(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->datapkt != NULL);
+
+    clearDataDP(mclmac->mac->datapkt);
+}
+
 void startCADMode(MCLMAC_t *mclmac)
 {
     // TO DO
