@@ -1300,6 +1300,261 @@ void testclearDataFromPacket()
     destroyMCLMAC(&mclmac);
 }
 
+void testinitPMStateMachine()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    initPMStateMachine(mclmac);
+    assert(mclmac->powerMode.currentState == STARTP);
+    assert(mclmac->powerMode.nextState == NONEP);
+
+    destroyMCLMAC(&mclmac);
+}
+
+void testupdateStateMachine()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+    int r;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    initPMStateMachine(mclmac);
+
+    // Try to transition from STARTP state to ACTIVE, TRANSMIT,  RECEIVE or FINISHP states.
+    // Return E_PM_TRANSITION_ERROR
+    setPowerModeState(mclmac, STARTP);
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == STARTP);
+    
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == STARTP);
+    
+    setNextPowerModeState(mclmac, RECEIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == STARTP);
+    
+    setNextPowerModeState(mclmac, FINISHP);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == STARTP);
+
+    // Try to transition from PASSIVE state to TRANSMIT,  RECEIVE or FINISHP states.
+    // Return E_PM_TRANSITION_ERROR
+    setPowerModeState(mclmac, PASSIVE);
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    setNextPowerModeState(mclmac, RECEIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    setNextPowerModeState(mclmac, FINISHP);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    // Try to transit from FINISHP to any other state
+    // Return E_PM_TRANSITION_ERROR
+    setPowerModeState(mclmac, FINISHP);
+
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    setNextPowerModeState(mclmac, RECEIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    // Once in finish state, to use once again the state machine,
+    // call initPMStateMachine, and go to PASSIVE state
+    initPMStateMachine(mclmac);
+    setPowerModeState(mclmac, STARTP);
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+
+    // Transit from PASSIVE to ACTIVE
+    // Return E_PM_TRANSITION_SUCCESS
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == ACTIVE);
+
+    // Transit from ACTIVE to PASSIVE
+    // Return E_PM_TRANSITION_SUCCESS
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    // Transit from PASSIVE to TRANSMIT. Remember to pass through ACTIVE,
+    // as specified by the state machine.
+    // Return E_PM_TRANSITION_SUCCESS
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == ACTIVE);
+
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == TRANSMIT);
+
+    // Try to get to RECEIVE mode.
+    // Return E_PM_TRANSITION_ERROR
+    setNextPowerModeState(mclmac, RECEIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+    assert(mclmac->powerMode.currentState == TRANSMIT);
+
+    // Try to get to ACTIVE mode.
+    // Return E_PM_TRANSITION_ERROR
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    // You are in TRANSMIT mode, in order to get to RECEIVE mode, 
+    // you have to get to PASSIVE again, an travers the path to 
+    // RECEIVE state, as indicated by the state machine.
+    // Return E_PM_TRANSITION_SUCCESS
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == ACTIVE);
+
+    setNextPowerModeState(mclmac, RECEIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == RECEIVE);
+
+    // Try to get to TRANSMIT mode.
+    // Return E_PM_TRANSITION_ERROR
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    // Try to get to ACTIVE mode
+    // Return E_PM_TRANSITION_ERROR
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_ERROR);
+
+    // Follow the path: PASSIVE -> ACTIVE -> FINISHP
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == ACTIVE);
+
+    setNextPowerModeState(mclmac, FINISHP);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+
+    // Travers the path: PASSIVE -> ACTIVE -> TRANSMIT -> FINISHP
+    initPMStateMachine(mclmac);
+    setPowerModeState(mclmac, STARTP);
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == ACTIVE);
+
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == TRANSMIT);
+
+    setNextPowerModeState(mclmac, FINISHP);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+
+    // Travers the path: PASSIVE -> ACTIVE -> RECEIVE -> FINISHP
+    initPMStateMachine(mclmac);
+    setPowerModeState(mclmac, STARTP);
+    setNextPowerModeState(mclmac, PASSIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == PASSIVE);
+
+    setNextPowerModeState(mclmac, ACTIVE);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == ACTIVE);
+
+    setNextPowerModeState(mclmac, TRANSMIT);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == TRANSMIT);
+
+    setNextPowerModeState(mclmac, FINISHP);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_TRANSITION_SUCCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+
+    // If nextState is NONEP, return E_PM_NO_TRANSITION
+    setNextPowerModeState(mclmac, NONEP);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_NO_TRANSITION);
+
+    // If invalid state, return E_PM_INVALID_STATE
+    setNextPowerModeState(mclmac, 10);
+    r = updatePMStateMachine(mclmac);
+    assert(r == E_PM_INVALID_STATE);
+
+    destroyMCLMAC(&mclmac);
+}
+
 void executeTestsMCLMAC()
 {
     srand(time(NULL));
@@ -1473,6 +1728,14 @@ void executeTestsMCLMAC()
 
     printf("Testing setNextPowerModeState function.\n");
     testsetNextPowerModeState();
+    printf("Test passed.\n");
+
+    printf("Testing initPMStateMachine function.\n");
+    testinitPMStateMachine();
+    printf("Test passed.\n");
+
+    printf("Test updateStateMachine function.\n");
+    testupdateStateMachine();
     printf("Test passed.\n");
 
     return;

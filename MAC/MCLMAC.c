@@ -70,6 +70,82 @@ void clearMCLMAC(MCLMAC_t *mclmac)
     mclmac->_networkTime = 0;
 }
 
+void initPMStateMachine(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    mclmac->powerMode.currentState = STARTP;
+    mclmac->powerMode.nextState = NONEP;
+}
+
+int updatePMStateMachine(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    if (mclmac->powerMode.nextState == NONEP)
+        return E_PM_NO_TRANSITION;
+
+    if (mclmac->powerMode.currentState == mclmac->powerMode.nextState)
+        return E_PM_NO_TRANSITION;
+ 
+    switch (mclmac->powerMode.nextState)
+    {
+    case PASSIVE:
+        if (mclmac->powerMode.currentState == FINISHP)
+            return E_PM_TRANSITION_ERROR;
+        setPowerModeState(mclmac, PASSIVE);
+        break;
+    
+    case ACTIVE:
+        if (mclmac->powerMode.currentState == STARTP)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == TRANSMIT)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == RECEIVE)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == FINISHP)
+            return E_PM_TRANSITION_ERROR;
+        setPowerModeState(mclmac, ACTIVE);
+        break;
+
+    case TRANSMIT:
+        if (mclmac->powerMode.currentState == STARTP)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == PASSIVE)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == RECEIVE)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == FINISHP)
+            return E_PM_TRANSITION_ERROR;
+        setPowerModeState(mclmac, TRANSMIT);
+        break;
+
+    case RECEIVE:
+        if (mclmac->powerMode.currentState == STARTP)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == PASSIVE)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == TRANSMIT)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == FINISHP)
+            return E_PM_TRANSITION_ERROR;
+        setPowerModeState(mclmac, RECEIVE);
+        break;
+
+    case FINISHP:
+        if (mclmac->powerMode.currentState == STARTP)
+            return E_PM_TRANSITION_ERROR;
+        if (mclmac->powerMode.currentState == PASSIVE)
+            return E_PM_TRANSITION_ERROR;
+        setPowerModeState(mclmac, FINISHP);
+        break;
+
+    default:
+        return E_PM_INVALID_STATE;
+        break;
+    }
+    return E_PM_TRANSITION_SUCCESS;
+}
+
 void setMACState(MCLMAC_t *mclmac, state_t state)
 {
     assert(mclmac != NULL);
@@ -103,8 +179,7 @@ void setPowerModeState(MCLMAC_t *mclmac, PowerMode_t mode)
 void setNextPowerModeState(MCLMAC_t *mclmac, PowerMode_t next)
 {
     assert(mclmac != NULL);
-    assert(mode != NONEP);
-    assert(mode != START);
+    assert(next != STARTP);
 
     mclmac->powerMode.nextState = next;
 }

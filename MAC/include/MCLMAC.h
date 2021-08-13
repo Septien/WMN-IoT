@@ -36,7 +36,9 @@
 
 typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY_AND_SELECTION, MEDIUMACCESS, NONE} state_t;
 
-typedef enum POWERMODE {PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP} PowerMode_t;
+typedef enum POWERMODE {STARTP, PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP, FINISHP} PowerMode_t;
+
+enum POWERMODE_ERRORS {E_PM_TRANSITION_SUCCESS, E_PM_TRANSITION_ERROR, E_PM_NO_TRANSITION, E_PM_INVALID_STATE};
 
 typedef struct State
 {
@@ -87,6 +89,11 @@ void macInit(MCLMAC_t **mclmac,
 );
 void destroyMCLMAC(MCLMAC_t **mclmac);
 void clearMCLMAC(MCLMAC_t *mclmac);
+
+// Protocol Execution
+// DevicePowerMode State Machine
+void initPMStateMachine(MCLMAC_t *mclmac);
+int updatePMStateMachine(MCLMAC_t *mclmac);
 
 // State machines
 void setMACState(MCLMAC_t *mclmac, state_t state);
