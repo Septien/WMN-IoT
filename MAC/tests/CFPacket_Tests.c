@@ -32,11 +32,13 @@ void testcreatePacketCF()
 
     uint8_t nodeID = (uint8_t)rand();
     uint8_t destinationID = (uint8_t)rand();
+    uint32_t frequency = (uint32_t)rand();
 
-    createPacketCF(cfpkt, nodeID, destinationID);
+    createPacketCF(cfpkt, nodeID, destinationID, frequency);
 
     assert(cfpkt->nodeID == nodeID);
     assert(cfpkt->destinationID == destinationID);
+    assert(cfpkt->frequency == frequency);
 
     destroyPacketCF(&cfpkt);
 }
@@ -48,8 +50,9 @@ void testclearPacketCF()
 
     uint8_t nodeID = (uint8_t)rand();
     uint8_t destinationID = (uint8_t)rand();
+    uint32_t netTime = (uint32_t)rand();
 
-    createPacketCF(cfpkt, nodeID, destinationID);
+    createPacketCF(cfpkt, nodeID, destinationID, netTime);
 
     clearPacketCF(cfpkt);
 
@@ -114,6 +117,33 @@ void testgetDestinationIDCF()
     destroyPacketCF(&cfpkt);
 }
 
+void testsetFrequencyCF()
+{
+    CFPacket_t *cfpkt;
+    initCF(&cfpkt);
+
+    uint32_t frequency = rand();
+    setFrequencyCF(cfpkt, frequency);
+    assert(cfpkt->frequency == frequency);
+
+    destroyPacketCF(&cfpkt);
+}
+
+void testgetFrequencyCF()
+{
+    CFPacket_t *cfpkt;
+    initCF(&cfpkt);
+
+    uint32_t frequency = rand();
+    setFrequencyCF(cfpkt, frequency);
+    
+    uint32_t freqA;
+    freqA = getFrequencyCF(cfpkt);
+    assert(freqA == frequency);
+
+    destroyPacketCF(&cfpkt);
+}
+
 void testgetPacketByteString()
 {
     CFPacket_t *cfpkt;
@@ -121,9 +151,11 @@ void testgetPacketByteString()
 
     uint8_t nodeID = (uint8_t)rand();
     uint8_t destinationID = (uint8_t)rand();
-    createPacketCF(cfpkt, nodeID, destinationID);
+    uint32_t frequency = (uint32_t)rand();
+    createPacketCF(cfpkt, nodeID, destinationID, frequency);
 
     size_t size = sizeof(nodeID) + sizeof(destinationID);
+    size += sizeof(frequency);
 
     uint8_t *byteString;
     size_t size2;
@@ -131,6 +163,10 @@ void testgetPacketByteString()
     assert(byteString != NULL);
     assert(byteString[0] == nodeID);
     assert(byteString[1] == destinationID);
+    assert(byteString[2] == (frequency & 0xff000000 >> 24));
+    assert(byteString[3] == (frequency & 0x00ff0000 >> 16));
+    assert(byteString[4] == (frequency & 0x0000ff00 >> 8));
+    assert(byteString[5] == (frequency & 0x000000ff));
     assert(size2 == size);
 
     free(byteString);
@@ -143,13 +179,22 @@ void testconstructPktFromByteString()
     initCF(&cfpkt);
 
     size_t size = 2 * sizeof(uint8_t);
+    size += sizeof(uint32_t);
+    printf("%ld\n", size);
     uint8_t *byteString = (uint8_t *)malloc(size * sizeof(uint8_t));
+    uint32_t frequency = 915000000;//(uint32_t)rand();
     byteString[0] = (uint8_t)rand();
     byteString[1] = (uint8_t)rand();
+    byteString[2] = ((frequency & 0xff000000) >> 24);
+    byteString[3] = ((frequency & 0x00ff0000) >> 16);
+    byteString[4] = ((frequency & 0x0000ff00) >> 8);
+    byteString[5] = (frequency & 0x000000ff);
 
     constructPktFromByteStringCF(cfpkt, byteString, size);
     assert(cfpkt->nodeID == byteString[0]);
     assert(cfpkt->destinationID == byteString[1]);
+    printf("%d\n", cfpkt->frequency);
+    assert(cfpkt->frequency == frequency);
 
     free(byteString);
     destroyPacketCF(&cfpkt);
@@ -188,6 +233,14 @@ void executeTestsCF()
 
     printf("Testing getDestinationIDCF function.\n"),
     testgetDestinationIDCF();
+    printf("Test passed.\n");
+
+    printf("Testing setFrequencyCF function.\n");
+    testsetFrequencyCF();
+    printf("Test passed.\n");
+
+    printf("Testing getFrequencyCF function.\n");
+    testgetFrequencyCF();
     printf("Test passed.\n");
 
     printf("Testing getPacketByteString function.\n");

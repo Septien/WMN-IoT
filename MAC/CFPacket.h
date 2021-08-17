@@ -18,16 +18,19 @@ typedef struct CFPacket
 {
     uint8_t nodeID;
     uint8_t destinationID;
+    uint32_t frequency;
 }CFPacket_t;
 
 void initCF(CFPacket_t **pkt);
 void destroyPacketCF(CFPacket_t **pkt);
-void createPacketCF(CFPacket_t *pkt, uint8_t nodeID, uint8_t destinationID);
+void createPacketCF(CFPacket_t *pkt, uint8_t nodeID, uint8_t destinationID, uint32_t frequency);
 void clearPacketCF(CFPacket_t *pkt);
 void setNodeIDCF(CFPacket_t *pkt, uint8_t nodeID);
 uint8_t getNodeIDCF(CFPacket_t *pkt);
 void setDestinationIDCF(CFPacket_t *pkt, uint8_t destinationID);
 uint8_t getDestinationIDCF(CFPacket_t *pkt);
+void setFrequencyCF(CFPacket_t *pkt, uint32_t frequency);
+uint32_t getFrequencyCF(CFPacket_t *pkt);
 void getPacketByteStringCF(CFPacket_t *pkt, uint8_t **byteString, size_t *size);
 void constructPktFromByteStringCF(CFPacket_t *pkt, uint8_t *byteString, size_t size);
 
