@@ -32,7 +32,7 @@ void testmacInit()
     assert(mclmac->frame->cfSlotsNumber == 0);
     assert(mclmac->frame->slotsNumber == 0);
     assert(mclmac->dataQueue != NULL);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(mclmac->powerMode.currentState == STARTP);
     assert(mclmac->macState.currentState == START);
     assert(mclmac->_dataQSize == dataQsize);
     assert(mclmac->_collisionDetected == 0);
@@ -839,6 +839,34 @@ void testsetSlotsNumber()
     destroyMCLMAC(&mclmac);
 }
 
+void testsetCFSlotsNumber()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    uint8_t nSlots;
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        nSlots = (uint8_t) rand();
+        nSlots = (nSlots == 0 ? 1 : nSlots);
+        setCFSlotsNumber(mclmac, nSlots);
+        assert(mclmac->frame->cfSlotsNumber == nSlots);
+    }
+
+    destroyMCLMAC(&mclmac);
+}
+
 void testsetCurrentCFSlot()
 {
     MCLMAC_t *mclmac;
@@ -1555,6 +1583,105 @@ void testupdateStateMachine()
     destroyMCLMAC(&mclmac);
 }
 
+void testexecutePMState()
+{
+    MCLMAC_t *mclmac;
+#ifdef __LINUX__
+    uint8_t *radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio;
+#endif
+    int dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+    int r;
+
+    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+
+    initPMStateMachine(mclmac);
+
+    setPowerModeState(mclmac, NONEP);
+    r = executePMState(mclmac);
+    assert(r == E_PM_EXECUTION_FAILED);
+
+    /* State STARTP. Execute the following tasks:
+    *   -Set the number of slots and cfslots.
+    *   -Set the timers value.
+    *   -Initialize the values of frame, slot, and cfslot to zero.
+    *   -Immediately pass to PASSIVE state.
+    *  Return E_PM_EXECUTION_SUCESS when successfully executed.
+    */
+#ifdef __LINUX__
+    mclmac->_frameDuration.it_value.tv_usec = 100;
+    mclmac->_frameDuration.it_value.tv_sec = 1;
+    mclmac->_slotDuration.it_value.tv_usec = 100;
+    mclmac->_slotDuration.it_value.tv_sec = 1;
+    mclmac->_cfDuration.it_value.tv_usec = 100;
+    mclmac->_cfDuration.it_value.tv_sec = 1;
+#endif
+#ifdef __RIOT__
+    mclmac->_frameDuration = 100;
+    mclmac->_slotDuration = 100;
+    mclmac->_cfDuration = 100;
+#endif
+   setPowerModeState(mclmac, STARTP);
+   r = executePMState(mclmac);
+   assert(r == E_PM_EXECUTION_SUCCESS);
+   assert(mclmac->mac->cfpkt == NULL);
+   assert(mclmac->mac->datapkt == NULL);
+   assert(mclmac->mac->ctrlpkt == NULL);
+   assert(mclmac->frame->slotsNumber == mclmac->_nSlots);
+   assert(mclmac->frame->cfSlotsNumber == mclmac->_nSlots);
+#ifdef __LINUX__
+    assert(mclmac->frame->frameDuration.it_value.tv_usec == mclmac->_frameDuration.it_value.tv_usec);
+    assert(mclmac->frame->frameDuration.it_value.tv_sec == mclmac->_frameDuration.it_value.tv_sec);
+    assert(mclmac->frame->slotDuration.it_value.tv_usec == mclmac->_slotDuration.it_value.tv_usec);
+    assert(mclmac->frame->slotDuration.it_value.tv_sec == mclmac->_slotDuration.it_value.tv_sec);
+    assert(mclmac->frame->cfDuration.it_value.tv_usec == mclmac->_cfDuration.it_value.tv_usec);
+    assert(mclmac->frame->cfDuration.it_value.tv_sec == mclmac->_cfDuration.it_value.tv_sec);
+#endif
+#ifdef __RIOT__
+    assert(mclmac->frame->frameDuration == mclmac->_frameDuration);
+    assert(mclmac->frame->slotDuration == mclmac->_slotDuration);
+    assert(mclmac->frame->cfDuration == mclmac->_cfDuration);
+#endif
+   assert(mclmac->frame->currentFrame == 0);
+   assert(mclmac->frame->currentSlot == 0);
+   assert(mclmac->frame->currentCFSlot == 0);
+   assert(mclmac->powerMode.nextState == PASSIVE);
+
+    /* State PASSIVE. Execute the following tasks:
+    *   -Set the radio to SLEEP mode.
+    *   -Start the slot timer.
+    *   -Set next state to NONEP.
+    */
+#ifdef __LINUX__
+    extern int slotalarm;
+    slotalarm = 0;
+#endif
+    setPowerModeState(mclmac, PASSIVE);
+    r = executePMState(mclmac);
+    assert(r == E_PM_EXECUTION_SUCCESS);
+    assert(mclmac->powerMode.nextState == NONEP);
+#ifdef __LINUX__
+    sleep(2);
+    assert(slotalarm == 1);
+    //assert(mclmac->powerMode.nextState == ACTIVE);
+#endif
+#ifdef __RIOT__
+    uint8_t mode = sx127x_get_op_mode(mclmac->mac->modem);
+    assert(mode == sx127x_RF_OPMODE_SLEEP);
+    uint8_t state = sx127x_get_state(mclmac->mac->modem);
+    assert(state == SX127X_RF_IDLE);
+    ztimer_sleep(ZTIMER_SEC, 2);
+    assert(mclmac->powerMode.nextState == ACTIVE);
+#endif
+    
+
+    destroyMCLMAC(&mclmac);
+}
+
 void executeTestsMCLMAC()
 {
     srand(time(NULL));
@@ -1674,6 +1801,10 @@ void executeTestsMCLMAC()
     testsetSlotsNumber();
     printf("Test passed.\n");
 
+    printf("Test setCFSlotsNumber function.\n");
+    testsetCFSlotsNumber();
+    printf("Test passed.\n");
+
     printf("Testing setCurrentCFSlot function.\n");
     testsetCurrentCFSlot();
     printf("Test passed.\n");
@@ -1736,6 +1867,10 @@ void executeTestsMCLMAC()
 
     printf("Test updateStateMachine function.\n");
     testupdateStateMachine();
+    printf("Test passed.\n");
+
+    printf("Testing executePMState function.\n");
+    testexecutePMState();
     printf("Test passed.\n");
 
     return;

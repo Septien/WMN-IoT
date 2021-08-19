@@ -28,7 +28,7 @@ void macInit(MCLMAC_t **mclmac,
     mclmacA->dataQueue = (uint8_t *)malloc(mclmacA->_dataQSize * sizeof(uint8_t));
     mclmacA->frame = frame;
     mclmacA->macState.currentState = START;
-    mclmacA->powerMode.currentState = PASSIVE;
+    mclmacA->powerMode.currentState = STARTP;
     mclmacA->_nChannels = _nChannels;
     mclmacA->_nSlots = _nSlots;
 
@@ -81,14 +81,14 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    if (mclmac->powerMode.nextState == NONEP)
-        return E_PM_NO_TRANSITION;
-
     if (mclmac->powerMode.currentState == mclmac->powerMode.nextState)
         return E_PM_NO_TRANSITION;
  
     switch (mclmac->powerMode.nextState)
     {
+    case NONEP:
+        setPowerModeState(mclmac, NONEP);
+        return E_PM_NO_TRANSITION;
     case PASSIVE:
         if (mclmac->powerMode.currentState == FINISHP)
             return E_PM_TRANSITION_ERROR;
@@ -146,6 +146,70 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
     return E_PM_TRANSITION_SUCCESS;
 }
 
+int executePMState(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->mac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(mclmac->_nSlots > 0);
+    #ifdef __LINUX__
+    assert(mclmac->frame->frameDuration.it_value.tv_usec > 0);
+    assert(mclmac->frame->frameDuration.it_value.tv_sec >= 0);
+    assert(mclmac->frame->slotDuration.it_value.tv_usec > 0);
+    assert(mclmac->frame->slotDuration.it_value.tv_sec >= 0);
+    assert(mclmac->frame->cfDuration.it_value.tv_usec > 0);
+    assert(mclmac->frame->cfDuration.it_value.tv_sec >= 0);
+#endif
+#ifdef __RIOT__
+    assert(mclmac->frame->frameDuration > 0);
+    assert(mclmac->frame->slotDuration > 0);
+    assert(mclmac->frame->cfDuration > 0);
+#endif
+
+    if (mclmac->powerMode.currentState == NONEP)
+        return E_PM_EXECUTION_FAILED;
+    
+    switch (mclmac->powerMode.currentState)
+    {
+    case STARTP:
+        // Set the number of slots and cfslots
+        setSlotsNumber(mclmac, mclmac->_nSlots);
+        setCFSlotsNumber(mclmac, mclmac->_nSlots);
+
+        // Set the value of the timers
+        setFrameDuration(mclmac, &mclmac->_frameDuration);
+        setSlotDuration(mclmac, &mclmac->_slotDuration);
+        setCFDuration(mclmac, &mclmac->_cfDuration);
+
+        // Initialize frame, slots, and cfslots counter to zero
+        mclmac->frame->currentFrame = 0;
+        mclmac->frame->currentSlot = 0;
+        mclmac->frame->currentCFSlot = 0;
+
+        // Pass immediatly to PASSIVE state
+        setNextPowerModeState(mclmac, PASSIVE);
+        break;
+    
+    case PASSIVE:
+#ifdef __LINUX__
+        /* Set to sleep */
+        signal(SIGALRM, slotCallback);
+        setitimer(ITIMER_REAL, &mclmac->frame->slotDuration, NULL);
+#endif
+#ifdef __RIOT__
+        sx127x_set_sleep(mclmac->mac->modem);
+        mclmac->frame->slotTimer = { .callback=slotCallback, .arg=(void *)mclmac};
+        ztimer_set(ZTIMER_MSEC, &mclmac->frame->slotTimer, mclmac->frame->slotDuration);
+#endif
+        setNextPowerModeState(mclmac, NONEP);
+        break;
+    default:
+        break;
+    }
+
+    return E_PM_EXECUTION_SUCCESS;
+}
+
 void setMACState(MCLMAC_t *mclmac, state_t state)
 {
     assert(mclmac != NULL);
@@ -172,7 +236,7 @@ state_t getMACState(MCLMAC_t *mclmac)
 void setPowerModeState(MCLMAC_t *mclmac, PowerMode_t mode)
 {
     assert(mclmac != NULL);
-    assert(mode != NONE);
+ 
     mclmac->powerMode.currentState = mode;
 }
 
@@ -360,6 +424,15 @@ void setSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots)
     mclmac->frame->slotsNumber = nSlots;
 }
 
+void setCFSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots)
+{
+    assert(mclmac != NULL);
+    assert(mclmac->frame != NULL);
+    assert(nSlots > 0);
+
+    mclmac->frame->cfSlotsNumber = nSlots;
+}
+
 void setCurrentCFSlot(MCLMAC_t *mclmac, uint8_t nCFSlot)
 {
     assert(mclmac != NULL);
@@ -490,9 +563,15 @@ void createCFPacket(MCLMAC_t *mclmac)
     assert(mclmac->mac->nodeID > 0);
     assert(mclmac->mac->destinationID >= 0);
 
+    if (mclmac->mac->cfpkt != NULL)
+    {
+        free(mclmac->mac->cfpkt);
+        mclmac->mac->cfpkt = NULL;
+    }
+
     CFPacket_t *cfA;
     initCF(&cfA);
-    createPacketCF(cfA, mclmac->mac->nodeID, mclmac->mac->destinationID);
+    createPacketCF(cfA, mclmac->mac->nodeID, mclmac->mac->destinationID, mclmac->_networkTime);
     mclmac->mac->cfpkt = cfA;
 }
 
@@ -500,6 +579,13 @@ void createControlPacket(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     assert(mclmac->mac != NULL);
+
+    if (mclmac->mac->ctrlpkt != NULL)
+    {
+        free(mclmac->mac->cfpkt);
+        mclmac->mac->ctrlpkt = NULL;
+    }
+
 
     ControlPacket_t *ctrlpkt;
     initCP(&ctrlpkt, mclmac->_nSlots, mclmac->_nChannels);
@@ -512,6 +598,13 @@ void createDataPacket(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     assert(mclmac->mac != NULL);
+
+    if (mclmac->mac->datapkt != NULL)
+    {
+        free(mclmac->mac->datapkt);
+        mclmac->mac->datapkt = NULL;
+    }
+
 
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -562,4 +655,25 @@ void startCADMode(MCLMAC_t *mclmac)
 {
     // TO DO
     return;
+}
+
+void slotCallback(
+#ifdef __LINUX__
+    int signum
+#endif
+#ifdef __RIOT__
+    void *args
+#endif
+)
+{
+#ifdef __LINUX__
+    if (signum == SIGALRM)
+    {
+        slotalarm = 1;
+    }
+#endif
+#ifdef __RIOT__
+    MCLMAC_t *mclmac = (MCLMAC_t *)args;
+    setNextPowerModeState(mclmac, ACTIVE);
+#endif
 }

@@ -36,10 +36,6 @@ typedef struct Frame
     uint8_t currentCFSlot;
     uint8_t cfSlotsNumber;
 #ifdef __LINUX__
-    // linux timers
-    timer_t frameTimer;
-    timer_t slotTimer;
-    timer_t cfTimer;
     // linux timer values
     struct itimerval frameDuration;
     struct itimerval slotDuration;
