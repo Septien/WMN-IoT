@@ -1,0 +1,21 @@
+# Application's name
+APPLICATION = mac
+
+# Default board
+BOARD ?= native
+
+RIOTBASE ?= /home/jash/riot/RIOT
+
+USEMODULE += ztimer
+USEMODULE += ztimer_usec
+USEMODULE += ztimer_msec
+USEMODULE += ztimer_sec
+USEMODULE += stdio_uart
+
+FEATURES_REQUIRED += arch_esp32
+FEATURES_REQUIRED += periph_gpio
+
+CFLAGS = -D__RIOT__
+CFLAGS += -Wno-unused-variable
+
+include $(RIOTBASE)/Makefile.include
