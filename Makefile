@@ -2,6 +2,8 @@
 ifdef LINUX
 unexport LINUX	# No longer needed, remove so it does not causes problems
 
+CC = /usr/bin/gcc
+
 # Create a static library
 AR = ar csrv
 RL = ranlib
@@ -50,8 +52,8 @@ directories_main:
 			$(MKDIR_WMNL)
 
 ifdef TEST
-$(BIN)/wmnlora : $(OBJ)/main_test.o
-	$(CC) $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) $< -o $@ 
+$(BIN)/wmnlora : $(OBJ)/main.o
+	$(CC) $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -c $< -o $@ 
 
 $(OBJ)/main_test.o : main_test.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
