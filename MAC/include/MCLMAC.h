@@ -15,8 +15,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../Frame.h"
-#include "../MAC_Internals.h"
+#include "Frame.h"
+#include "MAC_Internals.h"
 
 #ifdef __LINUX__
 #include <unistd.h>
