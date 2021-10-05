@@ -1,13 +1,27 @@
-#include "CFPacket.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-void initCF(CFPacket_t **pkt)
+#include "CFPacket.h"
+
+void initCF(
+#ifdef __LINUX__
+    CFPacket_t **pkt
+#endif
+#ifdef __RIOT__
+    CFPacket_t *pkt
+#endif
+)
 {
+#ifdef __LINUX__
     CFPacket_t *pktA = (CFPacket_t *)malloc(sizeof(CFPacket_t));
+    memset(pktA, 0, sizeof(*pktA));
     *pkt = pktA;
+#endif
+#ifdef __RIOT__
+    return;
+#endif
 }
 
 void destroyPacketCF(CFPacket_t **pkt)
