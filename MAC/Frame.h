@@ -24,7 +24,6 @@
 
 #ifdef __RIOT__
 #include "config.h"
-#include "periodic.h"
 #include "ztimer.h"
 #endif
 
