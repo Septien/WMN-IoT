@@ -202,7 +202,10 @@ void testconstructPktFromByteString()
 
 void executeTestsCF()
 {
+#ifdef __LINUX__    
     srand(time(NULL));
+#endif
+
     printf("Testing initCF function.\n");
     testinitCF();
     printf("Test passed.\n");
