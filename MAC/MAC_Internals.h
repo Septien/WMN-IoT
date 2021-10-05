@@ -22,9 +22,6 @@
 
 #ifdef __RIOT__
 #include "sx127x.h"
-#include "sx127x_internals.h"
-#include "sx127x_netdev.h"
-#include "sx127x_registers.h"
 #endif
 
 typedef struct MAC_Internals
