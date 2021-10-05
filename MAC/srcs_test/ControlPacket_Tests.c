@@ -4,11 +4,11 @@
 #include <assert.h>
 #include <time.h>
 
-#include "../ControlPacket.h"
+#include "ControlPacket.h"
 
 #define ITERATIONS 1000
-
-void testInit()
+#if 0
+void testInit(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -22,7 +22,7 @@ void testInit()
     destroyPacketCP(&pkt);
 }
 
-void testDestroyPacket()
+void testDestroyPacket(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -66,7 +66,7 @@ void testCreatePacket(void)
     destroyPacketCP(&pkt);
 }
 
-void testClearPacket()
+void testClearPacket(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
@@ -99,7 +99,7 @@ void testClearPacket()
     destroyPacketCP(&pkt);
 }
 
-void testsetNodeID()
+void testsetNodeID(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
@@ -114,7 +114,7 @@ void testsetNodeID()
     destroyPacketCP(&pkt);
 }
 
-void testgetNodeID()
+void testgetNodeID(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
@@ -131,7 +131,7 @@ void testgetNodeID()
     destroyPacketCP(&pkt);
 }
 
-void testsetCollisionSlot()
+void testsetCollisionSlot(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
@@ -145,7 +145,7 @@ void testsetCollisionSlot()
     destroyPacketCP(&pkt);
 }
 
-void testgetCollisionSlot()
+void testgetCollisionSlot(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;;
@@ -160,7 +160,7 @@ void testgetCollisionSlot()
     destroyPacketCP(&pkt);
 }
 
-void testsetOccupiedSlots()
+void testsetOccupiedSlots(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -180,7 +180,7 @@ void testsetOccupiedSlots()
     destroyPacketCP(&pkt);
 }
 
-void testgetOccupiedSlots()
+void testgetOccupiedSlots(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -203,7 +203,7 @@ void testgetOccupiedSlots()
     destroyPacketCP(&pkt);
 }
 
-void testsetCollisionFrequency()
+void testsetCollisionFrequency(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -216,7 +216,7 @@ void testsetCollisionFrequency()
     destroyPacketCP(&pkt);
 }
 
-void testgetCollisionFrequency()
+void testgetCollisionFrequency(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -232,7 +232,7 @@ void testgetCollisionFrequency()
     destroyPacketCP(&pkt);
 }
 
-void testsetHopCount()
+void testsetHopCount(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -245,7 +245,7 @@ void testsetHopCount()
     destroyPacketCP(&pkt);
 }
 
-void testgetHopCount()
+void testgetHopCount(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -261,7 +261,7 @@ void testgetHopCount()
     destroyPacketCP(&pkt);
 }
 
-void testsetNetworkTimeCP()
+void testsetNetworkTimeCP(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -279,7 +279,7 @@ void testsetNetworkTimeCP()
     destroyPacketCP(&pkt);
 }
 
-void testgetNetworkTimeCP()
+void testgetNetworkTimeCP(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -298,7 +298,7 @@ void testgetNetworkTimeCP()
     destroyPacketCP(&pkt);
 }
 
-void testsetACK()
+void testsetACK(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -311,7 +311,7 @@ void testsetACK()
     destroyPacketCP(&pkt);
 }
 
-void testgetACK()
+void testgetACK(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 8, channels = 17;
@@ -327,7 +327,7 @@ void testgetACK()
     destroyPacketCP(&pkt);
 }
 
-void testgetByteString()
+void testgetByteString(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 9, channels = 17;
@@ -380,7 +380,7 @@ void testgetByteString()
     destroyPacketCP(&pkt);
 }
 
-void testconstructPacketFromByteString()
+void testconstructPacketFromByteString(void)
 {
     ControlPacket_t *pkt;
     size_t slots = 9, channels = 17;
@@ -439,7 +439,7 @@ void testconstructPacketFromByteString()
     destroyPacketCP(&pkt);
 }
 
-void executeTestsCP()
+void executeTestsCP(void)
 {
     srand(time(NULL));
 
@@ -523,3 +523,4 @@ void executeTestsCP()
     testconstructPacketFromByteString();
     printf("Test passed.\n");
 }
+#endif

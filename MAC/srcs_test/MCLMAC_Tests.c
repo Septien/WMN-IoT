@@ -8,8 +8,8 @@
 #include "../include/MCLMAC.h"
 
 #define ITERATIONS 1000
-
-void testmacInit()
+#if 0
+void testmacInit(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -45,7 +45,7 @@ void testmacInit()
     destroyMCLMAC(&mclmac);
 }
 
-void testdestroyMCLMAC()
+void testdestroyMCLMAC(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -64,7 +64,7 @@ void testdestroyMCLMAC()
     assert(mclmac == NULL);
 }
 
-void testclearMCLMAC()
+void testclearMCLMAC(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -95,7 +95,7 @@ void testclearMCLMAC()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetMACState()
+void testsetMACState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -129,7 +129,7 @@ void testsetMACState()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetNextMACState()
+void testsetNextMACState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -160,7 +160,7 @@ void testsetNextMACState()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetMACState()
+void testgetMACState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -203,7 +203,7 @@ void testgetMACState()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetPowerModeState()
+void testsetPowerModeState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -237,7 +237,7 @@ void testsetPowerModeState()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetNextPowerModeState()
+void testsetNextPowerModeState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -267,7 +267,7 @@ void testsetNextPowerModeState()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetPowerModeState()
+void testgetPowerModeState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -305,7 +305,7 @@ void testgetPowerModeState()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetCFChannel()
+void testsetCFChannel(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -332,7 +332,7 @@ void testsetCFChannel()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetCFChannel()
+void testgetCFChannel(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -360,7 +360,7 @@ void testgetCFChannel()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetSelectedChannel()
+void testsetSelectedChannel(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -387,7 +387,7 @@ void testsetSelectedChannel()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetSelectedChannel()
+void testgetSelectedChannel(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -415,7 +415,7 @@ void testgetSelectedChannel()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetReceptionChannel()
+void testsetReceptionChannel(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -442,7 +442,7 @@ void testsetReceptionChannel()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetReceptionChannel()
+void testgetReceptionChannel(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -470,7 +470,7 @@ void testgetReceptionChannel()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetAvailableChannels()
+void testsetAvailableChannels(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -501,7 +501,7 @@ void testsetAvailableChannels()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetAvailableChannels()
+void testgetAvailableChannels(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -537,7 +537,7 @@ void testgetAvailableChannels()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetNodeIDMCL()
+void testsetNodeIDMCL(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -564,7 +564,7 @@ void testsetNodeIDMCL()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetNodeIDMCL()
+void testgetNodeIDMCL(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -592,7 +592,7 @@ void testgetNodeIDMCL()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetSelectedSlot()
+void testsetSelectedSlot(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -619,7 +619,7 @@ void testsetSelectedSlot()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetSelectedSlot()
+void testgetSelectedSlot(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -647,7 +647,7 @@ void testgetSelectedSlot()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetNumberOfHops()
+void testsetNumberOfHops(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -674,7 +674,7 @@ void testsetNumberOfHops()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetNumberOfHops()
+void testgetNumberOfHops(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -702,7 +702,7 @@ void testgetNumberOfHops()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetCurrentFrame()
+void testsetCurrentFrame(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -729,7 +729,7 @@ void testsetCurrentFrame()
     destroyMCLMAC(&mclmac);
 }
 
-void testincreaseFrame()
+void testincreaseFrame(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -757,7 +757,7 @@ void testincreaseFrame()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetCurrentSlot()
+void testsetCurrentSlot(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -784,7 +784,7 @@ void testsetCurrentSlot()
     destroyMCLMAC(&mclmac);
 }
 
-void testincreaseSlot()
+void testincreaseSlot(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -812,7 +812,7 @@ void testincreaseSlot()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetSlotsNumber()
+void testsetSlotsNumber(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -839,7 +839,7 @@ void testsetSlotsNumber()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetCFSlotsNumber()
+void testsetCFSlotsNumber(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -867,7 +867,7 @@ void testsetCFSlotsNumber()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetCurrentCFSlot()
+void testsetCurrentCFSlot(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -894,7 +894,7 @@ void testsetCurrentCFSlot()
     destroyMCLMAC(&mclmac);
 }
 
-void testincreaseCFSlot()
+void testincreaseCFSlot(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -922,7 +922,7 @@ void testincreaseCFSlot()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetSlotDuration()
+void testsetSlotDuration(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -958,7 +958,7 @@ void testsetSlotDuration()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetFrameDuration()
+void testsetFrameDuration(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -996,7 +996,7 @@ void testsetFrameDuration()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetCFDuration()
+void testsetCFDuration(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1035,7 +1035,7 @@ void testsetCFDuration()
     destroyMCLMAC(&mclmac);
 }
 
-void testrecordCollision()
+void testrecordCollision(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1066,7 +1066,7 @@ void testrecordCollision()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetDestinationID()
+void testsetDestinationID(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1094,7 +1094,7 @@ void testsetDestinationID()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetNetworkTime()
+void testsetNetworkTime(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1121,7 +1121,7 @@ void testsetNetworkTime()
     destroyMCLMAC(&mclmac);
 }
 
-void testgetNetworkTime()
+void testgetNetworkTime(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1149,7 +1149,7 @@ void testgetNetworkTime()
     destroyMCLMAC(&mclmac);
 }
 
-void testcreateCFPacket()
+void testcreateCFPacket(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1172,7 +1172,7 @@ void testcreateCFPacket()
     destroyMCLMAC(&mclmac);
 }
 
-void testcreateControlPacket()
+void testcreateControlPacket(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1199,7 +1199,7 @@ void testcreateControlPacket()
     destroyMCLMAC(&mclmac);
 }
 
-void testcreateDataPacket()
+void testcreateDataPacket(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1223,7 +1223,7 @@ void testcreateDataPacket()
     destroyMCLMAC(&mclmac);
 }
 
-void testsetPacketData()
+void testsetPacketData(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1268,7 +1268,7 @@ void testsetPacketData()
     destroyMCLMAC(&mclmac);
 }
 
-void testdeleteDataFromPacket()
+void testdeleteDataFromPacket(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1298,7 +1298,7 @@ void testdeleteDataFromPacket()
     destroyMCLMAC(&mclmac);
 }
 
-void testclearDataFromPacket()
+void testclearDataFromPacket(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1328,7 +1328,7 @@ void testclearDataFromPacket()
     destroyMCLMAC(&mclmac);
 }
 
-void testinitPMStateMachine()
+void testinitPMStateMachine(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1350,7 +1350,7 @@ void testinitPMStateMachine()
     destroyMCLMAC(&mclmac);
 }
 
-void testupdateStateMachine()
+void testupdateStateMachine(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1583,7 +1583,7 @@ void testupdateStateMachine()
     destroyMCLMAC(&mclmac);
 }
 
-void testexecutePMState()
+void testexecutePMState(void)
 {
     MCLMAC_t *mclmac;
 #ifdef __LINUX__
@@ -1734,7 +1734,7 @@ void testexecutePMState()
     destroyMCLMAC(&mclmac);
 }
 
-void executeTestsMCLMAC()
+void executeTestsMCLMAC(void)
 {
     srand(time(NULL));
     printf("Testing macInit function.\n");
@@ -1927,3 +1927,4 @@ void executeTestsMCLMAC()
 
     return;
 }
+#endif

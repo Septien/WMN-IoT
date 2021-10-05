@@ -5,9 +5,10 @@
 #include <assert.h>
 #include <time.h>
 
-#include "../DataPacket.h"
+#include "DataPacket.h"
 
-void testinitDP()
+#if 0
+void testinitDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -18,7 +19,7 @@ void testinitDP()
     destroyPacketDP(&datapkt);
 }
 
-void testdestroyPacketDP()
+void testdestroyPacketDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -27,7 +28,7 @@ void testdestroyPacketDP()
     assert(datapkt == NULL);
 }
 
-void testsetIsFragmentDP()
+void testsetIsFragmentDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -43,7 +44,7 @@ void testsetIsFragmentDP()
     destroyPacketDP(&datapkt);
 }
 
-void testisFragmentDP()
+void testisFragmentDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -59,7 +60,7 @@ void testisFragmentDP()
     destroyPacketDP(&datapkt);
 }
 
-void testsetTotalFragmentsDP()
+void testsetTotalFragmentsDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -74,7 +75,7 @@ void testsetTotalFragmentsDP()
     destroyPacketDP(&datapkt);
 }
 
-void testgetTotalFragmentsDP()
+void testgetTotalFragmentsDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -90,7 +91,7 @@ void testgetTotalFragmentsDP()
     destroyPacketDP(&datapkt);
 }
 
-void testsetFragmentNumberDP()
+void testsetFragmentNumberDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -106,7 +107,7 @@ void testsetFragmentNumberDP()
     destroyPacketDP(&datapkt);
 }
 
-void testgetFragmentNumberDP()
+void testgetFragmentNumberDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -123,7 +124,7 @@ void testgetFragmentNumberDP()
     destroyPacketDP(&datapkt);
 }
 
-void testsetPacketDataDP()
+void testsetPacketDataDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -142,7 +143,7 @@ void testsetPacketDataDP()
     destroyPacketDP(&datapkt);
 }
 
-void testdeleteDataDP()
+void testdeleteDataDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -163,7 +164,7 @@ void testdeleteDataDP()
     destroyPacketDP(&datapkt);
 }
 
-void testclearDataDP()
+void testclearDataDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -185,7 +186,7 @@ void testclearDataDP()
     destroyPacketDP(&datapkt);
 }
 
-void testgetPacketDataDP()
+void testgetPacketDataDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -216,7 +217,7 @@ void testgetPacketDataDP()
     destroyPacketDP(&datapkt);
 }
 
-void testgetDataLengthDP()
+void testgetDataLengthDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -237,7 +238,7 @@ void testgetDataLengthDP()
     destroyPacketDP(&datapkt);
 }
 
-void testcreatePacketDP()
+void testcreatePacketDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -272,7 +273,7 @@ void testcreatePacketDP()
     destroyPacketDP(&datapkt);
 }
 
-void testclearPacketDP()
+void testclearPacketDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -301,7 +302,7 @@ void testclearPacketDP()
     destroyPacketDP(&datapkt);
 }
 
-void testgetPacketLengthDP()
+void testgetPacketLengthDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -333,7 +334,7 @@ void testgetPacketLengthDP()
     destroyPacketDP(&datapkt);
 }
 
-void testgetPacketByteStringDP()
+void testgetPacketByteStringDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -369,7 +370,7 @@ void testgetPacketByteStringDP()
     destroyPacketDP(&datapkt);
 }
 
-void testconstructPktFromByteStringDP()
+void testconstructPktFromByteStringDP(void)
 {
     DataPacket_t *datapkt;
     initDP(&datapkt);
@@ -400,7 +401,7 @@ void testconstructPktFromByteStringDP()
     destroyPacketDP(&datapkt);
 }
 
-void executeTestsDP()
+void executeTestsDP(void)
 {
     srand(time(NULL));
     printf("Testing initDP function.\n");
@@ -475,3 +476,4 @@ void executeTestsDP()
     testconstructPktFromByteStringDP();
     printf("Test passed.\n");
 }
+#endif
