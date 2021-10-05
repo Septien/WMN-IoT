@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 
+#if 0
 void macInit(MCLMAC_t **mclmac, 
 #ifdef __LINUX__
     uint8_t *radio,
@@ -188,20 +189,40 @@ int executePMState(MCLMAC_t *mclmac)
 
         // Pass immediatly to PASSIVE state
         setNextPowerModeState(mclmac, PASSIVE);
-        break;
-    
-    case PASSIVE:
 #ifdef __LINUX__
-        /* Set to sleep */
-        signal(SIGALRM, slotCallback);
+        // Set timer for active state
+        signal(SIGALRM, _slotCallback);
         setitimer(ITIMER_REAL, &mclmac->frame->slotDuration, NULL);
 #endif
 #ifdef __RIOT__
-        sx127x_set_sleep(mclmac->mac->modem);
-        mclmac->frame->slotTimer = { .callback=slotCallback, .arg=(void *)mclmac};
+        mclmac->frame->slotTimer = { .callback=_slotCallback, .arg=(void *)mclmac};
         ztimer_set(ZTIMER_MSEC, &mclmac->frame->slotTimer, mclmac->frame->slotDuration);
 #endif
+        break;
+    
+    case PASSIVE:
+        // Reset the cf counter to zero
+        setCurrentCFSlot(mclmac, 0);
+#ifdef __LINUX__
+        /* Set to sleep */
+#endif
+#ifdef __RIOT__
+        sx127x_set_sleep(mclmac->mac->modem);
+#endif
         setNextPowerModeState(mclmac, NONEP);
+        break;
+    
+    case ACTIVE:
+        createCFPacket(mclmac);
+#ifdef __LINUX__
+        // change radio to common channel
+#endif
+#ifdef __RIOT__
+        sx127x_set_channel(mclmac->mac->radio, mclmac->mac->cfChannel);
+        // sleep for 20 us while the radio changes channel (according to datasheet)
+        ztimer_sleep(ZTIME_USEC, 20);
+#endif
+        
         break;
     default:
         break;
@@ -657,7 +678,7 @@ void startCADMode(MCLMAC_t *mclmac)
     return;
 }
 
-void slotCallback(
+void _slotCallback(
 #ifdef __LINUX__
     int signum
 #endif
@@ -677,3 +698,4 @@ void slotCallback(
     setNextPowerModeState(mclmac, ACTIVE);
 #endif
 }
+#endif

@@ -26,12 +26,8 @@
 
 #ifdef __RIOT__
 #include "config.h"
-#include "periodic.h"
 #include "ztimer.h"
 #include "sx127x.h"
-#include "sx127x_internals.h"
-#include "sx127x_netdev.h"
-#include "sx127x_registers.h"
 #endif
 
 typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY_AND_SELECTION, MEDIUMACCESS, NONE} state_t;
@@ -202,7 +198,16 @@ bool CADDetected(MCLMAC_t *mclmac);
 
 /* Private functions */
 void _selectSlotAndChannel(MCLMAC_t *mclmac);
-void slotCallback(
+void _slotCallback(
+#ifdef __LINUX__
+    int signum
+#endif
+#ifdef __RIOT__
+    void *args
+#endif
+);
+
+void _cfSlotCallback(
 #ifdef __LINUX__
     int signum
 #endif
@@ -214,6 +219,7 @@ void slotCallback(
 #ifdef __LINUX__
 // For alarms
 int slotalarm;
+int cfslotalarm;
 #endif
 
 #endif  // MCLMAC_H

@@ -1640,11 +1640,15 @@ void testexecutePMState()
     assert(mclmac->frame->slotDuration.it_value.tv_sec == mclmac->_slotDuration.it_value.tv_sec);
     assert(mclmac->frame->cfDuration.it_value.tv_usec == mclmac->_cfDuration.it_value.tv_usec);
     assert(mclmac->frame->cfDuration.it_value.tv_sec == mclmac->_cfDuration.it_value.tv_sec);
+    sleep(2);
+    assert(slotalarm == 1);
 #endif
 #ifdef __RIOT__
     assert(mclmac->frame->frameDuration == mclmac->_frameDuration);
     assert(mclmac->frame->slotDuration == mclmac->_slotDuration);
     assert(mclmac->frame->cfDuration == mclmac->_cfDuration);
+    ztimer_sleep(ZTIMER_SEC, 2);
+    assert(mclmac->powerMode.nextState == ACTIVE);
 #endif
    assert(mclmac->frame->currentFrame == 0);
    assert(mclmac->frame->currentSlot == 0);
@@ -1664,20 +1668,68 @@ void testexecutePMState()
     r = executePMState(mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
     assert(mclmac->powerMode.nextState == NONEP);
+    assert(mclmac->frame->currentCFSlot == 0);
 #ifdef __LINUX__
-    sleep(2);
-    assert(slotalarm == 1);
-    //assert(mclmac->powerMode.nextState == ACTIVE);
+    // Assert mode is sleep
 #endif
 #ifdef __RIOT__
-    uint8_t mode = sx127x_get_op_mode(mclmac->mac->modem);
+    uint8_t mode = sx127x_get_op_mode(mclmac->mac->radio);
     assert(mode == sx127x_RF_OPMODE_SLEEP);
-    uint8_t state = sx127x_get_state(mclmac->mac->modem);
+    uint8_t state = sx127x_get_state(mclmac->mac->radio);
     assert(state == SX127X_RF_IDLE);
-    ztimer_sleep(ZTIMER_SEC, 2);
-    assert(mclmac->powerMode.nextState == ACTIVE);
 #endif
-    
+
+    /** State ACTIVE. Executes the following tasks:
+     *      - Initiates the slot for synchornization and data transmission.
+     *      - Initiates the slot timer.
+     *      - Initialize the cf packet.
+     *      - Initiates the cf phase: in which:
+     *          - Changes the radio to the common channel.
+     *          - Sets the cf counter to zero.
+     *          - Initiates the cf timer.
+     *          - It checks wether the current cf slot is equal to the 
+     *            selected slot, in which case it transmits a cf packet with destination ID.
+     *            Set the next state to TRANSMIT.
+     *          - Otherwise, it puts the radio in listen mode, and if packet arrives in which the 
+     *            destinationID == nodeID or destinationID == 0, save the frequency and set 
+     *            the next state to RECEIVE.
+     *          - When the CF timer expires, increment the cf counter.
+     *          - When the CF counter equals the number of slots, check whether we should transmit,
+     *            receive, or none. If none required, set next state to PASSIVE, otherwise, change 
+     *            to the required frequency.
+     *          - In case a collision is detected: save frequency and slot of collision, and wait
+     *            for the next time we send a control packet to tell the network. Save the number
+     *            cf packets received.
+     */
+    setCurrentCFSlot(mclmac, 1);
+    setCFChannel(mclmac, 915000000);
+    setPowerModeState(mclmac, ACTIVE);
+    r = executePMState(mclmac);
+    assert(r == E_PM_EXECUTION_SUCCESS);
+    assert(mclmac->mac->cfpkt != NULL);
+#ifdef __LINUX__
+    // Check channel is changed
+#endif
+#ifdef __RIOT__
+    // Wait 30 us for radio to change frequency.
+    uint32_t channel = sx127x_get_channel(mclmac->mac->radio);
+    assert(channel == mclmac->mac->cfChannel);
+#endif
+#ifdef __LINUX__
+    extern int cfslotalarm;
+    cfslotalarm = 0;
+    sleep(2);
+    assert(cfslotalarm == 1);
+#endif
+#ifdef __RIOT__
+    uint8_t prevCFvalue = mclmac->frame->currentCFSlot;
+    ztimer_sleep(ZTIMER_SEC, 2);
+    assert(mclmac->frame->currentCFSlot== prevCFvalue + 1);
+#endif
+    setCurrentCFSlot(mclmac, mclmac->mac->selectedSlot);
+    r = executePMState(mclmac);
+    assert(mclmac->mac->cfpkt->destinationID == mclmac->mac->destinationID);
+    assert(mclmac->powerMode.nextState == TRANSMIT);
 
     destroyMCLMAC(&mclmac);
 }
