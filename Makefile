@@ -80,7 +80,7 @@ APPLICATION = main_test
 # Default board
 BOARD ?= native
 
-RIOTBASE ?= /home/jash/riot/RIOT
+RIOTBASE ?= /home/phantom/cp-systems/RTOS/RIOT
 
 DEVHELP ?= 1
 
