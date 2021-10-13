@@ -105,7 +105,7 @@ void timeout_signal_handler(
 );
 
 int timeout_init(
-#ifdef __LINUX
+#ifdef __LINUX__
 void);
 #endif
 #ifdef __RIOT__
