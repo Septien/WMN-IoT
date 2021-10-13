@@ -9,26 +9,24 @@
 #include <stdbool.h>
 
 #ifdef __RIOT__
-#include <periph/gpio.h>
-#include <periph_cpu.h>
-#include <gpio_arch.h>
-
 #include "periph/pm.h"
 
 #endif
 
+#include "assert.h"
 #include "mclmac_tests.h"
 
 int main(void)
 {
 #ifdef __LINUX__ 
     printf("Testing the MAC protocol (MCLMAC).\n");
+    mac_tests();
 #endif
 #ifdef __RIOT__
-    //pm_reboot();
     puts("Welcome to RIOT!\n");
-    mac_tests();
-    while (1) ;
+    do {
+        mac_tests();
+    }while (0) ;
 #endif
-    return 0;
+    exit(0);
 }
