@@ -3,3 +3,5 @@ bin/
 obj/
 MAC/obj
 MAC/lib
+code-analysis/
+valgrind-output/
