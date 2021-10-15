@@ -90,6 +90,8 @@ DEVELHELP ?= 1
 
 QUIET ?= 1
 
+USEMODULE += memarray
+
 include WMNLoRa.include
 
 # Which features do you require? (mcu architecure, peripherals, sensors, etc.)

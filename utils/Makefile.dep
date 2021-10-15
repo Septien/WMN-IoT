@@ -1,0 +1,6 @@
+USEMODULE += memarray
+
+FEATURES_REQUIRE += ztimer
+FEATURES_REQUIRE += ztimer_sec
+FEATURES_REQUIRE += ztimer_msec
+FEATURES_REQUIRE += ztimer_usec
