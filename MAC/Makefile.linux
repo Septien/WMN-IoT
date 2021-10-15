@@ -1,5 +1,3 @@
-CC=/usr/bin/gcc
-
 # Get the current directory
 mac_mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 $(info $$mac_mkfile_path is [${mac_mkfile_path}])
@@ -7,11 +5,11 @@ mac_current_dir := $(notdir $(patsubst %/,%,$(dir $(mac_mkfile_path))))
 $(info $$mac_current_dir is [${mac_current_dir}])
 
 # Flags
-CFLAGS = -O3 -Wall -fpic -I$(mac_current_dir)/include -I$(mac_current_dir)/include/testsinclude
+CFLAGS += -I$(mac_current_dir)/include -I$(mac_current_dir)/include/testsinclude
 ifdef DEBUG
 	CFLAGS += -g
 endif
-CPPFLAGS = -D__LINUX__
+CPPFLAGS += -D__LINUX__
 
 MKDIR_OBJ_MAC = mkdir -p $(mac_current_dir)/obj
 MKDIR_LIB_MAC = mkdir -p $(mac_current_dir)/lib
@@ -35,17 +33,17 @@ $(info $$SRCT_DIR is [${SRCT_DIR}])
 endif
 
 # Source files
-SRC = $(mac_current_dir)/CFPacket.c $(mac_current_dir)/ControlPacket.c $(mac_current_dir)/DataPacket.c #$(mac_current_dir)/MAC_Internals.c
+SRC = $(mac_current_dir)/CFPacket.c
 $(info $$SRC is [${SRC}])
 ifdef TEST
-SRCT += $(SRCT_DIR)/mclmac_tests.c $(SRCT_DIR)/CFPacket_Tests.c $(SRCT_DIR)/ControlPacket_Tests.c  $(SRCT_DIR)/DataPacket_Tests.c #$(SRCT_DIR)/MAC_Internals_Tests.c
+SRCT += $(SRCT_DIR)/mclmac_tests.c $(SRCT_DIR)/CFPacket_Tests.c
 $(info $$SRCT is [${SRCT}])
 endif
 
 # Dependencies
-DEPS = $(INC_DIR)/CFPacket.h $(INC_DIR)/ControlPacket.h $(INC_DIR)/DataPacket.h #$(INC_DIR)/MAC_Internals.h
+DEPS = $(INC_DIR)/CFPacket.h
 ifdef TEST
-DEPST = $(INCT_DIR)/mclmac_tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/ControlPacket_Tests.h $(INCT_DIR)/DataPacket_Tests.h #$(INCT_DIR)/MAC_Internals_Tests.h
+DEPST = $(INCT_DIR)/mclmac_tests.h $(INCT_DIR)/CFPacket_Tests.h
 endif
 $(info $$DEPS is [${DEPS}])
 
@@ -57,10 +55,10 @@ OBJT_DIR = $(mac_current_dir)/obj
 $(info $$OBJT_DIR is ${OBJT_DIR})
 endif
 
-OBJS = $(OBJ_DIR)/CFPacket.o $(OBJ_DIR)/ControlPacket.o $(OBJ_DIR)/DataPacket.o #$(OBJ_DIR)/MAC_Internals.o
+OBJS = $(OBJ_DIR)/CFPacket.o
 $(info $$OBJS is ${OBJS})
 ifdef TEST
-OBJST = $(OBJT_DIR)/mclmac_tests.o $(OBJT_DIR)/CFPacket_Tests.o $(OBJT_DIR)/ControlPacket_Tests.o $(OBJT_DIR)/DataPacket_Tests.o #$(OBJT_DIR)/MAC_Internals_Tests.o
+OBJST = $(OBJT_DIR)/mclmac_tests.o $(OBJT_DIR)/CFPacket_Tests.o
 $(info $$OBJST is ${OBJST})
 endif
 
