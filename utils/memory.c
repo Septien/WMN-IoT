@@ -105,23 +105,8 @@ int read_element(array_t *array, uint8_t *element, const unsigned int i)
     if (i >= array->size)
         return 0;
 
-    if (i == 0)
-    {
-        *element = array->head->block[0];
-        return 1;
-    }
-
     memory_block_t *block;
     unsigned int ith;
-    if (i == array->size - 1)
-    {
-        block = array->head;
-        for (ith = 1; ith < array->size; ith++)
-            block = block->next;
-        *element = block->block[0];
-        return 1;
-    }
-
     block = array->head;
     ith = 0;
     for (ith = 0; ith < array->size; ith++)
