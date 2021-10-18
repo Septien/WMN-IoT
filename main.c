@@ -18,6 +18,7 @@
 
 #ifdef __RIOT__
 #include "utils_tests.h"
+#include "memory.h"
 #endif
 
 int main(void)
@@ -29,8 +30,8 @@ int main(void)
 #ifdef __RIOT__
     puts("Welcome to RIOT!\n");
     do {
-        mac_tests();
         utils_tests();
+        mac_tests();
     }while (0) ;
 #endif
     exit(0);
