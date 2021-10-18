@@ -9,7 +9,7 @@ AR = ar csrv
 RL = ranlib
 
 CFLAGS += -fpic -fstack-protector-strong -Werror -Wall -Wextra -pedantic -g3 -Og -std=gnu11 -fstack-protector-all -ffunction-sections -fwrapv -Wstrict-overflow -fno-common -fdata-sections -Wmissing-include-dirs -fno-delete-null-pointer-checks -fdiagnostics-color -Wstrict-prototypes -Wold-style-definition -gz -Wformat=2 -Wformat-overflow -Wformat-truncation
-
+CFLAGS += -Iutils/include
 # Compile each of the submodules
 include MAC/Makefile.linux
 
