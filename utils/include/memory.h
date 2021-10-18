@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __RIOT__
+
 #include "memarray.h"
 
 #define BLOCK_SIZE          (1U)
@@ -43,5 +45,7 @@ int create_array(array_t *array, size_t size);
 int free_array(array_t *array);
 int write_element(array_t *array, const uint8_t element, const unsigned int i);
 int read_element(array_t *array, uint8_t *element, const unsigned int i);
+
+#endif      // __RIOT__
 
 #endif      // MEMORY_H

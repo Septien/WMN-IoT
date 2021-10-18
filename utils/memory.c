@@ -1,5 +1,7 @@
 #include "memory.h"
 
+#ifdef __RIOT__
+
 static memory_block_t   MEMORY[MAX_NUMBER_BLOCKS];
 extern memarray_t       storage;
 
@@ -119,3 +121,5 @@ int read_element(array_t *array, uint8_t *element, const unsigned int i)
     *element = block->block[0];
     return 1;
 }
+
+#endif
