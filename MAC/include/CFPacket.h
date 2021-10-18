@@ -14,8 +14,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Which pointer to use? Double for linux, single for RIOT. */
+#ifdef __LINUX__
+#define DOUBLE_POINTER      **
+#define SINGLE_POINTER      *
+#define ARROW(st)           (st)->
+#define REFERENCE
+#define ARRAY               uint8_t *
+#endif
+
 #ifdef __RIOT__
-#include "random.h"
+#include "memory.h"
+
+#define DOUBLE_POINTER      *
+#define SINGLE_POINTER      
+#define ARROW(st)           (st).
+#define REFERENCE           &
+#define ARRAY               array_t
 #endif
 
 typedef struct CFPacket
@@ -25,24 +40,17 @@ typedef struct CFPacket
     uint32_t frequency;
 }CFPacket_t;
 
-void initCF(
-#ifdef __LINUX__
-    CFPacket_t **pkt
-#endif
-#ifdef __RIOT__
-    CFPacket_t *pkt
-#endif
-);
-/*void destroyPacketCF(CFPacket_t **pkt);
-void createPacketCF(CFPacket_t *pkt, uint8_t nodeID, uint8_t destinationID, uint32_t frequency);
-void clearPacketCF(CFPacket_t *pkt);
-void setNodeIDCF(CFPacket_t *pkt, uint8_t nodeID);
-uint8_t getNodeIDCF(CFPacket_t *pkt);
-void setDestinationIDCF(CFPacket_t *pkt, uint8_t destinationID);
-uint8_t getDestinationIDCF(CFPacket_t *pkt);
-void setFrequencyCF(CFPacket_t *pkt, uint32_t frequency);
-uint32_t getFrequencyCF(CFPacket_t *pkt);
-void getPacketByteStringCF(CFPacket_t *pkt, uint8_t **byteString, size_t *size);
-void constructPktFromByteStringCF(CFPacket_t *pkt, uint8_t *byteString, size_t size);
-*/
+void cfpacket_init(CFPacket_t DOUBLE_POINTER pkt);
+void cfpacket_destroy(CFPacket_t DOUBLE_POINTER pkt);
+void cfpacket_create(CFPacket_t *pkt, uint8_t nodeID, uint8_t destinationID, uint32_t frequency);
+void cfpacket_clear(CFPacket_t *pkt);
+void cfpacket_set_nodeid(CFPacket_t *pkt, uint8_t nodeID);
+uint8_t cfpacket_get_nodeid(CFPacket_t *pkt);
+void cfpacket_set_destinationid(CFPacket_t *pkt, uint8_t destinationID);
+uint8_t cfpacket_get_destinationid(CFPacket_t *pkt);
+void cfpacket_set_frequency(CFPacket_t *pkt, uint32_t frequency);
+uint32_t cfpacket_get_frequency(CFPacket_t *pkt);
+void cfpacket_get_packet_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t *size);
+void cfpacket_construct_packet_from_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t size);
+
 #endif // CFPKT_H
