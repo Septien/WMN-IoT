@@ -14,24 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Which pointer to use? Double for linux, single for RIOT. */
-#ifdef __LINUX__
-#define DOUBLE_POINTER      **
-#define SINGLE_POINTER      *
-#define ARROW(st)           (st)->
-#define REFERENCE
-#define ARRAY               uint8_t *
-#endif
-
 #ifdef __RIOT__
 #include "memory.h"
-
-#define DOUBLE_POINTER      *
-#define SINGLE_POINTER      
-#define ARROW(st)           (st).
-#define REFERENCE           &
-#define ARRAY               array_t
 #endif
+#include "memory_macros.h"
 
 typedef struct CFPacket
 {
