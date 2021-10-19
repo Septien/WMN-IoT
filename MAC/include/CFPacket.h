@@ -37,6 +37,6 @@ uint8_t cfpacket_get_destinationid(CFPacket_t *pkt);
 void cfpacket_set_frequency(CFPacket_t *pkt, uint32_t frequency);
 uint32_t cfpacket_get_frequency(CFPacket_t *pkt);
 void cfpacket_get_packet_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t *size);
-void cfpacket_construct_packet_from_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t size);
+void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t size);
 
 #endif // CFPKT_H

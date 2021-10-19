@@ -122,7 +122,7 @@ void cfpacket_get_packet_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t 
     *size = sizeA;
 }
 
-void cfpacket_construct_packet_from_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t size)
+void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t size)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
@@ -133,12 +133,12 @@ void cfpacket_construct_packet_from_byte_string(CFPacket_t *pkt, ARRAY* byteStri
 
     uint32_t frequency = 0;
 #ifdef __LINUX__
-    pkt->nodeID = *byteString[0];
-    pkt->destinationID = *byteString[1];
-    frequency |= *byteString[2] << 24;
-    frequency |= *byteString[3] << 16;
-    frequency |= *byteString[4] << 8;
-    frequency |= *byteString[5];
+    pkt->nodeID = (*byteString)[0];
+    pkt->destinationID = (*byteString)[1];
+    frequency |= (*byteString)[2] << 24;
+    frequency |= (*byteString)[3] << 16;
+    frequency |= (*byteString)[4] << 8;
+    frequency |= (*byteString)[5];
 #endif
 #ifdef __RIOT__
     read_element(byteString, &pkt->nodeID, 0);

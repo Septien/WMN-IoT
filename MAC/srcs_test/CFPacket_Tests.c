@@ -216,7 +216,7 @@ void test_cfpacket_get_packet_byte_string(void)
     cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_construct_packet_from_byte_string(void)
+void test_cfpacket_construct_packet_from_bytestring(void)
 {
     CFPacket_t SINGLE_POINTER cfpkt;
     cfpacket_init(&cfpkt);
@@ -249,7 +249,7 @@ void test_cfpacket_construct_packet_from_byte_string(void)
     write_element(&byteString, (frequency & 0x000000ff),            5);
 #endif
 
-    cfpacket_construct_packet_from_byte_string(REFERENCE cfpkt, &byteString, size);
+    cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString, size);
 #ifdef __LINUX__
     assert(cfpkt->nodeID        == byteString[0]);
     assert(cfpkt->destinationID == byteString[1]);
@@ -323,7 +323,7 @@ void executeTestsCF(void)
     test_cfpacket_get_packet_byte_string();
     printf("Test passed.\n");
 
-    printf("Testing cfpacket_construct_packet_from_byte_string function.\n");
-    test_cfpacket_construct_packet_from_byte_string();
+    printf("Testing cfpacket_construct_packet_from_bytestring function.\n");
+    test_cfpacket_construct_packet_from_bytestring();
     printf("Test passed.\n");
 }
