@@ -36,6 +36,7 @@ void test_create_array(void)
     assert(array.head->next == NULL);
 
     ret = free_array(&array);
+    assert(ret == 1);
 
     size = 1 + (rand() % MAX_NUMBER_BLOCKS);
     ret = create_array(&array, size);
@@ -56,7 +57,7 @@ void test_create_array(void)
             block = NULL;
     }
     assert(count == size);
-    ret = free_array(&array);
+    free_array(&array);
 
     size = MAX_NUMBER_BLOCKS - 1;
     ret = create_array(&array, size);
@@ -76,7 +77,7 @@ void test_create_array(void)
             block = NULL;
     }
     assert(count == size);
-    ret = free_array(&array);
+    free_array(&array);
 
     size = MAX_NUMBER_BLOCKS;
     ret = create_array(&array, size);
@@ -96,7 +97,7 @@ void test_create_array(void)
             block = NULL;
     }
     assert(count == size);
-    ret = free_array(&array);
+    free_array(&array);
 
     size = MAX_NUMBER_BLOCKS + 1;
     ret = create_array(&array, size);
@@ -123,14 +124,14 @@ void test_free_array(void)
     assert(ret == 0);
 
     size = 1;
-    ret = create_array(&array, size);
+    create_array(&array, size);
     ret = free_array(&array);
     assert(ret == 1);
     assert(array.size == 0);
     assert(array.head == NULL);
 
     size = 1 + (rand() % (MAX_NUMBER_BLOCKS - 1));
-    ret = create_array(&array, size);
+    create_array(&array, size);
     ret = free_array(&array);
     assert(ret == 1);
     assert(array.size == 0);
@@ -142,7 +143,7 @@ void test_write_array(void)
     array_t array;
     array.head = NULL;
     size_t size = MAX_NUMBER_BLOCKS;
-    int ret = create_array(&array, size);
+    create_array(&array, size);
 
     /**
      *  Test cases:
@@ -155,7 +156,7 @@ void test_write_array(void)
      * */
     uint8_t element = (uint8_t)rand();
     unsigned int ith = MAX_NUMBER_BLOCKS;
-    ret = write_element(&array, element, ith);
+    int ret = write_element(&array, element, ith);
     assert(ret == 0);
 
     element = (uint8_t)rand();
@@ -198,14 +199,13 @@ void test_read_element(void)
     array_t array;
     array.head = NULL;
     size_t size = MAX_NUMBER_BLOCKS;
-    int ret = create_array(&array, size);
+    create_array(&array, size);
     
     unsigned int ith = 0;
-    uint8_t element;
     for (ith = 0; ith < size; ith++)
     {
-        element = ith % 256;
-        ret = write_element(&array, element, ith);
+        uint8_t element = ith % 256;
+        write_element(&array, element, ith);
     }
 
     /**
@@ -216,7 +216,7 @@ void test_read_element(void)
      *  -Read an alement outside the range, should return 0.
     */
    uint8_t elementr = 0;
-   ret = read_element(&array, &elementr, 0);
+   int ret = read_element(&array, &elementr, 0);
    assert(ret == 1);
    assert(elementr == 0);
 
@@ -237,7 +237,7 @@ void test_read_element(void)
     ret = read_element(&array, &elementr, ith);
     assert(ret == 0);
 
-   ret = free_array(&array);
+   free_array(&array);
 }
 
 void memory_tests(void)

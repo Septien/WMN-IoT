@@ -189,19 +189,18 @@ void test_cfpacket_get_packet_bytestring(void)
 #endif
 #ifdef __RIOT__
     uint8_t r;
-    int ret = read_element(&byteString, &r, 0);
+    read_element(&byteString, &r, 0);
     assert(r == nodeID);
-    ret = read_element(&byteString, &r, 1);
+     read_element(&byteString, &r, 1);
     assert(r == destinationID);
-    ret = read_element(&byteString, &r, 2);
+    read_element(&byteString, &r, 2);
     assert(r == (frequency & 0xff000000 >> 24));
-    ret = read_element(&byteString, &r, 3);
+    read_element(&byteString, &r, 3);
     assert(r == (frequency & 0x00ff0000 >> 16));
-    ret = read_element(&byteString, &r, 4);
+    read_element(&byteString, &r, 4);
     assert(r == (frequency & 0x0000ff00 >> 8));
-    ret = read_element(&byteString, &r, 5);
+    read_element(&byteString, &r, 5);
     assert(r == (frequency & 0x000000ff));
-    assert(ret == 1);
     write_element(&byteString, 1, 0);
 
     free_array(&byteString);
