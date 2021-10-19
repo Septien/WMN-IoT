@@ -160,7 +160,7 @@ void test_cfpacket_get_frequency(void)
     cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_get_packet_byte_string(void)
+void test_cfpacket_get_packet_bytestring(void)
 {
     CFPacket_t SINGLE_POINTER cfpkt;
     cfpacket_init(&cfpkt);
@@ -174,13 +174,8 @@ void test_cfpacket_get_packet_byte_string(void)
     size += sizeof(frequency);
     ARRAY byteString;
     size_t size2;
-#ifdef __LINUX__
-    byteString = (uint8_t *)malloc(size * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&byteString, size);
-#endif
-    cfpacket_get_packet_byte_string(REFERENCE cfpkt, &byteString, &size2);
+
+    cfpacket_get_packet_bytestring(REFERENCE cfpkt, &byteString, &size2);
 #ifdef __LINUX__
     assert(byteString != NULL);
     assert(byteString[0] == nodeID);
@@ -319,8 +314,8 @@ void executeTestsCF(void)
     test_cfpacket_get_frequency();
     printf("Test passed.\n");
 
-    printf("Testing cfpacket_get_packet_byte_string function.\n");
-    test_cfpacket_get_packet_byte_string();
+    printf("Testing cfpacket_get_packet_bytestring function.\n");
+    test_cfpacket_get_packet_bytestring();
     printf("Test passed.\n");
 
     printf("Testing cfpacket_construct_packet_from_bytestring function.\n");

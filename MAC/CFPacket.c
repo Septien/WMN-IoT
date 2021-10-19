@@ -90,7 +90,7 @@ uint32_t cfpacket_get_frequency(CFPacket_t *pkt)
     return pkt->frequency;
 }
 
-void cfpacket_get_packet_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t *size)
+void cfpacket_get_packet_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t *size)
 {
     assert(pkt != NULL);
 
@@ -98,6 +98,9 @@ void cfpacket_get_packet_byte_string(CFPacket_t *pkt, ARRAY* byteString, size_t 
     sizeA += sizeof(pkt->frequency);
 #ifdef __LINUX__
     uint8_t *byteStringA = (uint8_t *)malloc(sizeA * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(byteString, sizeA);
 #endif
 
 #ifdef __LINUX__
@@ -128,6 +131,9 @@ void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteStrin
     assert(byteString != NULL);
 #ifdef __LINUX__
     assert(*byteString != NULL);
+#endif
+#ifdef __RIOT__
+    assert(byteString->size > 0);
 #endif
     assert(size > 0);
 
