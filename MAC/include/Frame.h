@@ -23,7 +23,6 @@
 #endif
 
 #ifdef __RIOT__
-#include "config.h"
 #include "ztimer.h"
 #endif
 
