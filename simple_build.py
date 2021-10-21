@@ -13,7 +13,11 @@ def main():
     print(cmd)
     os.system(cmd)
     
-    cmd = "make all flash term RIOT=1 TEST=1"
+    cmd = "make clean RIOT=1 TEST=1"
+    print(cmd)
+    os.system(cmd)
+
+    cmd = "make all term RIOT=1 TEST=1"
     print(cmd)
     os.system(cmd)
     
