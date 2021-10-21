@@ -4,7 +4,7 @@
 
 // Given an arbitrary number n, get the next multiple of 8 greater than n, and
 // return the multiple.
-uint8_t getNumberBytes(uint8_t n)
+uint8_t get_number_bytes(uint8_t n)
 {
     uint8_t mod = 8;
     uint8_t res = n % mod;
@@ -12,26 +12,33 @@ uint8_t getNumberBytes(uint8_t n)
     return (n + add) / 8;
 }
 
-void initCP(ControlPacket_t **pkt, uint8_t nSlots, uint8_t nChannels)
+void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt, uint8_t nSlots, uint8_t nChannels)
 {
-    ControlPacket_t *pktA = NULL;
-    pktA = (ControlPacket_t *)malloc(sizeof(ControlPacket_t));
-    if (pktA == NULL)
+#ifdef __LINUX__
+    (*pkt) = (ControlPacket_t *)malloc(sizeof(ControlPacket_t));
+    if ((*pkt) == NULL)
     {
         printf("Unable to create packet.\n");
         exit(-1);
     }
-    pktA->_nSlots = nSlots;
-    pktA->_nChannels = nChannels;
+#endif
+    memset(SINGLE_POINTER pkt, 0, sizeof(ControlPacket_t));
+    (SINGLE_POINTER pkt)->_nSlots = nSlots;
+    (SINGLE_POINTER pkt)->_nChannels = nChannels;
     // Create a one-dimension array of size nSlot*nChannels to store the occupied slots per channel
-    uint8_t bytes = getNumberBytes(nSlots * nChannels), i;
-    pktA->occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-    *pkt = pktA;
+    uint8_t bytes = get_number_bytes(nSlots * nChannels);
+#ifdef __LINUX__
+    (*pkt)->occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&pkt->occupiedSlots, bytes);
+#endif
 }
 
-void destroyPacketCP(ControlPacket_t **pkt)
+void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
 {
     assert(pkt != NULL);
+#ifdef __LINUX__
     assert(*pkt != NULL);
 
     free((*pkt)->occupiedSlots);
@@ -39,20 +46,31 @@ void destroyPacketCP(ControlPacket_t **pkt)
     free(*pkt);
 
     *pkt = NULL;
-    return;
+#endif
+#ifdef __RIOT__
+    free_array(&pkt->occupiedSlots);
+    memset(pkt, 0, sizeof(ControlPacket_t));
+#endif
 }
 
 // Fill the packet with the given parameters
-void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots, uint8_t collisionSlot, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack)
+void controlpacket_create(ControlPacket_t *pkt, uint8_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, 
+                          uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
+#ifdef __LINUX__
+    assert(*occupiedSlots != NULL);
+#endif
 
     pkt->nodeID = nodeID;
-    uint8_t bytes = getNumberBytes(pkt->_nChannels * pkt->_nSlots);
+    uint8_t bytes = get_number_bytes(pkt->_nChannels * pkt->_nSlots);
     for (int i = 0; i < bytes; i++)
-        pkt->occupiedSlots[i] = occupiedSlots[i];
-    pkt->collisionSlot = collisionSlot;
+    {
+        uint8_t element = READ_ARRAY(SINGLE_POINTER occupiedSlots, i);
+        WRITE_ARRAY(REFERENCE pkt->occupiedSlots, element, i);
+    }
+    pkt->collisionSlot = collisionSlots;
     pkt->collisionFrequency = collisionFrequency;
     pkt->hopCount = hopCount;
     pkt->networkTime = netTime;
@@ -60,93 +78,107 @@ void createPacketCP(ControlPacket_t *pkt, uint8_t nodeID, uint8_t *occupiedSlots
 }
 
 // Set all values of the packet to zero, and free the arrays
-void clearPacktCP(ControlPacket_t *pkt)
-{
-    pkt->nodeID = 0;
-    free(pkt->occupiedSlots);
-    pkt->occupiedSlots = NULL;
-    pkt->collisionSlot = 0;
-    pkt->collisionFrequency = 0;
-    pkt->hopCount = 0;
-    pkt->networkTime = 0;
-    pkt->ack = 0;
-    pkt->_nSlots = 0;
-}
-
-void setNodeIDCP(ControlPacket_t *pkt, uint8_t nodeID)
+void controlpacket_clear(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
-    assert(0 <= nodeID && nodeID <= 255);
+#ifdef __LINUX__
+    free(pkt->occupiedSlots);
+    pkt->occupiedSlots = NULL;
+#endif
+#ifdef __RIOT__
+    free_array(&pkt->occupiedSlots);
+#endif
+    memset(pkt, 0, sizeof(ControlPacket_t));
+}
+
+void controlpacket_set_nodeID(ControlPacket_t *pkt, uint8_t nodeID)
+{
+    assert(pkt != NULL);
 
     pkt->nodeID = nodeID;
 }
 
-uint8_t getNodeIDCP(ControlPacket_t *pkt)
+uint8_t controlpacket_get_nodeID(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
     
     return pkt->nodeID;
 }
 
-void setCollisionSlotCP(ControlPacket_t *pkt, uint8_t slot)
+void controlpacket_set_collision_slot(ControlPacket_t *pkt, uint8_t slot)
 {
     assert(pkt != NULL);
 
     pkt->collisionSlot = slot;
 }
 
-uint8_t getCollisionSlotCP(ControlPacket_t *pkt)
+uint8_t controlpacket_get_collision_slot(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     return pkt->collisionSlot;
 }
 
-void setOccupiedSlotsCP(ControlPacket_t *pkt, uint8_t *occupiedSlots)
+void controlpacket_set_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
 
-    memcpy(pkt->occupiedSlots, occupiedSlots, getNumberBytes(pkt->_nChannels * pkt->_nSlots));
+    uint8_t bytes = get_number_bytes(pkt->_nChannels * pkt->_nSlots);
+    for (uint8_t i = 0; i < bytes; i++)
+    {
+        uint8_t element = READ_ARRAY(SINGLE_POINTER occupiedSlots, i);
+        WRITE_ARRAY(REFERENCE pkt->occupiedSlots, element, i);
+    }
+    //memcpy(REFERENCE pkt->occupiedSlots, SINGLE_POINTER occupiedSlots, get_number_bytes(pkt->_nChannels * pkt->_nSlots));
 }
 
-void getOccupiedSlotsCP(ControlPacket_t *pkt, uint8_t *occupiedSlots)
+void controlpacket_get_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots)
 {
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
-    assert(sizeof(pkt->occupiedSlots) == sizeof(occupiedSlots) );
+#ifdef __LINUX__
+    assert(*occupiedSlots != NULL);
+#endif
 
-    memcpy(occupiedSlots, pkt->occupiedSlots, getNumberBytes(pkt->_nChannels * pkt->_nSlots));
+    uint8_t bytes = get_number_bytes(pkt->_nChannels * pkt->_nSlots);
+    for (uint8_t i = 0; i < bytes; i++)
+    {
+        uint8_t element = READ_ARRAY(REFERENCE pkt->occupiedSlots, i);
+        WRITE_ARRAY(SINGLE_POINTER occupiedSlots, element, i);
+    }
+    //memcpy(SINGLE_POINTER occupiedSlots, REFERENCE pkt->occupiedSlots, get_number_bytes(pkt->_nChannels * pkt->_nSlots));
 }
 
-void setCollisionFrequencyCP(ControlPacket_t *pkt, uint32_t frequency)
+void controlpacket_set_collision_frequency(ControlPacket_t *pkt, uint32_t frequency)
 {
     assert(pkt != NULL);
 
     pkt->collisionFrequency = frequency;
 }
 
-uint32_t getColissionFrequencyCP(ControlPacket_t *pkt)
-{
-    uint32_t freq = pkt->collisionFrequency;
-    return freq;
-}
-
-void setHopCountCP(ControlPacket_t *pkt, uint8_t count)
+uint32_t controlpacket_get_collision_frequency(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
+
+    return pkt->collisionFrequency;;
+}
+
+void controlpacket_set_hop_count(ControlPacket_t *pkt, uint8_t count)
+{
+    assert(pkt != NULL);
+    
     pkt->hopCount = count;
 }
 
-uint8_t getHopCountCP(ControlPacket_t *pkt)
+uint8_t controlpacket_get_hop_count(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
-    uint8_t hops = pkt->hopCount;
 
-    return hops;
+    return pkt->hopCount;;
 }
 
-void setNetworkTimeCP(ControlPacket_t *pkt, uint32_t time)
+void controlpacket_set_network_time(ControlPacket_t *pkt, uint32_t time)
 {
     assert(pkt != NULL);
     assert(time > 0);
@@ -154,34 +186,33 @@ void setNetworkTimeCP(ControlPacket_t *pkt, uint32_t time)
     pkt->networkTime = time;
 }
 
-uint32_t getNetworkTimeCP(ControlPacket_t *pkt)
+uint32_t controlpacket_get_network_time(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     return pkt->networkTime;
 }
 
-void setACKCP(ControlPacket_t *pkt, uint8_t ack)
+void controlpacket_set_ACK(ControlPacket_t *pkt, uint8_t ack)
 {
     assert(pkt != NULL);
 
     pkt->ack = ack;
 }
 
-uint8_t getACKCP(ControlPacket_t *pkt)
+uint8_t controlpacket_get_ACK(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
-    uint8_t ack = pkt->ack;
-    return ack;
+    return pkt->ack;
 }
 
-void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size)
+void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, size_t *size)
 {
     assert(pkt != NULL);
     // Get string size and allocate memory
     size_t size1 = 0;
-    uint8_t bytes = getNumberBytes(pkt->_nSlots * pkt->_nChannels);
+    uint8_t bytes = get_number_bytes(pkt->_nSlots * pkt->_nChannels);
     size1 += sizeof(pkt->nodeID),
     size1 += (size_t)bytes;
     size1 += sizeof(pkt->collisionSlot);
@@ -191,54 +222,67 @@ void getPacketByteStringCP(ControlPacket_t *pkt, uint8_t **byteStr, size_t *size
     size1 += sizeof(pkt->ack);
     size1 += 1;
 
-    uint8_t *byteStrA = (uint8_t *)malloc(size1 * sizeof(uint8_t));
+#ifdef __LINUX__
+    *byteStr = (uint8_t *)malloc(size1 * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(byteStr, size1);
+#endif
 
     // Copy the fields
-    byteStrA[0] = pkt->nodeID;
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->nodeID, 0);
     int i;
     for (i = 0; i < bytes; i++)
     {
-        byteStrA[i + 1] = pkt->occupiedSlots[i];
+        uint8_t element = READ_ARRAY(REFERENCE pkt->occupiedSlots, i);
+        WRITE_ARRAY(SINGLE_POINTER byteStr, element, i + 1);
     }
-    byteStrA[i + 2] = pkt->collisionSlot;
-    byteStrA[i + 3] = (pkt->collisionFrequency & 0xff000000) >> 24;
-    byteStrA[i + 4] = (pkt->collisionFrequency & 0x00ff0000) >> 16;
-    byteStrA[i + 5] = (pkt->collisionFrequency & 0x0000ff00) >> 8;
-    byteStrA[i + 6] = (pkt->collisionFrequency & 0x000000ff);
-    byteStrA[i + 7] = pkt->hopCount;
-    byteStrA[i + 8] = (pkt->networkTime & 0xff000000) >> 24;
-    byteStrA[i + 9] = (pkt->networkTime & 0x00ff0000) >> 16;
-    byteStrA[i + 10] = (pkt->networkTime & 0x0000ff00) >> 8;
-    byteStrA[i + 11] = (pkt->networkTime & 0x000000ff);
-    byteStrA[i + 12] = pkt->ack;
-    *byteStr = byteStrA;
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->collisionSlot,                            i + 2);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0xff000000) >> 24,  i + 3);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x00ff0000) >> 16,  i + 4);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x0000ff00) >> 8,   i + 5);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x000000ff),        i + 6);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->hopCount,                                 i + 7);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0xff000000) >> 24,         i + 8);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x00ff0000) >> 16,         i + 9);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x0000ff00) >> 8,          i + 10);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x000000ff),               i + 11);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ack,                                      i + 12);
+
     *size = size1;
 }
 
-void constructPacketFromByteStringCP(ControlPacket_t *pkt, uint8_t *byteString, size_t size)
+void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString, size_t size)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
+#ifdef __LINUX__
+    assert(*byteString != NULL);
+#endif
     assert(size > 0);
 
     // Get size of collisionSlots array and initialize array
-    uint8_t bytes = getNumberBytes(pkt->_nSlots * pkt->_nChannels);
+    uint8_t bytes = get_number_bytes(pkt->_nSlots * pkt->_nChannels);
     
     // Fill the content of the packet
-    pkt->nodeID = byteString[0];
+    pkt->nodeID = READ_ARRAY(SINGLE_POINTER byteString, 0);
     for (int i = 0; i < bytes; i++)
-        pkt->occupiedSlots[i] = byteString[i + 1];
-    pkt->collisionSlot = byteString[bytes + 2];
+    {
+        uint8_t element;
+        element = READ_ARRAY(SINGLE_POINTER byteString, i + 1);
+        WRITE_ARRAY(REFERENCE pkt->occupiedSlots, element, i);
+    }
+    pkt->collisionSlot = READ_ARRAY(SINGLE_POINTER byteString, bytes + 2);
     pkt->collisionFrequency = 0;
-    pkt->collisionFrequency |= byteString[bytes + 3] << 24;
-    pkt->collisionFrequency |= byteString[bytes + 4] << 16;
-    pkt->collisionFrequency |= byteString[bytes + 5] << 8;
-    pkt->collisionFrequency |= byteString[bytes + 6];
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 3) << 24; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 4) << 16; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 5) << 8; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 6); 
     pkt->networkTime = 0;
-    pkt->networkTime |= byteString[bytes + 7] << 24;
-    pkt->networkTime |= byteString[bytes + 8] << 16;
-    pkt->networkTime |= byteString[bytes + 9] << 8;
-    pkt->networkTime |= byteString[bytes + 10];
-    pkt->hopCount = byteString[bytes + 11];
-    pkt->ack = byteString[bytes + 12];
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 7) << 24;
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 8) << 16;
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 9) << 8;
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 10);
+    pkt->hopCount = READ_ARRAY(SINGLE_POINTER byteString, bytes + 11);
+    pkt->ack = READ_ARRAY(SINGLE_POINTER byteString, bytes + 12);
 }
