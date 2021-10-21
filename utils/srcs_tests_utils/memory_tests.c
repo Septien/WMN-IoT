@@ -166,12 +166,12 @@ void test_write_array(void)
 
     ith = 0;
     ret = write_element(&array, element, ith);
-    assert(ret == 0);
+    assert(ret == 1);
     assert(array.head->block[0] == element);
 
     ith = MAX_NUMBER_BLOCKS - 1;
     ret = write_element(&array, element, ith);
-    assert(ret == 0);
+    assert(ret == 1);
     unsigned int i;
     // Go to the corresponding location
     memory_block_t *block = array.head;
@@ -183,7 +183,7 @@ void test_write_array(void)
 
     ith = rand() % MAX_NUMBER_BLOCKS;
     ret = write_element(&array, element, ith);
-    assert(ret == 0);
+    assert(ret == 1);
     block = array.head;
     for (i = 1; i <= ith; i++)
     {
@@ -192,6 +192,7 @@ void test_write_array(void)
     assert(block->block[0] == element);
 
     ret = free_array(&array);
+    assert(ret == 1);
 }
 
 void test_read_element(void)

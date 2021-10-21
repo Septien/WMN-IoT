@@ -97,8 +97,7 @@ int write_element(array_t *array, const uint8_t element, const unsigned int i)
     }
     block->block[0] = element;
     
-
-    return 0;
+    return 1;
 }
 
 int read_element(array_t *array, uint8_t *element, const unsigned int i)
