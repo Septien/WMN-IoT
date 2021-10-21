@@ -178,34 +178,22 @@ void test_cfpacket_get_packet_bytestring(void)
     cfpacket_get_packet_bytestring(REFERENCE cfpkt, &byteString, &size2);
 #ifdef __LINUX__
     assert(byteString != NULL);
-    assert(byteString[0] == nodeID);
-    assert(byteString[1] == destinationID);
-    assert(byteString[2] == (frequency & 0xff000000 >> 24));
-    assert(byteString[3] == (frequency & 0x00ff0000 >> 16));
-    assert(byteString[4] == (frequency & 0x0000ff00 >> 8));
-    assert(byteString[5] == (frequency & 0x000000ff));
+#endif
 
+    assert(READ_ARRAY(REFERENCE byteString, 0) == nodeID);
+    assert(READ_ARRAY(REFERENCE byteString, 1) == destinationID);
+    assert(READ_ARRAY(REFERENCE byteString, 2) == (frequency & 0xff000000 >> 24));
+    assert(READ_ARRAY(REFERENCE byteString, 3) == (frequency & 0x00ff0000 >> 16));
+    assert(READ_ARRAY(REFERENCE byteString, 4) == (frequency & 0x0000ff00 >> 8));
+    assert(READ_ARRAY(REFERENCE byteString, 5) == (frequency & 0x000000ff));
+    assert(size2 == size);
+
+#ifdef __LINUX__
     free(byteString);
 #endif
 #ifdef __RIOT__
-    uint8_t r;
-    read_element(&byteString, &r, 0);
-    assert(r == nodeID);
-     read_element(&byteString, &r, 1);
-    assert(r == destinationID);
-    read_element(&byteString, &r, 2);
-    assert(r == (frequency & 0xff000000 >> 24));
-    read_element(&byteString, &r, 3);
-    assert(r == (frequency & 0x00ff0000 >> 16));
-    read_element(&byteString, &r, 4);
-    assert(r == (frequency & 0x0000ff00 >> 8));
-    read_element(&byteString, &r, 5);
-    assert(r == (frequency & 0x000000ff));
-    write_element(&byteString, 1, 0);
-
     free_array(&byteString);
 #endif
-    assert(size2 == size);
 
     cfpacket_destroy(&cfpkt);
 }
@@ -226,37 +214,17 @@ void test_cfpacket_construct_packet_from_bytestring(void)
     create_array(&byteString, size);
 #endif
     uint32_t frequency = (uint32_t)rand();
-#ifdef __LINUX__
-    byteString[0] = (uint8_t)rand();
-    byteString[1] = (uint8_t)rand();
-    byteString[2] = ((frequency & 0xff000000) >> 24);
-    byteString[3] = ((frequency & 0x00ff0000) >> 16);
-    byteString[4] = ((frequency & 0x0000ff00) >> 8);
-    byteString[5] = (frequency & 0x000000ff);
-#endif
-#ifdef __RIOT__
-    write_element(&byteString, (uint8_t)rand(),                     0);
-    write_element(&byteString, (uint8_t)rand(),                     1);
-    write_element(&byteString, ((frequency & 0xff000000) >> 24),    2);
-    write_element(&byteString, ((frequency & 0x00ff0000) >> 16),    3);
-    write_element(&byteString, ((frequency & 0x0000ff00) >> 8),     4);
-    write_element(&byteString, (frequency & 0x000000ff),            5);
-#endif
+    WRITE_ARRAY(REFERENCE byteString, (uint8_t)rand(),                     0);
+    WRITE_ARRAY(REFERENCE byteString, (uint8_t)rand(),                     1);
+    WRITE_ARRAY(REFERENCE byteString, ((frequency & 0xff000000) >> 24),    2);
+    WRITE_ARRAY(REFERENCE byteString, ((frequency & 0x00ff0000) >> 16),    3);
+    WRITE_ARRAY(REFERENCE byteString, ((frequency & 0x0000ff00) >> 8),     4);
+    WRITE_ARRAY(REFERENCE byteString, (frequency & 0x000000ff),            5);
 
     cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString, size);
-#ifdef __LINUX__
-    assert(cfpkt->nodeID        == byteString[0]);
-    assert(cfpkt->destinationID == byteString[1]);
-    assert(cfpkt->frequency     == frequency);
-#endif
-#ifdef __RIOT__
-    uint8_t element;
-    read_element(&byteString, &element, 0);
-    assert(cfpkt.nodeID == element);
-    read_element(&byteString, &element, 1);
-    assert(cfpkt.destinationID == element);
-    assert(cfpkt.frequency == frequency);
-#endif
+    assert(ARROW(cfpkt)nodeID        == READ_ARRAY(REFERENCE byteString, 0));
+    assert(ARROW(cfpkt)destinationID == READ_ARRAY(REFERENCE byteString, 1));
+    assert(ARROW(cfpkt)frequency     == frequency);
 
 #ifdef __LINUX__
     free(byteString);
@@ -270,9 +238,8 @@ void test_cfpacket_construct_packet_from_bytestring(void)
 
 void executeTestsCF(void)
 {
-#ifdef __LINUX__
     srand(time(NULL));
-#endif
+
     printf("Testing cfpacket_init function.\n");
     test_cfpacket_init();
     printf("Test passed.\n");
