@@ -13,21 +13,32 @@
 #define MAMORY_MACROS_H
 
 #ifdef __LINUX__
-#define DOUBLE_POINTER      **
-#define SINGLE_POINTER      *
-#define ARROW(st)           (st)->
+#define DOUBLE_POINTER                  **
+#define SINGLE_POINTER                  *
+#define ARROW(st)                       (st)->
 #define REFERENCE
-#define ARRAY               uint8_t *
+#define ARRAY                           uint8_t *
+#define WRITE_ARRAY(ptr, element, i)    (ptr)[(i)] = (element)
+#define READ_ARRAY(ptr, i)              (ptr)[(i)]
 #endif
 
 #ifdef __RIOT__
 #include "memory.h"
 
-#define DOUBLE_POINTER      *
-#define SINGLE_POINTER      
-#define ARROW(st)           (st).
-#define REFERENCE           &
-#define ARRAY               array_t
+inline uint8_t readE(array_t *ptr, uint8_t i)
+{
+    uint8_t element;
+    read_element(ptr, &element, i);
+    return element;
+}
+
+#define DOUBLE_POINTER                  *
+#define SINGLE_POINTER
+#define ARROW(st)                       (st).
+#define REFERENCE                       &
+#define ARRAY                           array_t
+#define WRITE_ARRAY(ptr, element, i)    write_element((ptr), (element), (i))
+#define READ_ARRAY(ptr, i)              readE((ptr), (i))
 #endif
 
 #endif
