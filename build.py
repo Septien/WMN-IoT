@@ -30,7 +30,7 @@ def main():
     cmd = "cppcheck . -D__RIOT__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output.txt"
     os.system(cmd)
     # Compile codee for using with valgrind
-    cmd = "make -B clean all-valgrind"
+    cmd = "make -B clean all-valgrind RIOT=1 TEST=1"
     os.system(cmd)
     # Memory leaks check wwith valgrind
     cmd = "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output/memcheck-output-riot.txt --track-origins=yes --fullpath-after=/home/phantom/CP_Systems/RTOS/RIOT/ --read-var-info=yes /home/phantom/CP_Systems/Implementations/WMNLoRa/bin/native/main_test.elf /dev/ttyACM0"
