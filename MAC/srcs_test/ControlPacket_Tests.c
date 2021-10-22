@@ -175,11 +175,10 @@ void test_controlpacket_get_nodeID(void)
     size_t slots = 8, channels = 17;;
     controlpacket_init(&pkt, slots, channels);
 
-    uint8_t nodeid = 0;
     for (uint8_t i = 0; i < 255; i++)
     {
         controlpacket_set_nodeID(REFERENCE pkt, i);
-        nodeid = controlpacket_get_nodeID(REFERENCE pkt);
+        uint8_t nodeid = controlpacket_get_nodeID(REFERENCE pkt);
         assert(nodeid == i);
     }
 
@@ -352,11 +351,10 @@ void test_controlpacket_set_network_time(void)
     size_t slots = 8, channels = 17;
     controlpacket_init(&pkt, slots, channels);
 
-    uint32_t netTime;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        netTime = rand();
+        uint32_t netTime = rand();
         controlpacket_set_network_time(REFERENCE pkt, netTime);
         assert(ARROW(pkt)networkTime == netTime);
     }
@@ -370,13 +368,12 @@ void test_controlpacket_get_network_time(void)
     size_t slots = 8, channels = 17;
     controlpacket_init(&pkt, slots, channels);
 
-    uint32_t time, timeA;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        time = (uint32_t)rand();
+        uint32_t time = (uint32_t)rand();
         controlpacket_set_network_time(REFERENCE pkt, time);
-        timeA = controlpacket_get_network_time(REFERENCE pkt);
+        uint32_t timeA = controlpacket_get_network_time(REFERENCE pkt);
         assert(timeA == time);
     }
 
