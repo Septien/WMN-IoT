@@ -34,17 +34,17 @@ $(info $$SRCT_DIR is [${SRCT_DIR}])
 endif
 
 # Source files
-SRC = $(mac_current_dir)/CFPacket.c $(mac_current_dir)/ControlPacket.c
+SRC = $(mac_current_dir)/CFPacket.c $(mac_current_dir)/ControlPacket.c $(mac_current_dir)/DataPacket.c
 $(info $$SRC is [${SRC}])
 ifdef TEST
-SRCT += $(SRCT_DIR)/mclmac_tests.c $(SRCT_DIR)/CFPacket_Tests.c $(SRCT_DIR)/ControlPacket_Tests.c
+SRCT += $(SRCT_DIR)/mclmac_tests.c $(SRCT_DIR)/CFPacket_Tests.c $(SRCT_DIR)/ControlPacket_Tests.c $(SRCT_DIR)/DataPacket_Tests.c
 $(info $$SRCT is [${SRCT}])
 endif
 
 # Dependencies
-DEPS = $(INC_UTILS)/memory.h $(INC_DIR)/CFPacket.h $(INC_DIR)/ControlPacket.h
+DEPS = $(INC_UTILS)/memory.h $(INC_DIR)/CFPacket.h $(INC_DIR)/ControlPacket.h $(INC_DIR)/DataPacket.h
 ifdef TEST
-DEPST = $(INCT_DIR)/mclmac_tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/CFPacket_Tests.h
+DEPST = $(INCT_DIR)/mclmac_tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/DataPacket_Tests.h
 endif
 $(info $$DEPS is [${DEPS}])
 
@@ -56,10 +56,10 @@ OBJT_DIR = $(mac_current_dir)/obj
 $(info $$OBJT_DIR is ${OBJT_DIR})
 endif
 
-OBJS = $(OBJ_DIR)/CFPacket.o $(OBJ_DIR)/ControlPacket.o
+OBJS = $(OBJ_DIR)/CFPacket.o $(OBJ_DIR)/ControlPacket.o $(OBJ_DIR)/DataPacket.o
 $(info $$OBJS is ${OBJS})
 ifdef TEST
-OBJST = $(OBJT_DIR)/mclmac_tests.o $(OBJT_DIR)/CFPacket_Tests.o $(OBJT_DIR)/ControlPacket_Tests.o
+OBJST = $(OBJT_DIR)/mclmac_tests.o $(OBJT_DIR)/CFPacket_Tests.o $(OBJT_DIR)/ControlPacket_Tests.o $(OBJT_DIR)/DataPacket_Tests.o
 $(info $$OBJST is ${OBJST})
 endif
 

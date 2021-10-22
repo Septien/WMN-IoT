@@ -5,17 +5,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-void initDP(DataPacket_t **pkt)
+void datapacket_init(DataPacket_t DOUBLE_POINTER pkt)
 {
-    DataPacket_t *pktA;
-    pktA = (DataPacket_t *)malloc(sizeof(DataPacket_t));
-    pktA->data = NULL;  // Initialize until data is loaded
-    *pkt = pktA;
+#ifdef __LINUX__
+    (*pkt) = (DataPacket_t *)malloc(sizeof(DataPacket_t));
+    (*pkt)->data = NULL;  // Initialize until data is loaded
+#endif
+    memset(SINGLE_POINTER pkt, 0, sizeof(DataPacket_t));
 }
 
-void destroyPacketDP(DataPacket_t **pkt)
+void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt)
 {
     assert(pkt != NULL);
+#ifdef __LINUX__
     assert(*pkt != NULL);
 
     if ((*pkt)->data != NULL)
@@ -23,9 +25,15 @@ void destroyPacketDP(DataPacket_t **pkt)
 
     free(*pkt);
     *pkt = NULL;
+#endif
+#ifdef __RIOT__
+    if (pkt->data.size > 0)
+        free_array(&pkt->data);
+    memset(pkt, 0, sizeof(DataPacket_t));
+#endif
 }
 
-void createPacketDP(DataPacket_t *pkt, bool isFragment, uint8_t totalFragments, uint8_t fragmentNumber, void **data, size_t size)
+void datapacket_create(DataPacket_t *pkt, bool isFragment, uint8_t totalFragments, uint8_t fragmentNumber, ARRAY* data, size_t size)
 {
     assert(pkt != NULL);
 
@@ -33,135 +41,203 @@ void createPacketDP(DataPacket_t *pkt, bool isFragment, uint8_t totalFragments, 
     pkt->totalFragments = totalFragments;
     pkt->fragmentNumber = fragmentNumber;
     pkt->dataLength = size;
-    if (size > 0)
+    if (size > 0 && data != NULL)
     {
-        uint8_t *dataA = ((uint8_t *)*data);
+#ifdef __LINUX__
         pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&pkt->data, pkt->dataLength);
+#endif  
         for (int i = 0; i < pkt->dataLength; i++)
-            pkt->data[i] = dataA[i];
+        {
+            uint8_t element;
+            element = READ_ARRAY(SINGLE_POINTER data, i);
+            WRITE_ARRAY(REFERENCE pkt->data, element, i);
+        }
     }
+#ifdef __LINUX__
     else
         pkt->data = NULL;
+#endif
 }
 
-void clearPacketDP(DataPacket_t *pkt)
+void datapacket_clear(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     pkt->isFragment = false;
     pkt->totalFragments = 0;
-    pkt->totalFragments = 0;
     pkt->fragmentNumber = 0;
-    free(pkt->data);
-    pkt->data = NULL;
+#ifdef __LINUX__
+    if (pkt->data != NULL)
+    {
+        free(pkt->data);
+        pkt->data = NULL;
+    }
+#endif
+#ifdef __RIOT__
+    if (pkt->data.size > 0)
+    {
+        free_array(&pkt->data);
+    }
+#endif
     pkt->dataLength = 0;
 }
 
-void setIsFragmentDP(DataPacket_t *pkt, bool isFragment)
+void datapacket_set_isFragment(DataPacket_t *pkt, bool isFragment)
 {
     assert(pkt != NULL);
 
     pkt->isFragment = isFragment;
 }
 
-bool isFragmentDP(DataPacket_t *pkt)
+bool datapacket_get_isFragment(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     return pkt->isFragment;
 }
 
-void setTotalFragmentsDP(DataPacket_t *pkt, uint8_t totalFragments)
+void datapacket_set_total_fragments(DataPacket_t *pkt, uint8_t totalFragments)
 {
     assert(pkt != NULL);
 
     pkt->totalFragments = totalFragments;
 }
 
-uint8_t getTotalFragmentsDP(DataPacket_t *pkt)
+uint8_t datapacket_get_total_fragments(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
+    
     return pkt->totalFragments;
 }
 
-void setFragmentNumberDP(DataPacket_t *pkt, uint8_t fragmentNumber)
+void datapacket_set_fragment_number(DataPacket_t *pkt, uint8_t fragmentNumber)
 {
     assert(pkt != NULL);
-    assert(pkt->totalFragments >= fragmentNumber);
+    assert(pkt->totalFragments > fragmentNumber);
 
     pkt->fragmentNumber = fragmentNumber;
 }
 
-uint8_t getFragmentNumberDP(DataPacket_t *pkt)
+uint8_t datapacket_get_fragment_number(DataPacket_t *pkt)
 {
+    assert(pkt != NULL);
+
     return pkt->fragmentNumber;
 }
 
-void setPacketDataDP(DataPacket_t *pkt, void **data, uint8_t size)
+void datapacket_set_data(DataPacket_t *pkt, ARRAY* data, uint8_t size)
 {
     assert(pkt != NULL);
     assert(data != NULL);
+#ifdef __LINUX__
+    assert(*data != NULL);
+#endif
     assert(size > 0 && size < 250);
 
     // if packet already contains data, delete it
+#ifdef __LINUX__
     if (pkt->data != NULL)
     {
         free(pkt->data);
         pkt->data = NULL;
     }
+#endif
+#ifdef __RIOT__
+    if (pkt->data.size > 0)
+    {
+        free_array(&pkt->data);
+    }
+#endif
 
-    uint8_t *dataA = ((uint8_t *)*data);
     pkt->dataLength = size;
+#ifdef __LINUX__
     pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&pkt->data, pkt->dataLength);
+#endif
     for (int i = 0; i < size; i++)
-        pkt->data[i] = dataA[i];
+    {
+        uint8_t element = READ_ARRAY(SINGLE_POINTER data, i);
+        WRITE_ARRAY(REFERENCE pkt->data, element, i);
+    }
 }
 
-void deleteDataDP(DataPacket_t *pkt)
+void datapacket_delete_data(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
     assert(pkt->dataLength > 0);
+#ifdef __LINUX__
     assert(pkt->data != NULL);
+#endif
+#ifdef __RIOT__
+    assert(pkt->data.size > 0);
+#endif
 
     pkt->dataLength = 0;
+#ifdef __LINUX__
     free(pkt->data);
     pkt->data = NULL;
+#endif
+#ifdef __RIOT__
+    free_array(&pkt->data);
+#endif
 }
 
-void clearDataDP(DataPacket_t *pkt)
+void datapacket_clear_data(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
+#ifdef __LINUX__
     assert(pkt->data != NULL);
+#endif
+#ifdef __RIOT__
+    assert(pkt->data.size > 0);
+#endif
     assert(pkt->dataLength > 0);
 
-    memset(pkt->data, 0, pkt->dataLength);
+    for (int i = 0; i <pkt->dataLength; i++)
+        WRITE_ARRAY(REFERENCE pkt->data, 0, i);
 }
 
-void getPacketDataDP(DataPacket_t *pkt, void **data, uint8_t *size)
+void datapacket_get_data(DataPacket_t *pkt, ARRAY* data, uint8_t *size)
 {
     assert(pkt != NULL);
 
     uint8_t sizeA = pkt->dataLength;
-    uint8_t *dataA = (uint8_t *)malloc(sizeA * sizeof(uint8_t));
+    ARRAY dataA;
+#ifdef __LINUX__
+    dataA = (uint8_t *)malloc(sizeA * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&dataA, sizeA);
+#endif
     for (int i = 0; i < sizeA; i++)
-        dataA[i] = pkt->data[i];
+    {
+        uint8_t element;
+        element = READ_ARRAY(REFERENCE pkt->data, i);
+        WRITE_ARRAY(REFERENCE dataA, element, i);
+    }
 
     *size = sizeA;
     *data = dataA;
 }
 
-uint8_t getDataLengthDP(DataPacket_t *pkt)
+uint8_t datapacket_get_data_length(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     return pkt->dataLength;
 }
 
-size_t getPacketLengthDP(DataPacket_t *pkt)
+size_t datapacket_get_packet_length(DataPacket_t *pkt)
 {
     assert(pkt != NULL);
+#ifdef __LINUX__
     assert(pkt->data != NULL);
-    assert(pkt->dataLength >= 0);
+#endif
 
     size_t size = 0;
     size += sizeof(pkt->isFragment);
@@ -174,38 +250,57 @@ size_t getPacketLengthDP(DataPacket_t *pkt)
     return pkt->packetLength;
 }
 
-void getPacketByteStringDP(DataPacket_t *pkt, uint8_t **byteString, size_t *size)
+void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString, size_t *size)
 {
     assert(pkt != NULL);
 
-    size_t sizeA = getPacketLengthDP(pkt);
-    uint8_t *byteStringA = (uint8_t *)malloc(sizeA * sizeof(uint8_t));
+    size_t sizeA = datapacket_get_packet_length(pkt);
+    ARRAY byteStringA;
+#ifdef __LINUX__
+    byteStringA = (uint8_t *)malloc(sizeA * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&byteStringA, sizeA);
+#endif
 
-    byteStringA[0] = (uint8_t)pkt->isFragment;
-    byteStringA[1] = pkt->totalFragments;
-    byteStringA[2] = pkt->fragmentNumber;
-    byteStringA[3] = pkt->dataLength;
+    WRITE_ARRAY(REFERENCE byteStringA, (uint8_t)pkt->isFragment, 0);
+    WRITE_ARRAY(REFERENCE byteStringA, pkt->totalFragments, 1);
+    WRITE_ARRAY(REFERENCE byteStringA, pkt->fragmentNumber, 2);
+    WRITE_ARRAY(REFERENCE byteStringA, pkt->dataLength, 3);
     int i;
     for (i = 4; i < pkt->dataLength + 4; i++)
-        byteStringA[i] = pkt->data[i - 4];
+    {
+        uint8_t element;
+        element = READ_ARRAY(REFERENCE pkt->data, i - 4);
+        WRITE_ARRAY(REFERENCE byteStringA, element, i);
+    }
 
     *byteString = byteStringA;
     *size = sizeA;
 }
 
-void constructPktFromByteStringDP(DataPacket_t *pkt, uint8_t *byteString, size_t size)
+void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString, size_t size)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
     assert(size >= 6 && size <= 256);
 
     pkt->packetLength = size;
-    pkt->isFragment = byteString[0];
-    pkt->totalFragments = byteString[1];
-    pkt->fragmentNumber = byteString[2];
-    pkt->dataLength = byteString[3];
+    pkt->isFragment = READ_ARRAY(SINGLE_POINTER byteString, 0);
+    pkt->totalFragments = READ_ARRAY(SINGLE_POINTER byteString, 1);
+    pkt->fragmentNumber = READ_ARRAY(SINGLE_POINTER byteString, 2);;
+    pkt->dataLength = READ_ARRAY(SINGLE_POINTER byteString, 3);
+#ifdef __LINUX__
     pkt->data = (uint8_t *)malloc(pkt->dataLength * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&pkt->data, pkt->dataLength);
+#endif
     int i;
     for (i = 0; i < pkt->dataLength; i++)
-        pkt->data[i] = byteString[i + 4];
+    {
+        uint8_t element;
+        element = READ_ARRAY(SINGLE_POINTER byteString, i + 4);
+        WRITE_ARRAY(REFERENCE pkt->data, element, i);
+    }
 }
