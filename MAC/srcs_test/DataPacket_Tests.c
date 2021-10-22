@@ -75,6 +75,7 @@ void test_datapacket_create(void)
 
 #ifdef __LINUX__
     data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    printf("%p\n", data);
 #endif
 #ifdef __RIOT__
     create_array(&data, size);
@@ -84,12 +85,22 @@ void test_datapacket_create(void)
         WRITE_ARRAY(REFERENCE data, rand(), i);
 
     datapacket_create(REFERENCE pkt, isFragment, totalFragments, fragmentNumber, &data, size);
+#ifdef __LINUX__
+    printf("%p\n", data);
+#endif
     assert(ARROW(pkt)isFragment == isFragment);
     assert(ARROW(pkt)totalFragments == totalFragments);
     assert(ARROW(pkt)fragmentNumber == fragmentNumber);
     assert(ARROW(pkt)dataLength == size);
     for (i = 0; i < size; i++)
         assert(READ_ARRAY(REFERENCE ARROW(pkt)data, i) == READ_ARRAY(REFERENCE data, i));
+
+#ifdef __LINUX__
+    free(data);
+#endif
+#ifdef __RIOT__
+    free_array(&data);
+#endif
     
     datapacket_destroy(&pkt);
 }
@@ -190,11 +201,10 @@ void test_datapacket_get_total_fragments(void)
     DataPacket_t SINGLE_POINTER datapkt;
     datapacket_init(&datapkt);
 
-    uint8_t i, totalF;
-    for (i = 0; i < 255; i++)
+    for (uint8_t i = 0; i < 255; i++)
     {
         datapacket_set_total_fragments(REFERENCE datapkt, i);
-        totalF = datapacket_get_total_fragments(REFERENCE datapkt);
+        uint8_t totalF = datapacket_get_total_fragments(REFERENCE datapkt);
         assert(totalF == i);
     }
 
@@ -223,11 +233,10 @@ void test_datapacket_get_fragment_number(void)
     datapacket_init(&datapkt);
 
     datapacket_set_total_fragments(REFERENCE datapkt, 255);
-    uint8_t i, fnumber;
-    for (i = 0; i < 255; i++)
+    for (uint8_t i = 0; i < 255; i++)
     {
         datapacket_set_fragment_number(REFERENCE datapkt, i);
-        fnumber = datapacket_get_fragment_number(REFERENCE datapkt);
+        uint8_t fnumber = datapacket_get_fragment_number(REFERENCE datapkt);
         assert(fnumber == i);
     }
 
