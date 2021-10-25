@@ -9,8 +9,12 @@ AR = ar csrv
 RL = ranlib
 
 CFLAGS += -fpic -fstack-protector-strong -Werror -Wall -Wextra -pedantic -g3 -Og -std=gnu11 -fstack-protector-all -ffunction-sections -fwrapv -Wstrict-overflow -fno-common -fdata-sections -Wmissing-include-dirs -fno-delete-null-pointer-checks -fdiagnostics-color -Wstrict-prototypes -Wold-style-definition -gz -Wformat=2 -Wformat-overflow -Wformat-truncation
-CFLAGS += -Iutils/include
+ifdef DEBUG
+	CFLAGS += -g
+endif
+CPPFLAGS += -D__LINUX__
 # Compile each of the submodules
+include utils/Makefile.linux
 include MAC/Makefile.linux
 
 BIN = bin/linux-x86_64
@@ -28,11 +32,16 @@ ifdef TEST
 MKDIR_WMNL += $(OBJ)
 endif
 
-# Path to mclmac.a
+# Path to libutils.a
+UTILS_PATH = $(utils_current_dir)/lib
+# Path to libmclmac.a
 MAC_PATH = $(mac_current_dir)/lib
 $(info $$MAC_PATH is [${MAC_PATH}])
 
 # Libraries to include
+# utils
+LIBS += utils
+# MAC (optionally mactests)
 ifdef TEST
 LIBS += mclmacT
 endif
@@ -40,7 +49,8 @@ LIBS += mclmac
 $(info $$LIBS is [${LIBS}])
 
 # Paths to static libraries
-LDFLAGS = $(MAC_PATH)
+LDFLAGS += $(UTILS_PATH)
+LDFLAGS += $(MAC_PATH)
 $(info $$LDFLAGS is [${LDFLAGS}])
 
 TARGETS = directories_main
@@ -66,9 +76,14 @@ endif
 
 # Remove object files and static libraries
 clean:
-	rm $(OBJ_DIR)/*.o
-	rm $(OBJ)/*.o
+# Para utils
+	rm $(OBJU_DIR)/*.o
+	rm $(LIB_UTILS)/*.a
+# Para MAC
 	rm $(LIB_MAC)/*.a
+	rm $(OBJ_DIR)/*.o
+# Para main
+	rm $(OBJ)/*.o
 	rm $(BIN)/*
 
 endif # Linux compilation
@@ -92,17 +107,21 @@ QUIET ?= 1
 
 USEMODULE += memarray
 
-include WMNLoRa.include
-
 # Which features do you require? (mcu architecure, peripherals, sensors, etc.)
-#FEATURES_REQUIRED += arch_esp32
+ifeq ($(BOARD), esp32-wroom-32)
+FEATURES_REQUIRED += arch_esp32
+endif
 FEATURES_REQUIRED += periph_gpio
+
+include WMNLoRa.include
 
 CFLAGS += -Wno-unused-variable
 CFLAGS += -Wno-unused-parameter
 CFLAGS += -D__RIOT__
 
+ifdef TEST
 DISABLE_MODULE += test_utils_interactive_sync
+endif
 
 include $(RIOTBASE)/Makefile.include
 

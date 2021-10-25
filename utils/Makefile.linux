@@ -1,0 +1,72 @@
+# Get the current directory path
+utils_mkfil_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+$(info $$utils_mkfil_path is [$(utils_mkfil_path)])
+utils_current_dir := $(notdir $(patsubst %/,%,$(dir $(utils_mkfil_path))))
+$(info $$utils_current_dir is [$(utils_current_dir)])
+
+# Include path corresponding to this module
+CFLAGS += -I$(utils_current_dir)/include -I$(utils_current_dir)/include/testsinclude
+
+MKDIR_OBJ_UTILS := mkdir -p $(utils_current_dir)/obj
+MKDIR_LIB_UTILS := mkdir -p $(utils_current_dir)/lib
+
+LIB_UTILS := $(utils_current_dir)/lib
+
+# Include directories for this module
+INC_UTILS := $(utils_current_dir)/include
+ifdef TEST
+INCT_UTILS += $(utils_current_dir)/include/testsinclude
+endif
+$(info $$INC_UTILS is [$(INC_UTILS)])
+
+# sources location
+SRCD = $(utils_current_dir)
+ifdef TEST
+SRCDT += $(utils_current_dir)/srcs_test_utils
+endif
+$(info $$SRCD is [$(SRCD)])
+
+# sources
+SRC := $(utils_current_dir)/timers.c
+ifdef TEST
+endif
+$(info $$SRC is [$(SRC)])
+
+DEPS_U := $(INC_UTILS)/timers.h
+ifdef TEST
+endif
+
+OBJU_DIR := $(utils_current_dir)/obj
+ifdef TEST
+endif
+
+OBJSU := $(OBJU_DIR)/timers.o
+ifdef TEST
+endif
+
+TARGETS := directories_utils $(LIB_UTILS)/libutils
+ifdef TEST
+endif
+$(info $$TARGETS is [$(TARGETS)])
+
+all: $(TARGETS)
+
+directories_utils:
+	$(MKDIR_OBJ_UTILS)
+	$(MKDIR_LIB_UTILS)
+
+# Create a static library for the module
+$(LIB_UTILS)/libutils: $(OBJSU)
+	$(AR) $@.a $^
+	$(RL) $@.a
+
+ifdef TEST
+endif
+
+$(OBJU_DIR)/%.o: $(SRCD)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(OBJU_DIR)/%.o: $(INC_UTILS)/%.h
+
+ifdef TEST
+endif
