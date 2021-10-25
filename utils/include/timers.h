@@ -34,13 +34,13 @@
 static timer_t                  timeout_timer;
 static volatile sig_atomic_t    timeout_state[TIMEOUTS] = { 0 };
 static struct timespec          timeout_time[TIMEOUTS];
-static ztimer_clock_t           *clock;
 #endif
 
 #ifdef __RIOT__
 static ztimer_t                 timeout_timer;
 static volatile uint8_t         timeout_state[TIMEOUTS] = { 0 };
 static uint32_t                 timeout_time[TIMEOUTS];
+static ztimer_clock_t           *clock;
 #endif
 
 #ifdef __LINUX__
