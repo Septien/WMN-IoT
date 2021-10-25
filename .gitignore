@@ -1,7 +1,6 @@
 *.out
-bin/
-obj/
-MAC/obj
-MAC/lib
+*bin/
+*obj/
+*/lib
 code-analysis/
 valgrind-output/
