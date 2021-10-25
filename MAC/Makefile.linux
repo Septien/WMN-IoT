@@ -6,10 +6,6 @@ $(info $$mac_current_dir is [${mac_current_dir}])
 
 # Flags
 CFLAGS += -I$(mac_current_dir)/include -I$(mac_current_dir)/include/testsinclude
-ifdef DEBUG
-	CFLAGS += -g
-endif
-CPPFLAGS += -D__LINUX__
 
 MKDIR_OBJ_MAC = mkdir -p $(mac_current_dir)/obj
 MKDIR_LIB_MAC = mkdir -p $(mac_current_dir)/lib
@@ -25,7 +21,6 @@ $(info $$INCT_DIR is [${INCT_DIR}])
 endif
 
 # source directories
-#include sources from utils
 SRC_DIR = $(mac_current_dir)
 $(info $$SRC_DIR is [${SRC_DIR}])
 ifdef TEST
@@ -42,7 +37,7 @@ $(info $$SRCT is [${SRCT}])
 endif
 
 # Dependencies
-DEPS = $(INC_UTILS)/memory.h $(INC_DIR)/CFPacket.h $(INC_DIR)/ControlPacket.h $(INC_DIR)/DataPacket.h
+DEPS = $(INC_UTILS)/memory_macros.h $(INC_DIR)/CFPacket.h $(INC_DIR)/ControlPacket.h $(INC_DIR)/DataPacket.h
 ifdef TEST
 DEPST = $(INCT_DIR)/mclmac_tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/DataPacket_Tests.h
 endif
@@ -63,7 +58,7 @@ OBJST = $(OBJT_DIR)/mclmac_tests.o $(OBJT_DIR)/CFPacket_Tests.o $(OBJT_DIR)/Cont
 $(info $$OBJST is ${OBJST})
 endif
 
-TARGETS := directories $(LIB_MAC)/libmclmac
+TARGETS := directories_mac $(LIB_MAC)/libmclmac
 ifdef TEST
 TARGETS += $(LIB_MAC)/libmclmacT
 endif
@@ -71,7 +66,7 @@ $(info $$TARGETS is [${TARGETS}])
 
 all: $(TARGETS)
 
-directories:
+directories_mac:
 	$(MKDIR_OBJ_MAC)
 	$(MKDIR_LIB_MAC)
 
