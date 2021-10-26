@@ -75,7 +75,6 @@ void test_datapacket_create(void)
 
 #ifdef __LINUX__
     data = (uint8_t *)malloc(size * sizeof(uint8_t));
-    printf("%p\n", data);
 #endif
 #ifdef __RIOT__
     create_array(&data, size);
@@ -85,9 +84,6 @@ void test_datapacket_create(void)
         WRITE_ARRAY(REFERENCE data, rand(), i);
 
     datapacket_create(REFERENCE pkt, isFragment, totalFragments, fragmentNumber, &data, size);
-#ifdef __LINUX__
-    printf("%p\n", data);
-#endif
     assert(ARROW(pkt)isFragment == isFragment);
     assert(ARROW(pkt)totalFragments == totalFragments);
     assert(ARROW(pkt)fragmentNumber == fragmentNumber);
