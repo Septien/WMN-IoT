@@ -66,7 +66,7 @@ directories_main:
 
 ifdef TEST
 $(BIN)/wmnlora : $(OBJ)/main_test.o
-	$(CC) $< $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -o $@
+	$(CC) $< -o $@ $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -lrt
 
 $(OBJ)/main_test.o : main.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
