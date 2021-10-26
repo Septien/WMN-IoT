@@ -16,6 +16,11 @@
 
 #ifdef __RIOT__
 #include "ztimer.h"
+
+#ifndef CLOCK
+#define CLOCK ZTIMER_USEC
+#endif
+
 #endif
 
 #ifndef TIMEOUTS
@@ -30,18 +35,19 @@
 #define TIMEOUT_ARMED   2
 #define TIMEOUT_PASSED  4
 
+typedef struct timeout
+{
 #ifdef __LINUX__
-static timer_t                  timeout_timer;
-static volatile sig_atomic_t    timeout_state[TIMEOUTS] = { 0 };
-static struct timespec          timeout_time[TIMEOUTS];
+    timer_t                  timeout_timer;
+    volatile sig_atomic_t    timeout_state[TIMEOUTS];
+    struct timespec          timeout_time[TIMEOUTS];
 #endif
-
 #ifdef __RIOT__
-static ztimer_t                 timeout_timer;
-static volatile uint8_t         timeout_state[TIMEOUTS] = { 0 };
-static uint32_t                 timeout_time[TIMEOUTS];
-static ztimer_clock_t           *clock;
+    ztimer_t                 timeout_timer;
+    volatile uint8_t         timeout_state[TIMEOUTS];
+    uint32_t                 timeout_time[TIMEOUTS];
 #endif
+}timeout_t;
 
 #ifdef __LINUX__
 double timespec_diff(const struct timespec after, const struct timespec before);
@@ -103,13 +109,7 @@ void timeout_signal_handler(
 #endif
 );
 
-int timeout_init(
-#ifdef __LINUX__
-void);
-#endif
-#ifdef __RIOT__
-ztimer_clock_t *clockA);
-#endif
+int timeout_init(void);
 
 int timeout_done(void);
 
