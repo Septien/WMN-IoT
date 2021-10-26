@@ -1,13 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "timers.h"
 
 #ifdef __RIOT__
 #include "ztimer.h"
-
-extern ztimer_t         timeout_timer;
-extern uint32_t         timeout_time[TIMEOUTS];
-extern ztimer_clock_t   *clock;
 #endif
+
+extern timeout_t timeouts;
 
 /**
  * Return the number of seconds between before and after (after - before).
@@ -134,12 +135,13 @@ int timeout_passed(
 {
     if (timeout < TIMEOUTS)
     {
+        int state = 0;
 #ifdef __LINUX__
         if (timeout >= 0)
-            const int state = __sync_or_and_fetch(&timeout_state[timeout], 0);
+            state = __sync_or_and_fetch(&timeouts.timeout_state[timeout], 0);
 #endif
 #ifdef __RIOT__
-        const int state = __sync_or_and_fetch(&timeout_state[timeout], 0);
+        state = __sync_or_and_fetch(&timeouts.timeout_state[timeout], 0);
 #endif
 
         /* Refers to an unused timeout? */
@@ -158,6 +160,8 @@ int timeout_passed(
         /* Invalid timeout number */
         return -1;
     }
+
+    return 0;
 }
 
 /**
@@ -179,12 +183,13 @@ int timeout_unset(
          * the clear all but the TIMEOUT_PASSED flag
          * for the specified timeout.
         */
+       int state = 0;
 #ifdef __LINUX__
         if (timeout >= 0)
-            const int state = __sync_fetch_and_and(&timeout_state[timeout], TIMEOUT_PASSED);
+            state = __sync_fetch_and_and(&timeouts.timeout_state[timeout], TIMEOUT_PASSED);
 #endif
 #ifdef __RIOT__
-        const int state = __sync_fetch_and_and(&timeout_state[timeout], TIMEOUT_PASSED);
+        state = __sync_fetch_and_and(&timeouts.timeout_state[timeout], TIMEOUT_PASSED);
 #endif
 
         /* Invalid timeout? */
@@ -203,6 +208,8 @@ int timeout_unset(
         /* Invalid timeout */
         return -1;
     }
+
+    return 0;
 }
 
 #ifdef __LINUX__
@@ -235,7 +242,7 @@ uint32_t timeout_set(const uint32_t seconds)
         return -1;
 #endif
 #ifdef __RIOT__
-    now = ztimer_now(clock);
+    now = ztimer_now(CLOCK);
 #endif
 
     /* and calculate when the timeout should be fired. */
@@ -244,7 +251,7 @@ uint32_t timeout_set(const uint32_t seconds)
 
     /* Find an unused timeout. */
     for (timeout = 0; timeout < TIMEOUTS; timeout++)
-        if(!(__sync_fetch_and_or(&timeout_state[timeout], TIMEOUT_USED) & TIMEOUT_USED))
+        if(!(__sync_fetch_and_or(&timeouts.timeout_state[timeout], TIMEOUT_USED) & TIMEOUT_USED))
             break;
     
     /* No unused timeouts? */
@@ -252,24 +259,24 @@ uint32_t timeout_set(const uint32_t seconds)
         return -1;
 
     /* Clear all but the TIMEOUT_USED from the state, */
-    __sync_and_and_fetch(&timeout_state[timeout], TIMEOUT_USED);
+    __sync_and_and_fetch(&timeouts.timeout_state[timeout], TIMEOUT_USED);
 
     /* update the timeout details, */
-    timeout_time[timeout] = then;
+    timeouts.timeout_time[timeout] = then;
 
     /* and mark the timeout armeable. */
-    __sync_or_and_fetch(&timeout_state[timeout], TIMEOUT_ARMED);
+    __sync_or_and_fetch(&timeouts.timeout_state[timeout], TIMEOUT_ARMED);
 
     /* How long till the next timeout? */
     next = seconds;
     for (i = 0; i < TIMEOUTS; i++)
-        if ((__sync_fetch_and_or(&timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
+        if ((__sync_fetch_and_or(&timeouts.timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
         {
 #ifdef __LINUX__
-            const double secs = timespec_diff(timeout_time[i], now);
+            const double secs = timespec_diff(timeouts.timeout_time[i], now);
 #endif
 #ifdef __RIOT__
-            const uint32_t secs = timespec_diff(timeout_time[i], now);
+            const uint32_t secs = timespec_diff(timeouts.timeout_time[i], now);
 #endif
             if (secs >= 0.0 && secs < next)
                 next = secs;
@@ -287,15 +294,15 @@ uint32_t timeout_set(const uint32_t seconds)
 
     /* and arm the timer. */
 #ifdef __LINUX__
-    if (timer_settime(timeout_timer, 0, &when, NULL))
+    if (timer_settime(timeouts.timeout_timer, 0, &when, NULL))
     {
         /* Failed. */
-        __sync_and_and_fetch(&timeout_state[timeout], 0);
+        __sync_and_and_fetch(&timeouts.timeout_state[timeout], 0);
         return -1;
     }
 #endif
 #ifdef __RIOT__
-    ztimer_set(clock, &timeout_timer, when);
+    ztimer_set(CLOCK, &timeouts.timeout_timer, when);
 #endif
 
     /* Return timeout number. */
@@ -335,13 +342,13 @@ void timeout_signal_handler(
 
     /* Check all the timeouts that are used and armed, but not passed yet. */
     for (i = 0; i < TIMEOUTS; i++)
-        if ((__sync_or_and_fetch(&timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
+        if ((__sync_or_and_fetch(&timeouts.timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
         {
-            const double seconds = timespec_diff(timeout_time[i], now);
+            const double seconds = timespec_diff(timeouts.timeout_time[i], now);
             if (seconds <= 0.0)
             {
                 /* Timeout [i] fires! */
-                __sync_or_and_fetch(&timeout_state[i], TIMEOUT_PASSED);
+                __sync_or_and_fetch(&timeouts.timeout_state[i], TIMEOUT_PASSED);
             }
             else
             if (next <= 0.0 || seconds < next)
@@ -359,7 +366,7 @@ void timeout_signal_handler(
    timespec_set(&when.it_value, next);
    when.it_interval.tv_sec = 0;
    when.it_interval.tv_nsec = 0L;
-   timer_settime(timeout_timer, 0, &when, NULL);
+   timer_settime(timeouts.timeout_timer, 0, &when, NULL);
 
    /* Restore errno. */
    errno = saved_errno;
@@ -371,20 +378,20 @@ void timeout_signal_handler(
     uint32_t    i;
     uint32_t    next;
 
-    now = ztimer_now(clock);
+    now = ztimer_now(CLOCK);
 
     /* Assume no next timeout. */
     next = 0.0;
 
     /* Check all the timeouts that are used and armed, but not passed yet. */
     for (i = 0; i < TIMEOUTS; i++)
-        if ((__sync_or_and_fetch(&timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
+        if ((__sync_or_and_fetch(&timeouts.timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
         {
-            const uint32_t seconds = timespec_diff(timeout_time[i], now);
+            const uint32_t seconds = timespec_diff(timeouts.timeout_time[i], now);
             if (seconds <= 0.0)
             {
                 /* Timeout [i] fires! */
-                __sync_or_and_fetch(&timeout_state[i], TIMEOUT_PASSED);
+                __sync_or_and_fetch(&timeouts.timeout_state[i], TIMEOUT_PASSED);
             }
             else
             if (next <= 0.0 || seconds < next)
@@ -400,21 +407,16 @@ void timeout_signal_handler(
      * The timer is one-shot; it_interval == 0.
     */
    timespec_set(&when, next);
-   ztimer_set(clock, &timeout_timer, when);
+   ztimer_set(CLOCK, &timeouts.timeout_timer, when);
 #endif
 }
 
-int timeout_init(
-#ifdef __LINUX__
-void)
-#endif
-#ifdef __RIOT__
-ztimer_clock_t *clockA)
-#endif
+int timeout_init(void)
 {
+    memset(&timeouts, 0, sizeof(timeout_t));
 #ifdef __LINUX__
     struct sigaction    act;
-    struct sigevetn     evt;
+    struct sigevent     evt;
     struct itimerspec   arm;
 
     /* Install timeout signal_handler. */
@@ -427,8 +429,8 @@ ztimer_clock_t *clockA)
     /* Create a timer that will signal to timeout_signal_handler. */
     evt.sigev_notify = SIGEV_SIGNAL;
     evt.sigev_signo = TIMEOUT_SIGNAL;
-    evt.sifev_value.sival_ptr = NULL;
-    if (timer_create(CLOCK_REALTIME, &evt, &timeout_timer))
+    evt.sigev_value.sival_ptr = NULL;
+    if (timer_create(CLOCK_REALTIME, &evt, &timeouts.timeout_timer))
         return errno;
 
     /* Disarm the timeout timer (for now). */
@@ -436,21 +438,20 @@ ztimer_clock_t *clockA)
     arm.it_value.tv_nsec = 0L;
     arm.it_interval.tv_sec = 0;
     arm.it_interval.tv_nsec = 0L;
-    if (timer_settime(timeout_timer, 0, &arm, NULL))
+    if (timer_settime(timeouts.timeout_timer, 0, &arm, NULL))
         return errno;
 #endif
 #ifdef __RIOT__
     /* Initialize board-specific ztimer configuration */
     ztimer_init();
-    clock = clockA;
 
     /* Set callback and arguments */
-    timeout_timer.callback = timeout_signal_handler;
-    timeout_timer.arg = NULL;
+    timeouts.timeout_timer.callback = timeout_signal_handler;
+    timeouts.timeout_timer.arg = NULL;
 
     /* Disarm timer */
     uint32_t arm = 0;
-    ztimer_set(clock, &timeout_timer, arm);
+    ztimer_set(CLOCK, &timeouts.timeout_timer, arm);
 #endif
     return 0;
 }
@@ -473,11 +474,12 @@ int timeout_done(void)
     arm.it_value.tv_nsec = 0L;
     arm.it_interval.tv_sec = 0;
     arm.it_interval.tv_nsec = 0L;
-    if (timer_settime(timeout_timer, 0, &arm, NULL))
+    if (timer_settime(timeouts.timeout_timer, 0, &arm, NULL))
         if (!errors) errors = errno;
 
     /* Destroy the timer itself. */
-    if (timer_delete(timeout_timer))
+    
+    if (timer_delete(timeouts.timeout_timer))
         if (!errors) errors = errno;
     
     /* If any error ocurred, set errno. */
@@ -488,7 +490,7 @@ int timeout_done(void)
     return errors;
 #endif
 #ifdef __RIOT__
-    ztimer_remove(clock, &timeout_timer);
+    ztimer_remove(CLOCK, &timeouts.timeout_timer);
     return 0;
 #endif
 }
