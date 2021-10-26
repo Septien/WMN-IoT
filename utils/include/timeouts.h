@@ -4,8 +4,8 @@
  * https://stackoverflow.com/questions/12764771/timers-in-linux-in-c
 */
 
-#ifndef TIMERS_H
-#define TIMERS_H
+#ifndef TIMEOUTS_H
+#define TIMEOUTS_H
 
 #ifdef __LINUX__
 #include <unistd.h>
@@ -115,4 +115,4 @@ int timeout_init(void);
 
 int timeout_done(void);
 
-#endif      // TIMERS_H
+#endif      // TIMEOUTS_H

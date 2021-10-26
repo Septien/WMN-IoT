@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "timers.h"
+#include "timeouts.h"
 
 #ifdef __RIOT__
 #include "ztimer.h"
