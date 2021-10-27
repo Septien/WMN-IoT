@@ -27,12 +27,12 @@ endif
 $(info $$SRCD is [$(SRCD)])
 
 # sources
-SRC := $(utils_current_dir)/timers.c
+SRC := $(utils_current_dir)/timeouts.c
 ifdef TEST
 endif
 $(info $$SRC is [$(SRC)])
 
-DEPS_U := $(INC_UTILS)/timers.h
+DEPS_U := $(INC_UTILS)/timeouts.h
 ifdef TEST
 endif
 
@@ -40,7 +40,7 @@ OBJU_DIR := $(utils_current_dir)/obj
 ifdef TEST
 endif
 
-OBJSU := $(OBJU_DIR)/timers.o
+OBJSU := $(OBJU_DIR)/timeouts.o
 ifdef TEST
 endif
 
