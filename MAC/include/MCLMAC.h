@@ -25,7 +25,7 @@
 #endif
 
 #ifdef __RIOT__
-#include "config.h"
+//#include "config.h"
 #include "ztimer.h"
 #include "sx127x.h"
 #endif
