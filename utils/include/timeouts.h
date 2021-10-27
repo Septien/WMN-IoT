@@ -49,8 +49,6 @@ typedef struct timeout
 #endif
 }timeout_t;
 
-static timeout_t timeouts;
-
 #ifdef __LINUX__
 double timespec_diff(const struct timespec after, const struct timespec before);
 #endif

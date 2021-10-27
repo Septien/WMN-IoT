@@ -8,7 +8,7 @@
 #include "ztimer.h"
 #endif
 
-extern timeout_t timeouts;
+static timeout_t timeouts;
 
 /**
  * Return the number of seconds between before and after (after - before).
