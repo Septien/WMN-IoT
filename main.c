@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #include <stdbool.h>
 
 #ifdef __RIOT__
@@ -14,6 +13,7 @@
 #endif
 
 #include "assert.h"
+#include "timeouts.h"
 #include "mclmac_tests.h"
 
 #ifdef __RIOT__
@@ -23,8 +23,9 @@
 
 int main(void)
 {
-#ifdef __LINUX__ 
     printf("Testing the MAC protocol (MCLMAC).\n");
+    timeout_init();
+#ifdef __LINUX__ 
     mac_tests();
 #endif
 #ifdef __RIOT__
