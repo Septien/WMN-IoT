@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <string.h>
 
-void initMACIn(MAC_Internals_t **mac)
+void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac)
 {
     *mac = NULL;
     MAC_Internals_t *macA;
@@ -19,18 +19,18 @@ void initMACIn(MAC_Internals_t **mac)
     *mac = macA;
 }
 
-void destroyMAC(MAC_Internals_t **mac)
+void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
 {
     assert(mac != NULL);
     assert(*mac != NULL);
 
     /* Destroy packets data structures */
     if ((*mac)->ctrlpkt != NULL)
-        destroyPacketCP(&(*mac)->ctrlpkt);
+        controlpacket_destroy(&(*mac)->ctrlpkt);
     if ((*mac)->cfpkt != NULL)
-        destroyPacketCF(&(*mac)->cfpkt);
+        cfpacket_destroy(&(*mac)->cfpkt);
     if ((*mac)->datapkt != NULL)
-        destroyPacketDP(&(*mac)->datapkt);
+        datapacket_destroy(&(*mac)->datapkt);
     
     // Destroy internal arrays
     if ((*mac)->channels != NULL)
@@ -41,7 +41,7 @@ void destroyMAC(MAC_Internals_t **mac)
     *mac = NULL;
 }
 
-void clearMAC(MAC_Internals_t *mac)
+void MAC_internals_clear(MAC_Internals_t *mac)
 {
     // Keep radio, it is not physically possible to change the radio once deployed.
     assert(mac != NULL);

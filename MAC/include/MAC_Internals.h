@@ -19,6 +19,9 @@
 #include "ControlPacket.h"
 #include "CFPacket.h"
 #include "DataPacket.h"
+#include "timeouts.h"
+#include "memory.h"
+#include "memory_macros.h"
 
 #ifdef __RIOT__
 #include "sx127x.h"
@@ -35,25 +38,25 @@ typedef struct MAC_Internals
     /* TODO: Add an implementation that runs the radio from a common computer */
 #endif
     // Packets send by the protocol
-    ControlPacket_t *ctrlpkt;
-    CFPacket_t *cfpkt;
-    DataPacket_t *datapkt;
+    ControlPacket_t SINGLE_POINTER ctrlpkt;
+    CFPacket_t      SINGLE_POINTER cfpkt;
+    DataPacket_t    SINGLE_POINTER datapkt;
     // Status variables
-    uint8_t numberChannels;
-    uint32_t *channels;
-    uint8_t nodeID;
-    uint8_t destinationID;
-    uint8_t selectedSlot;
-    uint32_t transmitChannel;
-    uint32_t receiveChannel;
-    uint32_t cfChannel;
-    uint8_t *slots;
-    uint8_t numberSlots;
-    uint8_t hopCount;
+    uint8_t         numberChannels;
+    uint32_t        *channels;
+    uint8_t         nodeID;
+    uint8_t         destinationID;
+    uint8_t         selectedSlot;
+    uint32_t        transmitChannel;
+    uint32_t        receiveChannel;
+    uint32_t        cfChannel;
+    ARRAY           slots;
+    uint8_t         numberSlots;
+    uint8_t         hopCount;
 }MAC_Internals_t;
 
-void initMACIn(MAC_Internals_t **mac);
-void clearMAC(MAC_Internals_t *mac);
-void destroyMAC(MAC_Internals_t **mac);
+void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac);
+void MAC_interals_clear(MAC_Internals_t *mac);
+void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac);
 
 #endif  // MAC_INTERNALS_H
