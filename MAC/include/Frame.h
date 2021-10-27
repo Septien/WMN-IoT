@@ -22,32 +22,36 @@
 #include <sys/time.h>
 #endif
 
-#ifdef __RIOT__
-#include "ztimer.h"
-#endif
+#include "timeouts.h"
+#include "memory.h"
+#include "memory_macros.h"
 
 typedef struct Frame
 {
-    uint32_t currentFrame;
-    uint8_t currentSlot;
-    uint8_t slotsNumber;
-    uint8_t currentCFSlot;
-    uint8_t cfSlotsNumber;
+    uint32_t current_frame;
+    uint8_t current_slot;
+    uint8_t slots_number;
+    uint8_t current_cf_slot;
+    uint8_t cf_slots_number;
 #ifdef __LINUX__
-    // linux timer values
-    struct itimerval frameDuration;
-    struct itimerval slotDuration;
-    struct itimerval cfDuration;
+    // Tiemr descriptor (identifier)
+    int frame_timer;
+    int slot_timer;
+    int cf_timer;
+    // Timer duration
+    double frame_duration;
+    double slot_duration;
+    double cf_duration;
 #endif
 #ifdef __RIOT__
-    // RIOT timers
-    ztimer_t frameTimer;
-    ztimer_t slotTimer;
-    ztimer_t sfTimer;
-    // RIOT timer values
-    uint32_t frameDuration;
-    uint32_t slotDuration;
-    uint32_t cfDuration;
+    // Tiemr descriptor (identifier)
+    uint32_t frame_timer;
+    uint32_t slot_timer;
+    uint32_t cf_timer;
+    // Timer duration
+    uint32_t frame_duration;
+    uint32_t slot_duration;
+    uint32_t cf_duration;
 #endif
 }Frame_t;
 
