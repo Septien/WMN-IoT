@@ -442,9 +442,6 @@ int timeout_init(void)
         return errno;
 #endif
 #ifdef __RIOT__
-    /* Initialize board-specific ztimer configuration */
-    ztimer_init();
-
     /* Set callback and arguments */
     timeouts.timeout_timer.callback = timeout_signal_handler;
     timeouts.timeout_timer.arg = NULL;
