@@ -39,7 +39,7 @@ def main():
     cmd = "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output/memcheck-output-riot.txt --track-origins=yes --fullpath-after=/home/phantom/CP_Systems/RTOS/RIOT/ --read-var-info=yes /home/phantom/CP_Systems/Implementations/WMNLoRa/bin/native/main_test.elf /dev/ttyACM0"
     os.system(cmd)
     # Valrgind with massif
-    cmd = "valgrind --tool=massif --stacks=yes --massif-out-file=valgrind-output/massif-output-riot.txt bin/linux-x86_64/wmnlora --fullpath-after=/home/phantom/CP_Systems/RTOS/RIOT/ --read-var-info=yes /home/phantom/CP_Systems/Implementations/WMNLoRa/bin/native/main_test.elf /dev/ttyACM0"
+    cmd = "valgrind --tool=massif --stacks=yes --massif-out-file=valgrind-output/massif-output-riot.txt --fullpath-after=/home/phantom/CP_Systems/RTOS/RIOT/ --read-var-info=yes /home/phantom/CP_Systems/Implementations/WMNLoRa/bin/native/main_test.elf /dev/ttyACM0"
     os.system(cmd)
     # Compile for the target board, flash, and execute
     cmd = "BOARD=esp32-wroom-32 make all flash term RIOT=1 TEST=1 PORT=/dev/ttyUSB0"
