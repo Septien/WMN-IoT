@@ -7,68 +7,92 @@
 
 #include "MAC_Internals.h"
 
-#if 0
-void testinitMACIn(void)
+void test_MAC_internals_init(void)
 {
-    MAC_Internals_t *mac;
-    initMACIn(&mac);
+    MAC_Internals_t SINGLE_POINTER mac;
+    MAC_internals_init(&mac);
 
-    assert(mac != NULL);
     // Create these packets until necessary
+#ifdef __LINUX__
+    assert(mac != NULL);
     assert(mac->cfpkt == NULL);
     assert(mac->datapkt == NULL);
     assert(mac->cfpkt == NULL);
-    assert(mac->nodeID == 1);
-    assert(mac->destinationID == 0);
+#endif
+    assert(ARROW(mac)nodeID == 1);
+    assert(ARROW(mac)destinationID == 0);
 
-    destroyMAC(&mac);
+    MAC_internals_destroy(&mac);
 }
 
-void testdestroyMAC(void)
+void test_MAC_internals_destroy(void)
 {
-    MAC_Internals_t *mac;
-    initMACIn(&mac);
-    mac->channels = (uint32_t *)malloc(32 * sizeof(uint32_t));
+    MAC_Internals_t SINGLE_POINTER mac;
+    MAC_internals_init(&mac);
+#ifdef __LINUX__
+    mac->channels = (uint8_t *)malloc(128 * sizeof(uint8_t));
     mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&mac.channels, 128);
+    create_array(&mac.slots, 32);
+#endif
 
-    destroyMAC(&mac);
+    MAC_internals_destroy(&mac);
+#ifdef __LINUX__
     assert(mac == NULL);
+#endif
+#ifdef __RIOT__
+    assert(mac.channels.size == 0);
+    assert(mac.slots.size == 0);
+#endif
 }
 
-void testclearMAC(void)
+void test_MAC_internals_clear(void)
 {
-    MAC_Internals_t *mac;
-    initMACIn(&mac);
-    mac->channels = (uint32_t *)malloc(32 * sizeof(uint32_t));
+    MAC_Internals_t SINGLE_POINTER mac;
+    MAC_internals_init(&mac);
+#ifdef __LINUX__
+    mac->channels = (uint8_t *)malloc(4 * 32 * sizeof(uint32_t));
     mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&mac.channels, 4 * 32);
+    create_array(&mac.slots, 32);
+#endif
 
-    clearMAC(mac);
+    MAC_internals_clear(REFERENCE mac);
+#ifdef __LINUX__
     assert(mac->channels == NULL);
     assert(mac->slots == NULL);
-    assert(mac->numberChannels == 0);
-    assert(mac->numberSlots == 0);
-    assert(mac->nodeID == 0);
-    assert(mac->selectedSlot == 0);
-    assert(mac->transmitChannel == 0);
-    assert(mac->cfChannel == 0);
-    assert(mac->cfChannel == 0);
-    assert(mac->hopCount == 0);
+#endif
+#ifdef __RIOT__
+    assert(mac.channels.size == 0);
+    assert(mac.slots.size == 0);
+#endif
+    assert(ARROW(mac)numberChannels == 0);
+    assert(ARROW(mac)numberSlots == 0);
+    assert(ARROW(mac)nodeID == 0);
+    assert(ARROW(mac)selectedSlot == 0);
+    assert(ARROW(mac)transmitChannel == 0);
+    assert(ARROW(mac)cfChannel == 0);
+    assert(ARROW(mac)cfChannel == 0);
+    assert(ARROW(mac)hopCount == 0);
 
-    destroyMAC(&mac);
+    MAC_internals_destroy(&mac);
 }
 
 void executeTestsMACInternals(void)
 {
-    printf("Testing initMACIn function.\n");
-    testinitMACIn();
-    printf("Test passed.\n");
-    
-    printf("Testing destroyMAC function.\n");
-    testdestroyMAC();
+    printf("Testing MAC_internals_init function.\n");
+    test_MAC_internals_init();
     printf("Test passed.\n");
 
-    printf("Testing clearMAC function.\n");
-    testclearMAC();
+    printf("Testing MAC_internals_destroy function.\n");
+    test_MAC_internals_destroy();
+    printf("Test passed.\n");
+
+    printf("Testing MAC_internals_clear function.\n");
+    test_MAC_internals_clear();
     printf("Test passed.\n");
 }
-#endif

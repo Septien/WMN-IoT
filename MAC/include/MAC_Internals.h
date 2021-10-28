@@ -43,7 +43,7 @@ typedef struct MAC_Internals
     DataPacket_t    SINGLE_POINTER datapkt;
     // Status variables
     uint8_t         numberChannels;
-    uint32_t        *channels;
+    ARRAY           channels;
     uint8_t         nodeID;
     uint8_t         destinationID;
     uint8_t         selectedSlot;
@@ -56,7 +56,7 @@ typedef struct MAC_Internals
 }MAC_Internals_t;
 
 void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac);
-void MAC_interals_clear(MAC_Internals_t *mac);
+void MAC_internals_clear(MAC_Internals_t *mac);
 void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac);
 
 #endif  // MAC_INTERNALS_H
