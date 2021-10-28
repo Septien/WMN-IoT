@@ -17,7 +17,7 @@ def main():
     cmd = "make all DEBUG=1 LINUX=1 TEST=1"
     os.system(cmd)
     # Static analysis
-    cmd = "cppcheck . -D__LINUX__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output.txt"
+    cmd = "cppcheck . -D__LINUX__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --includes-file=utils/include --includes-file=utils/include/testsinclude --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output.txt"
     os.system(cmd)
     # Memory leaks check with valgrin
     cmd = "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output/memcheck-output.txt bin/linux-x86_64/wmnlora"
@@ -30,7 +30,7 @@ def main():
     cmd = "make all RIOT=1 TEST=1"
     os.system(cmd)
     # Static code analysis
-    cmd = "cppcheck . -D__RIOT__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output_riot.txt"
+    cmd = "cppcheck . -D__RIOT__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --includes-file=utils/include --includes-file=utils/include/testsinclude --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output_riot.txt"
     os.system(cmd)
     # Compile codee for using with valgrind
     cmd = "make -B clean all-valgrind RIOT=1 TEST=1"
