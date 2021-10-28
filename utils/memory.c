@@ -3,7 +3,7 @@
 #ifdef __RIOT__
 
 static memory_block_t   MEMORY[MAX_NUMBER_BLOCKS];
-static memarray_t       storage;
+extern memarray_t       storage;
 
 int memory_init(void)
 {
