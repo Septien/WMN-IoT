@@ -44,8 +44,8 @@ typedef struct MAC_Internals
     // Status variables
     uint8_t         numberChannels;
     ARRAY           channels;
-    uint8_t         nodeID;
-    uint8_t         destinationID;
+    uint16_t         nodeID;
+    uint16_t         destinationID;
     uint8_t         selectedSlot;
     uint32_t        transmitChannel;
     uint32_t        receiveChannel;
