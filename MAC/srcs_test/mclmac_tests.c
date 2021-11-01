@@ -13,12 +13,13 @@
 #include "CFPacket.h"
 #include "DataPacket.h"
 #include "MAC_Internals.h"
+#include "MCLMAC.h"
 
 #include "ControlPacket_Tests.h"
 #include "CFPacket_Tests.h"
 #include "DataPacket_Tests.h"
 #include "MAC_Internals_Tests.h"
-//#include "MCLMAC_Tests.h"
+#include "MCLMAC_Tests.h"
 
 void mac_tests(void)
 {
@@ -34,8 +35,8 @@ void mac_tests(void)
     printf("\nTesting the implementation of the MAC_Internals structure.\n");
     executeTestsMACInternals();
 
-    /*printf("\nTesting the implementation of the MCLMAC structure.\n");
-    executeTestsMCLMAC();*/
+    printf("\nTesting the implementation of the MCLMAC structure.\n");
+    executeTestsMCLMAC();
 
     return;
 }
