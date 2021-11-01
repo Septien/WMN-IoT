@@ -22,7 +22,7 @@
 
 typedef struct 
 {
-    uint8_t     nodeID;
+    uint16_t     nodeID;
     ARRAY       occupiedSlots;
     uint8_t     collisionSlot;
     uint32_t    collisionFrequency;
@@ -35,10 +35,10 @@ typedef struct
 
 void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt, uint8_t nSlots, uint8_t nChannels);
 void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt);
-void controlpacket_create(ControlPacket_t *pkt, uint8_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack);
+void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack);
 void controlpacket_clear(ControlPacket_t *pkt);
-void controlpacket_set_nodeID(ControlPacket_t *pkt, uint8_t nodeID);
-uint8_t controlpacket_get_nodeID(ControlPacket_t *pkt);
+void controlpacket_set_nodeID(ControlPacket_t *pkt, uint16_t nodeID);
+uint16_t controlpacket_get_nodeID(ControlPacket_t *pkt);
 void controlpacket_set_collision_slot(ControlPacket_t *pkt, uint8_t slot);
 uint8_t controlpacket_get_collision_slot(ControlPacket_t *pkt);
 void controlpacket_set_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots);

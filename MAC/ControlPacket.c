@@ -54,7 +54,7 @@ void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
 }
 
 // Fill the packet with the given parameters
-void controlpacket_create(ControlPacket_t *pkt, uint8_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, 
+void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, 
                           uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack)
 {
     assert(pkt != NULL);
@@ -91,14 +91,14 @@ void controlpacket_clear(ControlPacket_t *pkt)
     memset(pkt, 0, sizeof(ControlPacket_t));
 }
 
-void controlpacket_set_nodeID(ControlPacket_t *pkt, uint8_t nodeID)
+void controlpacket_set_nodeID(ControlPacket_t *pkt, uint16_t nodeID)
 {
     assert(pkt != NULL);
 
     pkt->nodeID = nodeID;
 }
 
-uint8_t controlpacket_get_nodeID(ControlPacket_t *pkt)
+uint16_t controlpacket_get_nodeID(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
     
@@ -230,24 +230,25 @@ void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, s
 #endif
 
     // Copy the fields
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->nodeID, 0);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->nodeID & 0xff00) >> 8, 0);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->nodeID & 0x00ff),      1);
     int i;
     for (i = 0; i < bytes; i++)
     {
         uint8_t element = READ_ARRAY(REFERENCE pkt->occupiedSlots, i);
-        WRITE_ARRAY(SINGLE_POINTER byteStr, element, i + 1);
+        WRITE_ARRAY(SINGLE_POINTER byteStr, element, i + 2);
     }
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->collisionSlot,                            i + 2);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0xff000000) >> 24,  i + 3);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x00ff0000) >> 16,  i + 4);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x0000ff00) >> 8,   i + 5);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x000000ff),        i + 6);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->hopCount,                                 i + 7);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0xff000000) >> 24,         i + 8);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x00ff0000) >> 16,         i + 9);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x0000ff00) >> 8,          i + 10);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x000000ff),               i + 11);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ack,                                      i + 12);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->collisionSlot,                            i + 3);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0xff000000) >> 24,  i + 4);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x00ff0000) >> 16,  i + 5);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x0000ff00) >> 8,   i + 6);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x000000ff),        i + 7);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->hopCount,                                 i + 8);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0xff000000) >> 24,         i + 9);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x00ff0000) >> 16,         i + 10);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x0000ff00) >> 8,          i + 11);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x000000ff),               i + 12);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ack,                                      i + 13);
 
     *size = size1;
 }
@@ -265,24 +266,24 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     uint8_t bytes = get_number_bytes(pkt->_nSlots * pkt->_nChannels);
     
     // Fill the content of the packet
-    pkt->nodeID = READ_ARRAY(SINGLE_POINTER byteString, 0);
+    pkt->nodeID = (READ_ARRAY(SINGLE_POINTER byteString, 0) << 8) | READ_ARRAY(SINGLE_POINTER byteString, 1);
     for (int i = 0; i < bytes; i++)
     {
         uint8_t element;
-        element = READ_ARRAY(SINGLE_POINTER byteString, i + 1);
+        element = READ_ARRAY(SINGLE_POINTER byteString, i + 2);
         WRITE_ARRAY(REFERENCE pkt->occupiedSlots, element, i);
     }
-    pkt->collisionSlot = READ_ARRAY(SINGLE_POINTER byteString, bytes + 2);
+    pkt->collisionSlot = READ_ARRAY(SINGLE_POINTER byteString, bytes + 3);
     pkt->collisionFrequency = 0;
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 3) << 24; 
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 4) << 16; 
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 5) << 8; 
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 6); 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 4) << 24; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 5) << 16; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 6) << 8; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 7); 
     pkt->networkTime = 0;
-    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 7) << 24;
-    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 8) << 16;
-    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 9) << 8;
-    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 10);
-    pkt->hopCount = READ_ARRAY(SINGLE_POINTER byteString, bytes + 11);
-    pkt->ack = READ_ARRAY(SINGLE_POINTER byteString, bytes + 12);
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 8) << 24;
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 9) << 16;
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 10) << 8;
+    pkt->networkTime |= READ_ARRAY(SINGLE_POINTER byteString, bytes + 11);
+    pkt->hopCount = READ_ARRAY(SINGLE_POINTER byteString, bytes + 12);
+    pkt->ack = READ_ARRAY(SINGLE_POINTER byteString, bytes + 13);
 }
