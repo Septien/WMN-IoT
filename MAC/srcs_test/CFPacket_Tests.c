@@ -205,7 +205,7 @@ void test_cfpacket_construct_packet_from_bytestring(void)
     CFPacket_t SINGLE_POINTER cfpkt;
     cfpacket_init(&cfpkt);
 
-    size_t size = 2 * sizeof(uint8_t);
+    size_t size = 2 * sizeof(uint16_t);
     size += sizeof(uint32_t);
 
     ARRAY byteString;
