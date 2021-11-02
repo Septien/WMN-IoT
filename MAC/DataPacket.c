@@ -198,7 +198,7 @@ void datapacket_clear_data(DataPacket_t *pkt)
 #endif
     assert(pkt->dataLength > 0);
 
-    for (int i = 0; i <pkt->dataLength; i++)
+    for (int i = 0; i < pkt->dataLength; i++)
         WRITE_ARRAY(REFERENCE pkt->data, 0, i);
 }
 
