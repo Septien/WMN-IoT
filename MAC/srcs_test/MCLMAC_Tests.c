@@ -809,10 +809,10 @@ void test_mclmac_increase_frame(void)
 
     MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t frame_number = rand() % ITERATIONS;
+    uint32_t frame_number = 0;
     mclmac_set_current_frame(REFERENCE mclmac, frame_number);
 
-    for (int i = 0; i < 1e6; i++)
+    for (int i = 0; i < ITERATIONS; i++)
     {
         mclmac_increase_frame(REFERENCE mclmac);
         frame_number++;
