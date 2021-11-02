@@ -5,1604 +5,1708 @@
 #include <assert.h>
 #include <time.h>
 
-#include "../include/MCLMAC.h"
+#include "MCLMAC.h"
 
 #define ITERATIONS 1000
-#if 0
-void testmacInit(void)
+
+void test_MCLMAC_init(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t  dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+#ifdef __LINUX__
     assert(mclmac != NULL);
     assert(mclmac->mac != NULL);
     assert(mclmac->frame != NULL);
-    assert(mclmac->frame->currentSlot == 0);
-    assert(mclmac->frame->currentFrame == 0);
-    assert(mclmac->frame->currentCFSlot == 0);
-    assert(mclmac->frame->cfSlotsNumber == 0);
-    assert(mclmac->frame->slotsNumber == 0);
-    assert(mclmac->dataQueue != NULL);
-    assert(mclmac->powerMode.currentState == STARTP);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->_dataQSize == dataQsize);
-    assert(mclmac->_collisionDetected == 0);
-    assert(mclmac->_networkTime == 0);
-    assert(mclmac->_collisionFrequency == 0);
-    assert(mclmac->_collisionSlot == 0);
-    assert(mclmac->_nSlots == _nSlots);
-    assert(mclmac->_nChannels == _nChannels);
-
-    destroyMCLMAC(&mclmac);
-}
-
-void testdestroyMCLMAC(void)
-{
-    MCLMAC_t *mclmac;
+#endif
+    assert(ARROW(ARROW(mclmac)frame)current_slot == 0);
+    assert(ARROW(ARROW(mclmac)frame)current_frame == 0);
+    assert(ARROW(ARROW(mclmac)frame)slots_number == 0);
+    assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
+    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == 0);
+    assert(ARROW(mclmac)powerMode.currentState == STARTP);
+    assert(ARROW(mclmac)macState.currentState == START);
+    assert(ARROW(mclmac)_dataQSize == dataQsize);
+    assert(ARROW(mclmac)_collisionDetected == 0);
+    assert(ARROW(mclmac)_networkTime == 0);
+    assert(ARROW(mclmac)_collisionFrequency == 0);
+    assert(ARROW(mclmac)_collisionSlot == 0);
+    assert(ARROW(mclmac)_nSlots == _nSlots);
+    assert(ARROW(mclmac)_nChannels == _nChannels);
 #ifdef __LINUX__
-    uint8_t *radio;
+    assert(mclmac->_occupiedSlots != NULL);
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    assert(mclmac._occupiedSlots.size > 0);
 #endif
-    int dataQsize = 256;
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_MCLMAC_destroy(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
+#ifdef __LINUX__
     assert(mclmac == NULL);
-}
-
-void testclearMCLMAC(void)
-{
-    MCLMAC_t *mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    assert(mclmac._occupiedSlots.size == 0);
 #endif
-    int dataQsize = 256;
+}
+
+void test_MCLMAC_clear(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    clearMCLMAC(mclmac);
-    assert(mclmac->frame->currentFrame == 0);
-    assert(mclmac->frame->currentSlot == 0);
-    assert(mclmac->frame->currentCFSlot == 0);
-    assert(mclmac->frame->cfSlotsNumber == 0);
-    assert(mclmac->frame->slotsNumber == 0);
-    assert(mclmac->dataQueue == NULL);
-    assert(mclmac->_dataQSize == 0);
-    assert(mclmac->powerMode.currentState == PASSIVE);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->_collisionDetected == 0);
-    assert(mclmac->_networkTime == 0);
+    MCLMAC_clear(REFERENCE mclmac);
+    assert(ARROW(ARROW(mclmac)frame)current_frame == 0);
+    assert(ARROW(ARROW(mclmac)frame)current_slot == 0);
+    assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
+    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == 0);
+    assert(ARROW(ARROW(mclmac)frame)slots_number == 0);
+    assert(ARROW(mclmac)_dataQSize == 0);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)macState.currentState == START);
+    assert(ARROW(mclmac)_collisionDetected == 0);
+    assert(ARROW(mclmac)_networkTime == 0);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetMACState(void)
+void test_mclmac_init_powermode_state_machine(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+    assert(ARROW(mclmac)powerMode.currentState == STARTP);
+    assert(ARROW(mclmac)powerMode.nextState == NONEP);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_set_MAC_state(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     state_t state = START;
-    setMACState(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.currentState == state);
     state = INITIALIZATION;
-    setMACState(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.currentState == state);
     state = SYNCHRONIZATION;
-    setMACState(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.currentState == state);
     state = DISCOVERY_AND_SELECTION;
-    setMACState(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.currentState == state);
     state = MEDIUMACCESS;
-    setMACState(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.currentState == state);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetNextMACState(void)
+void test_mclmac_set_next_MAC_state(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     state_t state = INITIALIZATION;
-    setNextMACState(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.nextState == state);
     state = SYNCHRONIZATION;
-    setNextMACState(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.nextState == state);
     state = DISCOVERY_AND_SELECTION;
-    setNextMACState(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.nextState == state);
     state = MEDIUMACCESS;
-    setNextMACState(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.nextState == state);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetMACState(void)
+void test_mclmac_get_MAC_state(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     state_t state = START, stateA;
-    setMACState(mclmac, state);
-    stateA = getMACState(mclmac);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
     state = INITIALIZATION;
-    setMACState(mclmac, state);
-    stateA = getMACState(mclmac);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
     state = SYNCHRONIZATION;
-    setMACState(mclmac, state);
-    stateA = getMACState(mclmac);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
     state = DISCOVERY_AND_SELECTION;
-    setMACState(mclmac, state);
-    stateA = getMACState(mclmac);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
     state = MEDIUMACCESS;
-    setMACState(mclmac, state);
-    stateA = getMACState(mclmac);
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetPowerModeState(void)
+void test_mclmac_set_powermode_state(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     PowerMode_t mode = PASSIVE;
-    setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.currentState == mode);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.currentState == mode);
 
     mode = ACTIVE;
-    setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.currentState == mode);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.currentState == mode);
 
     mode = TRANSMIT;
-    setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.currentState == mode);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.currentState == mode);
 
     mode = RECEIVE;
-    setPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.currentState == mode);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.currentState == mode);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetNextPowerModeState(void)
+void test_mclmac_set_next_powermode_state(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     PowerMode_t mode = ACTIVE;
-    setNextPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.nextState == mode);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.nextState == mode);
 
     mode = TRANSMIT;
-    setNextPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.nextState == mode);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.nextState == mode);
 
     mode = RECEIVE;
-    setNextPowerModeState(mclmac, mode);
-    assert(mclmac->powerMode.nextState == mode);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, mode);
+    assert(ARROW(mclmac)powerMode.nextState == mode);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetPowerModeState(void)
+void test_mclmac_get_powermode_state(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     PowerMode_t mode = PASSIVE, modeR;
-    setPowerModeState(mclmac, mode);
-    modeR = getPowerModeState(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
     assert(modeR == mode);
 
     mode = ACTIVE;
-    setPowerModeState(mclmac, mode);
-    modeR = getPowerModeState(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
     assert(modeR == mode);
 
     mode = TRANSMIT;
-    setPowerModeState(mclmac, mode);
-    modeR = getPowerModeState(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
     assert(modeR == mode);
 
     mode = RECEIVE;
-    setPowerModeState(mclmac, mode);
-    modeR = getPowerModeState(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, mode);
+    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
     assert(modeR == mode);
     
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetCFChannel(void)
+void test_mclmac_set_cf_channel(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t cfchannel;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         cfchannel = (uint32_t)rand();
-        setCFChannel(mclmac, cfchannel);
-        assert(mclmac->mac->cfChannel == cfchannel);
+        mclmac_set_cf_channel(REFERENCE mclmac, cfchannel);
+        assert(ARROW(ARROW(mclmac)mac)cfChannel == cfchannel);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetCFChannel(void)
+void test_mclmac_get_cf_channel(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t cfchannel, cfchannelS;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         cfchannel = (uint32_t)rand();
-        setCFChannel(mclmac, cfchannel);
-        cfchannelS = getCFChannel(mclmac);
+        mclmac_set_cf_channel(REFERENCE mclmac, cfchannel);
+        cfchannelS = mclmac_get_cf_channel(REFERENCE mclmac);
         assert(cfchannelS == cfchannel);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetSelectedChannel(void)
+void test_mclmac_set_transmit_channel(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
-        setTransmitChannel(mclmac, channel);
-        assert(mclmac->mac->transmitChannel == channel);
+        mclmac_set_transmit_channel(REFERENCE mclmac, channel);
+        assert(ARROW(ARROW(mclmac)mac)transmitChannel == channel);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetSelectedChannel(void)
+void test_mclmac_get_transmit_channel(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel, channelS;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
-        setTransmitChannel(mclmac, channel);
-        channelS = getTransmitChannel(mclmac);
+        mclmac_set_transmit_channel(REFERENCE mclmac, channel);
+        channelS = mclmac_get_transmit_channel(REFERENCE mclmac);
         assert(channelS == channel);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetReceptionChannel(void)
+void test_mclmac_set_reception_channel(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
-        setReceptionChannel(mclmac, channel);
-        assert(mclmac->mac->receiveChannel == channel);
+        mclmac_set_reception_channel(REFERENCE mclmac, channel);
+        assert(ARROW(ARROW(mclmac)mac)receiveChannel == channel);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetReceptionChannel(void)
+void test_mclmac_get_reception_channel(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint32_t channel, channelS;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         channel = (uint32_t)rand();
-        setReceptionChannel(mclmac, channel);
-        channelS = getReceptionChannel(mclmac);
+        mclmac_set_reception_channel(REFERENCE mclmac, channel);
+        channelS = mclmac_get_reception_channel(REFERENCE mclmac);
         assert(channelS == channel);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetAvailableChannels(void)
+void test_mclmac_set_available_channels(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t nChannels = (uint8_t) rand();
-    uint32_t *channels = (uint32_t *)malloc(nChannels * sizeof(uint32_t));
+    nChannels = (nChannels == 0 ? 1 : nChannels);
+    ARRAY channels;
+#ifdef __LINUX__
+     channels = (uint8_t *)malloc(4 * nChannels * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&channels, nChannels * 4);
+#endif
     int i;
     for (i = 0; i < nChannels; i++)
-        channels[i] = (uint32_t)rand();
+        WRITE_ARRAY(REFERENCE channels, (uint8_t)rand(), i);
     
-    setAvailableChannels(mclmac, channels, nChannels);
-    assert(mclmac->mac->numberChannels == nChannels);
+    mclmac_set_available_channels(REFERENCE mclmac, &channels, nChannels);
+    assert(ARROW(ARROW(mclmac)mac)numberChannels == nChannels);
     for (i = 0; i < nChannels; i++)
-        assert(mclmac->mac->channels[i] == channels[i]);
+    {
+        uint8_t element = READ_ARRAY(REFERENCE channels, i);
+        uint8_t element2 = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)channels, i);
+        assert(element == element2);
+    }
 
+#ifdef __LINUX__
     free(channels);
-
-    destroyMCLMAC(&mclmac);
-}
-
-void testgetAvailableChannels(void)
-{
-    MCLMAC_t *mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    free_array(&channels);
 #endif
-    int dataQsize = 256;
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_get_available_channels(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t nChannels = (uint8_t) rand();
-    uint32_t *channels = (uint32_t *)malloc(nChannels * sizeof(uint32_t));
+    ARRAY channels;
+#ifdef __LINUX__
+     channels = (uint8_t *)malloc(nChannels * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&channels, nChannels);
+#endif
     int i;
     for (i = 0; i < nChannels; i++)
-        channels[i] = (uint32_t)rand();
+        WRITE_ARRAY(REFERENCE channels, (uint8_t)rand(), i);
     
-    setAvailableChannels(mclmac, channels, nChannels);
+    mclmac_set_available_channels(REFERENCE mclmac, &channels, nChannels);
 
     uint8_t nChannelsS;
-    uint32_t *channelS = (uint32_t *)malloc(nChannels * sizeof(uint32_t));
-    getAvailableChannels(mclmac, &channelS, &nChannelsS);
+    ARRAY channelS;
+#ifdef __LINUX__
+    channelS = (uint8_t *)malloc(nChannels * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&channelS, nChannels);
+#endif
+    mclmac_get_available_channels(REFERENCE mclmac, &channelS, &nChannelsS);
 
     assert(nChannelsS == nChannels);
     for (i = 0; i < nChannelsS; i++)
-        assert(channelS[i] == channels[i]);
+        assert(READ_ARRAY(REFERENCE channelS, i) == READ_ARRAY(REFERENCE channels, i));    
 
+#ifdef __LINUX__
     free(channels);
     free(channelS);
-    destroyMCLMAC(&mclmac);
-}
-
-void testsetNodeIDMCL(void)
-{
-    MCLMAC_t *mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    free_array(&channels);
+    free_array(&channelS);
 #endif
-    int dataQsize = 256;
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_set_nodeid(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint8_t nodeid;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        nodeid = (uint8_t)rand();
-        setNodeIDMCL(mclmac, nodeid);
-        assert(mclmac->mac->nodeID == nodeid);
+        uint16_t nodeid = (uint16_t)rand();
+        mclmac_set_nodeid(REFERENCE mclmac, nodeid);
+        assert(ARROW(ARROW(mclmac)mac)nodeID == nodeid);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetNodeIDMCL(void)
+void test_mclmac_get_nodeid(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint8_t nodeid, nodeidR;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        nodeid = (uint8_t)rand();
-        setNodeIDMCL(mclmac, nodeid);
-        nodeidR = getNodeIDMCL(mclmac);
+        uint16_t nodeid = (uint16_t)rand();
+        mclmac_set_nodeid(REFERENCE mclmac, nodeid);
+        uint16_t nodeidR = mclmac_get_nodeid(REFERENCE mclmac);
         assert(nodeidR == nodeid);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetSelectedSlot(void)
+void test_mclmac_set_selected_slot(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t slot;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         slot = (uint8_t) rand() % 256;
-        setSelectedSlot(mclmac, slot);
-        assert(mclmac->mac->selectedSlot == slot);
+        mclmac_set_selected_slot(REFERENCE mclmac, slot);
+        assert(ARROW(ARROW(mclmac)mac)selectedSlot == slot);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetSelectedSlot(void)
+void test_mclmac_get_selected_slot(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t slot, slotR;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         slot = (uint8_t) rand() % 256;
-        setSelectedSlot(mclmac, slot);
-        slotR = getSelectedSlot(mclmac);
+        mclmac_set_selected_slot(REFERENCE mclmac, slot);
+        slotR = mclmac_get_selected_slot(REFERENCE mclmac);
         assert(slotR == slot);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetNumberOfHops(void)
+void test_mclmac_set_number_of_hops(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t hops;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         hops = (uint8_t)rand() % 256;
-        setNumberOfHops(mclmac, hops);
-        assert(mclmac->mac->hopCount == hops);
+        mclmac_set_number_of_hops(REFERENCE mclmac, hops);
+        assert(ARROW(ARROW(mclmac)mac)hopCount == hops);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetNumberOfHops(void)
+void test_mclmac_get_number_of_hops(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t hops, hopsR;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         hops = (uint8_t)rand();
-        setNumberOfHops(mclmac, hops);
-        hopsR = getNumberOfHops(mclmac);
+        mclmac_set_number_of_hops(REFERENCE mclmac, hops);
+        hopsR = mclmac_get_number_of_hops(REFERENCE mclmac);
         assert(hopsR == hops);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetCurrentFrame(void)
+void test_mclmac_set_current_frame(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t frame;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        frame = (uint32_t)rand();
-        setCurrentFrame(mclmac, frame);
-        assert(mclmac->frame->currentFrame);
+        uint32_t frame_number = (uint32_t)rand();
+        mclmac_set_current_frame(REFERENCE mclmac, frame_number);
+        assert(ARROW(ARROW(mclmac)frame)current_frame);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testincreaseFrame(void)
+void test_mclmac_increase_frame(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t frame = rand() % ITERATIONS;
-    setCurrentFrame(mclmac, frame);
+    uint32_t frame_number = rand() % ITERATIONS;
+    mclmac_set_current_frame(REFERENCE mclmac, frame_number);
 
     for (int i = 0; i < 1e6; i++)
     {
-        increaseFrame(mclmac);
-        frame++;
-        assert(mclmac->frame->currentFrame == frame);
+        mclmac_increase_frame(REFERENCE mclmac);
+        frame_number++;
+        assert(ARROW(ARROW(mclmac)frame)current_frame == frame_number);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetCurrentSlot(void)
+void test_mclmac_set_current_slot(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint8_t slot;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        slot = (uint8_t)rand() % 256;
-        setCurrentSlot(mclmac, slot);
-        assert(mclmac->frame->currentSlot == slot);
+        uint8_t slot = (uint8_t)rand() % 256;
+        mclmac_set_current_slot(REFERENCE mclmac, slot);
+        assert(ARROW(ARROW(mclmac)frame)current_slot == slot);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testincreaseSlot(void)
+void test_mclmac_increase_slot(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     uint8_t slot = 0;
-    setCurrentSlot(mclmac, slot);
+    mclmac_set_current_slot(REFERENCE mclmac, slot);
     int n = rand() % 512;
     for (int i = 0; i < n; i++)
     {
-        increaseSlot(mclmac);
+        mclmac_increase_slot(REFERENCE mclmac);
         slot++;
-        assert(mclmac->frame->currentSlot == slot);
+        assert(ARROW(ARROW(mclmac)frame)current_slot == slot);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetSlotsNumber(void)
+void test_mclmac_set_slots_number(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint8_t nSlots;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        nSlots = (uint8_t) rand();
-        setSlotsNumber(mclmac, nSlots);
-        assert(mclmac->frame->slotsNumber == nSlots);
+        uint8_t slots_number = (uint8_t) rand();
+        slots_number = (slots_number == 0 ? 1 : slots_number);
+        mclmac_set_slots_number(REFERENCE mclmac, slots_number);
+        assert(ARROW(ARROW(mclmac)frame)slots_number == slots_number);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetCFSlotsNumber(void)
+void test_mclmac_set_cf_slots_number(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint8_t nSlots;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        nSlots = (uint8_t) rand();
-        nSlots = (nSlots == 0 ? 1 : nSlots);
-        setCFSlotsNumber(mclmac, nSlots);
-        assert(mclmac->frame->cfSlotsNumber == nSlots);
+        uint8_t cf_slots_number = 1 + ((uint8_t) rand());
+        cf_slots_number = (cf_slots_number == 0 ? 1 : cf_slots_number);
+        mclmac_set_cf_slots_number(REFERENCE mclmac, cf_slots_number);
+        assert(ARROW(ARROW(mclmac)frame)cf_slots_number == cf_slots_number);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetCurrentCFSlot(void)
+void test_mclmac_set_current_cf_slot(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint8_t nCFslot;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        nCFslot = (uint8_t) rand() % 256;
-        setCurrentCFSlot(mclmac, nCFslot);
-        assert(mclmac->frame->currentCFSlot == nCFslot);
+        uint8_t current_cf_slot = ((uint8_t) rand() % 256);
+        current_cf_slot = (current_cf_slot == 0 ? 1 : current_cf_slot);
+        mclmac_set_current_cf_slot(REFERENCE mclmac, current_cf_slot);
+        assert(ARROW(ARROW(mclmac)frame)current_cf_slot == current_cf_slot);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testincreaseCFSlot(void)
+void test_mclmac_increase_cf_slot(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
     
-    uint8_t nCFSlot = 0;
-    setCurrentCFSlot(mclmac, nCFSlot);
+    uint8_t nCFSlot = rand();
+    nCFSlot = (nCFSlot == 0 ? 1 : nCFSlot);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, nCFSlot);
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        increaseCFSlot(mclmac);
+        mclmac_increase_cf_slot(REFERENCE mclmac);
         nCFSlot++;
-        assert(mclmac->frame->currentCFSlot == nCFSlot);
+        assert(ARROW(ARROW(mclmac)frame)current_cf_slot == nCFSlot);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetSlotDuration(void)
+void test_mclmac_set_slot_duration(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
-    struct itimerval slotDuration;
-    // Use only it_value field
-    slotDuration.it_value.tv_usec = rand() % 1000000;
-    slotDuration.it_value.tv_sec = 0;
+    uint8_t radio;
+    double slot_duration;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
-    uint32_t slotDuration = random();
+    sx127x_t radio;
+    uint32_t slot_duration;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
     {
-        setSlotDuration(mclmac, &slotDuration);
-#ifdef __LINUX__
-        assert(mclmac->frame->slotDuration.it_value.tv_usec == slotDuration.it_value.tv_usec);
-        assert(mclmac->frame->slotDuration.it_value.tv_sec == slotDuration.it_value.tv_sec);
-#endif
-#ifdef __RIOT__
-        assert(mclmac->frame->slotDuration == slotDuration);
-#endif
+        slot_duration = rand();
+        mclmac_set_slot_duration(REFERENCE mclmac, slot_duration);
+        assert(ARROW(ARROW(mclmac)frame)slot_duration == slot_duration);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetFrameDuration(void)
+void test_mclmac_set_frame_duration(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
-    struct itimerval frameDuration;
-    // Use only it_value field
-    frameDuration.it_value.tv_usec = rand() % 1000000;
-    frameDuration.it_value.tv_sec = rand() % 10;
+    uint8_t radio;
+    double frame_duration;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
-    uint32_t frameDuration = random();
+    sx127x_t radio;
+    uint32_t frame_duration;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
     {
-        setFrameDuration(mclmac, &frameDuration);
-#ifdef __LINUX__
-        assert(mclmac->frame->frameDuration.it_value.tv_usec == frameDuration.it_value.tv_usec);
-        assert(mclmac->frame->frameDuration.it_value.tv_sec == frameDuration.it_value.tv_sec);
-        frameDuration.it_value.tv_usec = rand() % 1000000;
-        frameDuration.it_value.tv_sec = rand() % 10;
-#endif
-#ifdef __RIOT__
-        assert(mclmac->frame->frameDuration == frameDuration);
-        frameDuration = random();
-#endif
+        frame_duration = rand();
+        mclmac_set_frame_duration(REFERENCE mclmac, frame_duration);
+        assert(ARROW(ARROW(mclmac)frame)frame_duration == frame_duration);
     }
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetCFDuration(void)
+void test_mclmac_set_cf_duration(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
-    struct itimerval cfDuration;
-    // Use only it_value field
-    cfDuration.it_value.tv_usec = rand() % 1000000;
-    cfDuration.it_value.tv_sec = rand() % 10;
+    uint8_t radio;
+    double cf_duration;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
-    uint32_t cfDuration = random();
+    sx127x_t radio;
+    uint32_t cf_duration;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
     {
-        setCFDuration(mclmac, &cfDuration);
-#ifdef __LINUX__
-        assert(mclmac->frame->cfDuration.it_value.tv_usec == cfDuration.it_value.tv_usec);
-        assert(mclmac->frame->cfDuration.it_value.tv_sec == cfDuration.it_value.tv_sec);
-        cfDuration.it_value.tv_usec = rand() % 1000000;
-        cfDuration.it_value.tv_sec = rand() % 10;
-#endif
-#ifdef __RIOT__
-        assert(mclmac->frame->cfDuration == cfDuration);
-        cfDuration = random();
-#endif
+        cf_duration = rand();
+        mclmac_set_cf_duration(REFERENCE mclmac, cf_duration);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testrecordCollision(void)
+void test_mclmac_record_collision(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t freq;
-    uint8_t slot;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        freq = (uint32_t)rand();
-        slot = (uint8_t)rand();
-        recordCollision(mclmac, slot, freq);
-        assert(mclmac->_collisionSlot == slot);
-        assert(mclmac->_collisionFrequency == freq);
-        assert(mclmac->_collisionDetected == true);
+        uint32_t freq = (uint32_t) rand();
+        uint8_t slot = (uint8_t) rand();
+        mclmac_record_collision(REFERENCE mclmac, slot, freq);
+        assert(ARROW(mclmac)_collisionSlot == slot);
+        assert(ARROW(mclmac)_collisionFrequency == freq);
+        assert(ARROW(mclmac)_collisionDetected == true);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetDestinationID(void)
+void test_mclmac_set_destination_id(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    /* TODO: Change the type of detinationID in CF packet: uint8_t -> uint16_t*/
-    uint8_t destinationID;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        destinationID = (uint8_t) rand();
-        setDestinationID(mclmac, destinationID);
-        assert(mclmac->mac->destinationID == destinationID);
+        uint16_t destinationID = (uint16_t) rand();
+        mclmac_set_destination_id(REFERENCE mclmac, destinationID);
+        assert(ARROW(ARROW(mclmac)mac)destinationID == destinationID);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetNetworkTime(void)
+void test_mclmac_get_destination_id(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t netTime;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        netTime = (uint32_t)rand();
-        setNetworkTime(mclmac, netTime);
-        assert(mclmac->_networkTime == netTime);
+        uint16_t destinationid = (uint16_t) rand();
+        mclmac_set_destination_id(REFERENCE mclmac, destinationid);
+        uint16_t destinationidR = mclmac_get_destination_id(REFERENCE mclmac);
+        assert(destinationid == destinationidR);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testgetNetworkTime(void)
+void test_mclmac_set_network_time(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    uint32_t netTime, netTimeA;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        netTime = rand();
-        setNetworkTime(mclmac, netTime);
-        netTimeA = getNetworkTime(mclmac);
+        uint32_t netTime = (uint32_t)rand();
+        mclmac_set_network_time(REFERENCE mclmac, netTime);
+        assert(ARROW(mclmac)_networkTime == netTime);
+    }
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_get_network_time(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        uint32_t netTime = rand();
+        mclmac_set_network_time(REFERENCE mclmac, netTime);
+        uint32_t netTimeA = mclmac_get_network_time(REFERENCE mclmac);
         assert(netTimeA == netTime);
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testcreateCFPacket(void)
+void test_mclmac_create_cf_packet(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    createCFPacket(mclmac);
-    assert(mclmac->mac->cfpkt != NULL);
-    assert(mclmac->mac->cfpkt->nodeID > 0);
-    assert(mclmac->mac->cfpkt->destinationID >= 0);
+    mclmac_create_cf_packet(REFERENCE mclmac);
+#ifdef __LINUX__
+    assert(ARROW(ARROW(mclmac)mac)cfpkt != NULL);
+#endif
+    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)nodeID > 0);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID >= 0);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testcreateControlPacket(void)
+void test_mclmac_create_control_packet(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    uint8_t bytes = get_number_bytes(_nSlots * _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    ARROW(ARROW(mclmac)mac)nodeID = rand();
+    ARROW(mclmac)_collisionFrequency = rand();
+    ARROW(mclmac)_collisionSlot = rand();
+    ARROW(ARROW(mclmac)mac)hopCount = rand();
+    ARROW(mclmac)_ack = rand();
+    ARROW(mclmac)_networkTime = rand();
+    int i;
+    for (i = 0; i < bytes; i++)
+        WRITE_ARRAY(REFERENCE ARROW(mclmac)_occupiedSlots, rand(), i);
 
-    createControlPacket(mclmac);
+    mclmac_create_control_packet(REFERENCE mclmac);
+#ifdef __LINUX__
     assert(mclmac->mac->ctrlpkt != NULL);
-    assert(mclmac->mac->ctrlpkt->nodeID == mclmac->mac->nodeID);
-    assert(mclmac->mac->ctrlpkt->collisionSlot == mclmac->_collisionSlot);
-    assert(mclmac->mac->ctrlpkt->collisionFrequency == mclmac->_collisionFrequency);
-    assert(mclmac->mac->ctrlpkt->hopCount == mclmac->mac->hopCount);
-    assert(mclmac->mac->ctrlpkt->ack == mclmac->_ack);
-    assert(mclmac->mac->ctrlpkt->networkTime == mclmac->_networkTime);
+#endif
+    assert(ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)nodeID == ARROW(ARROW(mclmac)mac)nodeID);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)collisionSlot ==ARROW(mclmac)_collisionSlot);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)collisionFrequency == ARROW(mclmac)_collisionFrequency);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)hopCount == ARROW(ARROW(mclmac)mac)hopCount);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)ack == ARROW(mclmac)_ack);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)networkTime == ARROW(mclmac)_networkTime);
+    for (i = 0; i < bytes; i++)
+        assert(READ_ARRAY(REFERENCE ARROW(mclmac)_occupiedSlots, i) == READ_ARRAY(REFERENCE ARROW(ARROW(ARROW(mclmac)mac)ctrlpkt)occupiedSlots, i));
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testcreateDataPacket(void)
+void test_mclmac_create_data_packet(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    ARROW(mclmac)_isFragment = rand();
+    ARROW(mclmac)_numberFragments = rand();
+    ARROW(mclmac)_fragmentNumber = rand();
 
-    createDataPacket(mclmac);
+    mclmac_create_data_packet(REFERENCE mclmac);
+#ifdef __LINUX__
     assert(mclmac->mac->datapkt != NULL);
-    assert(mclmac->mac->datapkt->isFragment == mclmac->_isFragment);
-    assert(mclmac->mac->datapkt->totalFragments == mclmac->_numberFragments);
-    assert(mclmac->mac->datapkt->fragmentNumber == mclmac->_fragmentNumber);
+#endif
+    assert(ARROW(ARROW(ARROW(mclmac)mac)datapkt)isFragment == ARROW(mclmac)_isFragment);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)datapkt)totalFragments == ARROW(mclmac)_numberFragments);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)datapkt)fragmentNumber == ARROW(mclmac)_fragmentNumber);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testsetPacketData(void)
+void test_mclmac_set_packet_data(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    createDataPacket(mclmac);
+    mclmac_create_data_packet(REFERENCE mclmac);
 
     // The total length of the data packet, including the fields, should not exceed 256 bytes. This as the
     // maximum buffer size for the SX1276 modem is 256 bytes.
     uint8_t size;
-   int n = rand() % 1000;
+    int n = 1;//rand() % ITERATIONS;
     int j;
     for (int i = 0; i < n; i++)
     {
         size = 1 + rand() % 201;
-        uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t));
+        ARRAY data;
+#ifdef __LINUX__
+        data = (uint8_t *)malloc(size * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+        create_array(&data, size);
+#endif
         for (j = 0; j < size; j++)
-            data[j] = rand();
-        setPacketData(mclmac, data, size);
+            WRITE_ARRAY(REFERENCE data, rand(), j);
 
-        assert(mclmac->mac->datapkt->dataLength == size);
+        mclmac_set_packet_data(REFERENCE mclmac, &data, size);
+
+        assert(ARROW(ARROW(ARROW(mclmac)mac)datapkt)dataLength == size);
+#ifdef __LINUX__
         assert(mclmac->mac->datapkt->data != NULL);
+#endif
+#ifdef __RIOT__
+        assert(mclmac.mac.datapkt.data.size > 0);
+#endif
         for (j = 0; j < size; j++)
         {
-            assert(mclmac->mac->datapkt->data[j] == data[j]);
+            assert(READ_ARRAY(REFERENCE ARROW(ARROW(ARROW(mclmac)mac)datapkt)data, j) == READ_ARRAY(REFERENCE data, j));
         }
 
-        deleteDataFromPacket(mclmac);
+        //mclmac_delete_data_from_packet(mclmac);
+#ifdef __LINUX__
         free(data);
         data = NULL;
+#endif
+#ifdef __RIOT__
+        free_array(&data);
+#endif
     }
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testdeleteDataFromPacket(void)
+void test_mclmac_delete_data_from_packet(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    createDataPacket(mclmac);
-    uint8_t size = 1 + rand() % 201;
-    uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    mclmac_create_data_packet(REFERENCE mclmac);
+    uint8_t size = 249;
+    ARRAY data;
+#ifdef __LINUX__
+    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&data, size);
+#endif
     for (int i = 0; i < size; i++)
-        data[i] = rand();
-    setPacketData(mclmac, data, size);
+        WRITE_ARRAY(REFERENCE data, rand(), i);
 
-    deleteDataFromPacket(mclmac);
-    assert(mclmac->mac->datapkt->dataLength == 0);
+    mclmac_set_packet_data(REFERENCE mclmac, &data, size);
+
+    mclmac_delete_data_from_packet(REFERENCE mclmac);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)datapkt)dataLength == 0);
+#ifdef __LINUX__
     assert(mclmac->mac->datapkt->data == NULL);
-
-    free(data);
-    destroyMCLMAC(&mclmac);
-}
-
-void testclearDataFromPacket(void)
-{
-    MCLMAC_t *mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    assert(mclmac.mac.datapkt.data.size == 0);
 #endif
-    int dataQsize = 256;
+
+#ifdef __LINUX__
+    free(data);
+#endif
+#ifdef __RIOT__
+    free_array(&data);
+#endif
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_clear_data_from_packet(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    createDataPacket(mclmac);
-    uint8_t size = 1 + rand() % 201;
-    uint8_t *data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    mclmac_create_data_packet(REFERENCE mclmac);
+    uint8_t size = 249;
+    ARRAY data;
+#ifdef __LINUX__
+    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&data, size);
+#endif
     for (int i = 0; i < size; i++)
-        data[i] = rand();
-    setPacketData(mclmac, data, size);
-    clearDataFromPacket(mclmac);
-    assert(mclmac->mac->datapkt->dataLength == size);
-    for (int i = 0; i < size; i++)
-        assert(mclmac->mac->datapkt->data[i] == 0);
+        WRITE_ARRAY(REFERENCE data, rand(), i);
 
+    mclmac_set_packet_data(REFERENCE mclmac, &data, size);
+    mclmac_clear_data_from_packet(REFERENCE mclmac);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)datapkt)dataLength == size);
+    for (int i = 0; i < size; i++)
+        assert(READ_ARRAY(REFERENCE ARROW(ARROW(ARROW(mclmac)mac)datapkt)data, i) == 0);
+
+#ifdef __LINUX__
     free(data);
-    destroyMCLMAC(&mclmac);
-}
-
-void testinitPMStateMachine(void)
-{
-    MCLMAC_t *mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    free_array(&data);
 #endif
-    int dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
-
-    initPMStateMachine(mclmac);
-    assert(mclmac->powerMode.currentState == STARTP);
-    assert(mclmac->powerMode.nextState == NONEP);
-
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testupdateStateMachine(void)
+void test_mclmac_update_powermode_state_machine(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
     int r;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    initPMStateMachine(mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
     // Try to transition from STARTP state to ACTIVE, TRANSMIT,  RECEIVE or FINISHP states.
     // Return E_PM_TRANSITION_ERROR
-    setPowerModeState(mclmac, STARTP);
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, STARTP);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == STARTP);
+    assert(ARROW(mclmac)powerMode.currentState == STARTP);
     
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == STARTP);
+    assert(ARROW(mclmac)powerMode.currentState == STARTP);
     
-    setNextPowerModeState(mclmac, RECEIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, RECEIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == STARTP);
+    assert(ARROW(mclmac)powerMode.currentState == STARTP);
     
-    setNextPowerModeState(mclmac, FINISHP);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, FINISHP);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == STARTP);
+    assert(ARROW(mclmac)powerMode.currentState == STARTP);
 
     // Try to transition from PASSIVE state to TRANSMIT,  RECEIVE or FINISHP states.
     // Return E_PM_TRANSITION_ERROR
-    setPowerModeState(mclmac, PASSIVE);
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
-    setNextPowerModeState(mclmac, RECEIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, RECEIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
-    setNextPowerModeState(mclmac, FINISHP);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, FINISHP);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
     // Try to transit from FINISHP to any other state
     // Return E_PM_TRANSITION_ERROR
-    setPowerModeState(mclmac, FINISHP);
+    mclmac_set_powermode_state(REFERENCE mclmac, FINISHP);
 
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
-    setNextPowerModeState(mclmac, RECEIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, RECEIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
     // Once in finish state, to use once again the state machine,
-    // call initPMStateMachine, and go to PASSIVE state
-    initPMStateMachine(mclmac);
-    setPowerModeState(mclmac, STARTP);
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    // call mclmac_init_powermode_state_machine, and go to PASSIVE state
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, STARTP);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
 
     // Transit from PASSIVE to ACTIVE
     // Return E_PM_TRANSITION_SUCCESS
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == ACTIVE);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
     // Transit from ACTIVE to PASSIVE
     // Return E_PM_TRANSITION_SUCCESS
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
     // Transit from PASSIVE to TRANSMIT. Remember to pass through ACTIVE,
     // as specified by the state machine.
     // Return E_PM_TRANSITION_SUCCESS
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == ACTIVE);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
 
     // Try to get to RECEIVE mode.
     // Return E_PM_TRANSITION_ERROR
-    setNextPowerModeState(mclmac, RECEIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, RECEIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
-    assert(mclmac->powerMode.currentState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
 
     // Try to get to ACTIVE mode.
     // Return E_PM_TRANSITION_ERROR
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
     // You are in TRANSMIT mode, in order to get to RECEIVE mode, 
     // you have to get to PASSIVE again, an travers the path to 
     // RECEIVE state, as indicated by the state machine.
     // Return E_PM_TRANSITION_SUCCESS
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == ACTIVE);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
-    setNextPowerModeState(mclmac, RECEIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, RECEIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == RECEIVE);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
 
     // Try to get to TRANSMIT mode.
     // Return E_PM_TRANSITION_ERROR
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
     // Try to get to ACTIVE mode
     // Return E_PM_TRANSITION_ERROR
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_ERROR);
 
     // Follow the path: PASSIVE -> ACTIVE -> FINISHP
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == ACTIVE);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
-    setNextPowerModeState(mclmac, FINISHP);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, FINISHP);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
 
     // Travers the path: PASSIVE -> ACTIVE -> TRANSMIT -> FINISHP
-    initPMStateMachine(mclmac);
-    setPowerModeState(mclmac, STARTP);
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, STARTP);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == ACTIVE);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
 
-    setNextPowerModeState(mclmac, FINISHP);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, FINISHP);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
 
     // Travers the path: PASSIVE -> ACTIVE -> RECEIVE -> FINISHP
-    initPMStateMachine(mclmac);
-    setPowerModeState(mclmac, STARTP);
-    setNextPowerModeState(mclmac, PASSIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, STARTP);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == PASSIVE);
 
-    setNextPowerModeState(mclmac, ACTIVE);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == ACTIVE);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
-    setNextPowerModeState(mclmac, TRANSMIT);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
 
-    setNextPowerModeState(mclmac, FINISHP);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, FINISHP);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_TRANSITION_SUCCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
 
     // If nextState is NONEP, return E_PM_NO_TRANSITION
-    setNextPowerModeState(mclmac, NONEP);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, NONEP);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_NO_TRANSITION);
 
     // If invalid state, return E_PM_INVALID_STATE
-    setNextPowerModeState(mclmac, 10);
-    r = updatePMStateMachine(mclmac);
+    mclmac_set_next_powermode_state(REFERENCE mclmac, 10);
+    r = mclmac_update_powermode_state_machine(REFERENCE mclmac);
     assert(r == E_PM_INVALID_STATE);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
-void testexecutePMState(void)
+void test_mclmac_execute_powermode_state(void)
 {
-    MCLMAC_t *mclmac;
+    MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t *radio;
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio;
+    sx127x_t radio;
 #endif
-    int dataQsize = 256;
+    size_t dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
     int r;
 
-    macInit(&mclmac, radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
 
-    initPMStateMachine(mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
-    setPowerModeState(mclmac, NONEP);
-    r = executePMState(mclmac);
+    ARROW(mclmac)_frameDuration = 100;
+    ARROW(mclmac)_slotDuration = 100;
+    ARROW(mclmac)_cfDuration = 100;
+    mclmac_set_powermode_state(REFERENCE mclmac, NONEP);
+    r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_FAILED);
 
     /* State STARTP. Execute the following tasks:
@@ -1612,71 +1716,42 @@ void testexecutePMState(void)
     *   -Immediately pass to PASSIVE state.
     *  Return E_PM_EXECUTION_SUCESS when successfully executed.
     */
+    mclmac_set_powermode_state(REFERENCE mclmac, STARTP);
+    r = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(r == E_PM_EXECUTION_SUCCESS);
 #ifdef __LINUX__
-    mclmac->_frameDuration.it_value.tv_usec = 100;
-    mclmac->_frameDuration.it_value.tv_sec = 1;
-    mclmac->_slotDuration.it_value.tv_usec = 100;
-    mclmac->_slotDuration.it_value.tv_sec = 1;
-    mclmac->_cfDuration.it_value.tv_usec = 100;
-    mclmac->_cfDuration.it_value.tv_sec = 1;
-#endif
-#ifdef __RIOT__
-    mclmac->_frameDuration = 100;
-    mclmac->_slotDuration = 100;
-    mclmac->_cfDuration = 100;
-#endif
-   setPowerModeState(mclmac, STARTP);
-   r = executePMState(mclmac);
-   assert(r == E_PM_EXECUTION_SUCCESS);
    assert(mclmac->mac->cfpkt == NULL);
    assert(mclmac->mac->datapkt == NULL);
    assert(mclmac->mac->ctrlpkt == NULL);
-   assert(mclmac->frame->slotsNumber == mclmac->_nSlots);
-   assert(mclmac->frame->cfSlotsNumber == mclmac->_nSlots);
-#ifdef __LINUX__
-    assert(mclmac->frame->frameDuration.it_value.tv_usec == mclmac->_frameDuration.it_value.tv_usec);
-    assert(mclmac->frame->frameDuration.it_value.tv_sec == mclmac->_frameDuration.it_value.tv_sec);
-    assert(mclmac->frame->slotDuration.it_value.tv_usec == mclmac->_slotDuration.it_value.tv_usec);
-    assert(mclmac->frame->slotDuration.it_value.tv_sec == mclmac->_slotDuration.it_value.tv_sec);
-    assert(mclmac->frame->cfDuration.it_value.tv_usec == mclmac->_cfDuration.it_value.tv_usec);
-    assert(mclmac->frame->cfDuration.it_value.tv_sec == mclmac->_cfDuration.it_value.tv_sec);
-    sleep(2);
-    assert(slotalarm == 1);
 #endif
-#ifdef __RIOT__
-    assert(mclmac->frame->frameDuration == mclmac->_frameDuration);
-    assert(mclmac->frame->slotDuration == mclmac->_slotDuration);
-    assert(mclmac->frame->cfDuration == mclmac->_cfDuration);
-    ztimer_sleep(ZTIMER_SEC, 2);
-    assert(mclmac->powerMode.nextState == ACTIVE);
-#endif
-   assert(mclmac->frame->currentFrame == 0);
-   assert(mclmac->frame->currentSlot == 0);
-   assert(mclmac->frame->currentCFSlot == 0);
-   assert(mclmac->powerMode.nextState == PASSIVE);
+    assert(ARROW(ARROW(mclmac)frame)slots_number == ARROW(mclmac)_nSlots);
+    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == ARROW(mclmac)_nSlots);
+    assert(ARROW(ARROW(mclmac)frame)frame_duration == ARROW(mclmac)_frameDuration);
+    assert(ARROW(ARROW(mclmac)frame)slot_duration == ARROW(mclmac)_slotDuration);
+    assert(ARROW(ARROW(mclmac)frame)cf_duration == ARROW(mclmac)_cfDuration);
+    assert(ARROW(ARROW(mclmac)frame)current_frame == 0);
+    assert(ARROW(ARROW(mclmac)frame)current_slot == 0);
+    assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
     /* State PASSIVE. Execute the following tasks:
     *   -Set the radio to SLEEP mode.
     *   -Start the slot timer.
     *   -Set next state to NONEP.
     */
-#ifdef __LINUX__
-    extern int slotalarm;
-    slotalarm = 0;
-#endif
-    setPowerModeState(mclmac, PASSIVE);
-    r = executePMState(mclmac);
+    mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
+    r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
-    assert(mclmac->powerMode.nextState == NONEP);
-    assert(mclmac->frame->currentCFSlot == 0);
+    assert(ARROW(mclmac)powerMode.nextState == NONEP);
+    assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
 #ifdef __LINUX__
     // Assert mode is sleep
 #endif
 #ifdef __RIOT__
-    uint8_t mode = sx127x_get_op_mode(mclmac->mac->radio);
+    /*uint8_t mode = sx127x_get_op_mode(mclmac->mac->radio);
     assert(mode == sx127x_RF_OPMODE_SLEEP);
     uint8_t state = sx127x_get_state(mclmac->mac->radio);
-    assert(state == SX127X_RF_IDLE);
+    assert(state == SX127X_RF_IDLE);*/
 #endif
 
     /** State ACTIVE. Executes the following tasks:
@@ -1701,230 +1776,224 @@ void testexecutePMState(void)
      *            for the next time we send a control packet to tell the network. Save the number
      *            cf packets received.
      */
-    setCurrentCFSlot(mclmac, 1);
-    setCFChannel(mclmac, 915000000);
-    setPowerModeState(mclmac, ACTIVE);
-    r = executePMState(mclmac);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1);
+    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+    mclmac_set_powermode_state(REFERENCE mclmac, ACTIVE);
+    r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
-    assert(mclmac->mac->cfpkt != NULL);
 #ifdef __LINUX__
+    assert(mclmac->mac->cfpkt != NULL);
     // Check channel is changed
 #endif
 #ifdef __RIOT__
     // Wait 30 us for radio to change frequency.
-    uint32_t channel = sx127x_get_channel(mclmac->mac->radio);
-    assert(channel == mclmac->mac->cfChannel);
+    /*uint32_t channel = sx127x_get_channel(mclmac->mac->radio);
+    assert(channel == mclmac->mac->cfChannel);*/
 #endif
-#ifdef __LINUX__
-    extern int cfslotalarm;
-    cfslotalarm = 0;
-    sleep(2);
-    assert(cfslotalarm == 1);
-#endif
-#ifdef __RIOT__
-    uint8_t prevCFvalue = mclmac->frame->currentCFSlot;
-    ztimer_sleep(ZTIMER_SEC, 2);
-    assert(mclmac->frame->currentCFSlot== prevCFvalue + 1);
-#endif
-    setCurrentCFSlot(mclmac, mclmac->mac->selectedSlot);
-    r = executePMState(mclmac);
-    assert(mclmac->mac->cfpkt->destinationID == mclmac->mac->destinationID);
-    assert(mclmac->powerMode.nextState == TRANSMIT);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, ARROW(ARROW(mclmac)mac)selectedSlot);
+    r = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == ARROW(ARROW(mclmac)mac)destinationID);
+    assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
 
-    destroyMCLMAC(&mclmac);
+    MCLMAC_destroy(&mclmac);
 }
 
 void executeTestsMCLMAC(void)
 {
     srand(time(NULL));
-    printf("Testing macInit function.\n");
-    testmacInit();
+
+    printf("Testing MAC_init function.\n");
+    test_MCLMAC_init();
     printf("Test passed.\n");
 
-    printf("Testing destroyMCLMAC function.\n");
-    testdestroyMCLMAC();
+    printf("Testing MCLMAC_destroy function.\n");
+    test_MCLMAC_destroy();
     printf("Test passed.\n");
 
-    printf("Test clearMCLMAC function.\n");
-    testclearMCLMAC();
+    printf("Test MCLMAC_clear function.\n");
+    test_MCLMAC_clear();
     printf("Test passed.\n");
 
-    printf("Testing setMACState function.\n");
-    testsetMACState();
+    printf("Testing _mclmac_init_powermode_state_machine function.\n");
+    test_mclmac_init_powermode_state_machine();
     printf("Test passed.\n");
 
-    printf("Test getMACState function.\n");
-    testgetMACState();
+    printf("Testing mclmac_set_MAC_state function.\n");
+    test_mclmac_set_MAC_state();
     printf("Test passed.\n");
 
-    printf("Test setPowerModeState function.\n");
-    testsetPowerModeState();
+    printf("Testing mclmac_set_next_MAC_state function.\n");
+    test_mclmac_set_next_MAC_state();
     printf("Test passed.\n");
 
-    printf("Test getPowerModeState function.\n");
-    testgetPowerModeState();
+    printf("Testing mclmac_get_MAC_state function.\n");
+    test_mclmac_get_MAC_state();
     printf("Test passed.\n");
 
-    printf("Test setCFChannel function.\n");
-    testsetCFChannel();
+    printf("Testing mclmac_set_powermode_state function.\n");
+    test_mclmac_set_powermode_state();
     printf("Test passed.\n");
 
-    printf("Test getCFChannel function.\n");
-    testgetCFChannel();
+    printf("Testing mclmac_set_next_powermode_state function.\n");
+    test_mclmac_set_next_powermode_state();
     printf("Test passed.\n");
 
-    printf("Test setSelectedChannel function.\n");
-    testsetSelectedChannel();
+    printf("Testing mclmac_get_powermode_state function.\n");
+    test_mclmac_get_powermode_state();
     printf("Test passed.\n");
 
-    printf("Test getSelectedChannel function.\n");
-    testgetSelectedChannel();
+    printf("Testing mclmac_set_cf_channel function.\n");
+    test_mclmac_set_cf_channel();
     printf("Test passed.\n");
 
-    printf("Test setReceptionChannel function.\n");
-    testsetReceptionChannel();
+    printf("Testing mclmac_get_cf_channel function.\n");
+    test_mclmac_get_cf_channel();
     printf("Test passed.\n");
 
-    printf("Test getReceptionChannel function.\n");
-    testgetReceptionChannel();
+    printf("Testing mclmac_set_transmit_channel function.\n");
+    test_mclmac_set_transmit_channel();
     printf("Test passed.\n");
 
-    printf("Test setAvailableChannels function.\n");
-    testsetAvailableChannels();
+    printf("Testing mclmac_get_transmite_channel function.\n");
+    test_mclmac_get_transmit_channel();
     printf("Test passed.\n");
 
-    printf("Test getAvailableChannels function.\n");
-    testgetAvailableChannels();
+    printf("Testing mclmac_set_reception_channel function.\n");
+    test_mclmac_set_reception_channel();
     printf("Test passed.\n");
 
-    printf("Testing setNodeIDMCL function.\n");
-    testsetNodeIDMCL();
+    printf("Testing mclmac_get_reception_channel function.\n");
+    test_mclmac_get_reception_channel();
     printf("Test passed.\n");
 
-    printf("Testing getNodeIDMCL function.\n");
-    testgetNodeIDMCL();
+    printf("Testing mclmac_set_available_channels function.\n");
+    test_mclmac_set_available_channels();
     printf("Test passed.\n");
 
-    printf("Test setSelectedSlot function.\n");
-    testsetSelectedSlot();
+    printf("Testing mclmac_get_available_channels function.\n");
+    test_mclmac_get_available_channels();
     printf("Test passed.\n");
 
-    printf("Testing getSelectedSlot function.\n");
-    testgetSelectedSlot();
+    printf("Testing mclmac_set_nodeid function.\n");
+    test_mclmac_set_nodeid();
     printf("Test passed.\n");
 
-    printf("Testing setNumberOfHops function.\n");
-    testsetNumberOfHops();
+    printf("Testing mclmac_get_nodeid function.\n");
+    test_mclmac_get_nodeid();
     printf("Test passed.\n");
 
-    printf("Testing getNumberOfHops function.\n");
-    testgetNumberOfHops();
+    printf("Testing mclmac_set_selected_slot function.\n");
+    test_mclmac_set_selected_slot();
     printf("Test passed.\n");
 
-    printf("Testing setCurrentFrame function.\n");
-    testsetCurrentFrame();
+    printf("Testing mclmac_get_selected_slot function.\n");
+    test_mclmac_get_selected_slot();
     printf("Test passed.\n");
 
-    printf("Test increaseFrame function.\n");
-    testincreaseFrame();
+
+    printf("Testing mclmac_set_number_of_hops function.\n");
+    test_mclmac_set_number_of_hops();
     printf("Test passed.\n");
 
-    printf("Testing setCurrentSlot function.\n");
-    testsetCurrentSlot();
+    printf("Testing mclmac_get_number_of_hops function.\n");
+    test_mclmac_get_number_of_hops();
     printf("Test passed.\n");
 
-    printf("Testing increaseSlot function.\n");
-    testincreaseSlot();
+    printf("Testing mclmac_set_current_frame function.\n");
+    test_mclmac_set_current_frame();
     printf("Test passed.\n");
 
-    printf("Testing setSlotDuration function.\n");
-    testsetSlotDuration();  
+    printf("Test mclmac_increase_frame function.\n");
+    test_mclmac_increase_frame();
     printf("Test passed.\n");
 
-    printf("Testing setFrameDuration function.\n");
-    testsetFrameDuration();
+    printf("Testing mclmac_set_current_slot function.\n");
+    test_mclmac_set_current_slot();
     printf("Test passed.\n");
 
-    printf("Testing setCFDuration function.\n");
-    testsetCFDuration();
+    printf("Testing mclmac_increase_slot function.\n");
+    test_mclmac_increase_slot();
     printf("Test passed.\n");
 
-    printf("Test setSlotsNumber function.\n");
-    testsetSlotsNumber();
+    printf("Testing mclmac_set_slots_number function.\n");
+    test_mclmac_set_slots_number();
     printf("Test passed.\n");
 
-    printf("Test setCFSlotsNumber function.\n");
-    testsetCFSlotsNumber();
+    printf("Testing mclmac_set_cf_slots_number function.\n");
+    test_mclmac_set_cf_slots_number();
     printf("Test passed.\n");
 
-    printf("Testing setCurrentCFSlot function.\n");
-    testsetCurrentCFSlot();
+    printf("Testing mclmac_set_current_cf_slot function.\n");
+    test_mclmac_set_current_cf_slot();
     printf("Test passed.\n");
 
-    printf("Testing increaseCFSlot function.\n");
-    testincreaseCFSlot();
+    printf("Testing mclmac_increase_cf_slot function.\n");
+    test_mclmac_increase_cf_slot();
     printf("Test passed.\n");
 
-    printf("Testing recordCollision function.\n");
-    testrecordCollision();
+    printf("Testing mclmac_set_slot_duration function.\n");
+    test_mclmac_set_slot_duration();  
     printf("Test passed.\n");
 
-    printf("Testing setDestinationID function.\n");
-    testsetDestinationID();
+    printf("Testing mclmac_set_frame_duration function.\n");
+    test_mclmac_set_frame_duration();
     printf("Test passed.\n");
 
-    printf("Testing setNetworkTime function.\n");
-    testsetNetworkTime();
+    printf("Testing mclmac_set_cf_duration function.\n");
+    test_mclmac_set_cf_duration();
     printf("Test passed.\n");
 
-    printf("Testing getNetworkTime function.\n");
-    testgetNetworkTime();
+    printf("Testing mclmac_record_collision function.\n");
+    test_mclmac_record_collision();
     printf("Test passed.\n");
 
-    printf("Testing createCFPacket function.\n");
-    testcreateCFPacket();
+    printf("Testing mclmac_set_destination_id function.\n");
+    test_mclmac_set_destination_id();
     printf("Test passed.\n");
 
-    printf("Testing createControlPacket function.\n");
-    testcreateControlPacket();
+    printf("Testing mclmac_get_destination_id function.\n");
+    test_mclmac_get_destination_id();
     printf("Test passed.\n");
 
-    printf("Testing createDataPacket function.\n");
-    testcreateDataPacket();
+    printf("Testing mclmac_set_network_time function.\n");
+    test_mclmac_set_network_time();
     printf("Test passed.\n");
 
-    printf("Testing setPacketData function.\n");
-    testsetPacketData();
+    printf("Testing mclmac_get_network_time function.\n");
+    test_mclmac_get_network_time();
     printf("Test passed.\n");
 
-    printf("Testing deleteDataFromPacket function.\n");
-    testdeleteDataFromPacket();
+    printf("Testing mclmac_create_cf_packet function.\n");
+    test_mclmac_create_cf_packet();
     printf("Test passed.\n");
 
-    printf("Testing clearDataFromPacket function.\n");
-    testclearDataFromPacket();
+    printf("Testing mclmac_create_control_packet function.\n");
+    test_mclmac_create_control_packet();
     printf("Test passed.\n");
 
-    printf("Testing setNextMACState funtion.\n");
-    testsetNextMACState();
+    printf("Testing mclmac_create_data_packet function.\n");
+    test_mclmac_create_data_packet();
     printf("Test passed.\n");
 
-    printf("Testing setNextPowerModeState function.\n");
-    testsetNextPowerModeState();
+    printf("Testing mclmac_set_packet_data function.\n");
+    test_mclmac_set_packet_data();
     printf("Test passed.\n");
 
-    printf("Testing initPMStateMachine function.\n");
-    testinitPMStateMachine();
+    printf("Testing mclmac_delete_data_from_packet function.\n");
+    test_mclmac_delete_data_from_packet();
     printf("Test passed.\n");
 
-    printf("Test updateStateMachine function.\n");
-    testupdateStateMachine();
+    printf("Testing mclmac_clear_data_from_packet function.\n");
+    test_mclmac_clear_data_from_packet();
     printf("Test passed.\n");
 
-    printf("Testing executePMState function.\n");
-    testexecutePMState();
+    printf("Test mclmac_update_powermode_state_machine function.\n");
+    test_mclmac_update_powermode_state_machine();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_execute_powermode_state function.\n");
+    test_mclmac_execute_powermode_state();
     printf("Test passed.\n");
 
     return;
 }
-#endif

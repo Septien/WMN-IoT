@@ -1,9 +1,9 @@
-#include "include/MCLMAC.h"
 #include <assert.h>
 #include <string.h>
 
-#if 0
-void macInit(MCLMAC_t **mclmac, 
+#include "MCLMAC.h"
+
+void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
 #ifdef __LINUX__
     uint8_t *radio,
 #endif
@@ -13,72 +13,85 @@ void macInit(MCLMAC_t **mclmac,
     size_t dataQSize, uint8_t _nSlots, uint8_t _nChannels
 )
 {
-    MCLMAC_t *mclmacA = (MCLMAC_t *)malloc(sizeof(MCLMAC_t));
-    Frame_t *frame = (Frame_t *)malloc(sizeof(Frame_t));
-    if (mclmacA == NULL)
+#ifdef __LINUX__
+    (*mclmac) = (MCLMAC_t *)malloc(sizeof(MCLMAC_t));
+    if ((*mclmac) == NULL)
     {
         return;
     }
-    if (frame == NULL)
+#endif
+    memset((SINGLE_POINTER mclmac), 0, sizeof(MCLMAC_t));
+#ifdef __LINUX__
+    (*mclmac)->frame = (Frame_t *)malloc(sizeof(Frame_t));
+    if ((*mclmac)->frame == NULL)
         return;
+    memset((*mclmac)->frame, 0, sizeof(Frame_t));
+#endif
 
-    memset(mclmacA, 0, sizeof(MCLMAC_t));
-    memset(frame, 0, sizeof(frame));
-    initMACIn(&mclmacA->mac);
-    mclmacA->_dataQSize = dataQSize;
-    mclmacA->dataQueue = (uint8_t *)malloc(mclmacA->_dataQSize * sizeof(uint8_t));
-    mclmacA->frame = frame;
-    mclmacA->macState.currentState = START;
-    mclmacA->powerMode.currentState = STARTP;
-    mclmacA->_nChannels = _nChannels;
-    mclmacA->_nSlots = _nSlots;
+    MAC_internals_init(&(SINGLE_POINTER mclmac)->mac);
+    ARROW((SINGLE_POINTER mclmac)->mac)radio = radio;
+    (SINGLE_POINTER mclmac)->_dataQSize = dataQSize;
+    (SINGLE_POINTER mclmac)->macState.currentState = START;
+    (SINGLE_POINTER mclmac)->powerMode.currentState = STARTP;
+    (SINGLE_POINTER mclmac)->_nChannels = _nChannels;
+    (SINGLE_POINTER mclmac)->_nSlots = _nSlots;
 
-    int bytes = getNumberBytes(_nChannels * _nSlots);
-    mclmacA->_occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-    memset(mclmacA->_occupiedSlots, 0, bytes);
-    *mclmac = mclmacA;
+    int bytes = get_number_bytes(_nChannels * _nSlots);
+#ifdef __LINUX__
+    (*mclmac)->_occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
+    memset((*mclmac)->_occupiedSlots, 0, bytes);
+#endif
+#ifdef __RIOT__
+    create_array(&mclmac->_occupiedSlots, bytes);
+#endif
 }
-
-void destroyMCLMAC(MCLMAC_t **mclmac)
+ 
+void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(*mclmac != NULL);
+#endif
 
-    destroyMAC(&(*mclmac)->mac);
-    free((*mclmac)->dataQueue);
+    MAC_internals_destroy(&(SINGLE_POINTER mclmac)->mac);
+#ifdef __LINUX__
     free((*mclmac)->frame);
     free((*mclmac)->_occupiedSlots);
     free((*mclmac));
     *mclmac = NULL;
+#endif
+
+#ifdef __RIOT__
+    free_array(&mclmac->_occupiedSlots);
+    memset(mclmac, 0, sizeof(MCLMAC_t));
+#endif
 }
 
-void clearMCLMAC(MCLMAC_t *mclmac)
+void MCLMAC_clear(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     
-    clearMAC(mclmac->mac);
-    mclmac->frame->currentSlot = 0;
-    mclmac->frame->currentFrame = 0;
-    mclmac->frame->currentCFSlot = 0;
-    mclmac->frame->cfSlotsNumber = 0;
-    mclmac->frame->slotsNumber = 0;
+    MAC_internals_clear(REFERENCE mclmac->mac);
+    ARROW(mclmac->frame)current_slot = 0;
+    ARROW(mclmac->frame)current_frame = 0;
+    ARROW(mclmac->frame)current_cf_slot = 0;
+    ARROW(mclmac->frame)cf_slots_number = 0;
+    ARROW(mclmac->frame)slots_number = 0;
     mclmac->_dataQSize = 0;
-    free(mclmac->dataQueue);
-    mclmac->dataQueue = NULL;
     mclmac->macState.currentState = START;
     mclmac->powerMode.currentState = PASSIVE;
     mclmac->_collisionDetected = 0;
     mclmac->_networkTime = 0;
 }
 
-void initPMStateMachine(MCLMAC_t *mclmac)
+void mclmac_init_powermode_state_machine(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     mclmac->powerMode.currentState = STARTP;
     mclmac->powerMode.nextState = NONEP;
 }
 
-int updatePMStateMachine(MCLMAC_t *mclmac)
+int mclmac_update_powermode_state_machine(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
@@ -88,12 +101,12 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
     switch (mclmac->powerMode.nextState)
     {
     case NONEP:
-        setPowerModeState(mclmac, NONEP);
+        mclmac_set_powermode_state(mclmac, NONEP);
         return E_PM_NO_TRANSITION;
     case PASSIVE:
         if (mclmac->powerMode.currentState == FINISHP)
             return E_PM_TRANSITION_ERROR;
-        setPowerModeState(mclmac, PASSIVE);
+        mclmac_set_powermode_state(mclmac, PASSIVE);
         break;
     
     case ACTIVE:
@@ -105,7 +118,7 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
             return E_PM_TRANSITION_ERROR;
         if (mclmac->powerMode.currentState == FINISHP)
             return E_PM_TRANSITION_ERROR;
-        setPowerModeState(mclmac, ACTIVE);
+        mclmac_set_powermode_state(mclmac, ACTIVE);
         break;
 
     case TRANSMIT:
@@ -117,7 +130,7 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
             return E_PM_TRANSITION_ERROR;
         if (mclmac->powerMode.currentState == FINISHP)
             return E_PM_TRANSITION_ERROR;
-        setPowerModeState(mclmac, TRANSMIT);
+        mclmac_set_powermode_state(mclmac, TRANSMIT);
         break;
 
     case RECEIVE:
@@ -129,7 +142,7 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
             return E_PM_TRANSITION_ERROR;
         if (mclmac->powerMode.currentState == FINISHP)
             return E_PM_TRANSITION_ERROR;
-        setPowerModeState(mclmac, RECEIVE);
+        mclmac_set_powermode_state(mclmac, RECEIVE);
         break;
 
     case FINISHP:
@@ -137,7 +150,7 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
             return E_PM_TRANSITION_ERROR;
         if (mclmac->powerMode.currentState == PASSIVE)
             return E_PM_TRANSITION_ERROR;
-        setPowerModeState(mclmac, FINISHP);
+        mclmac_set_powermode_state(mclmac, FINISHP);
         break;
 
     default:
@@ -147,25 +160,17 @@ int updatePMStateMachine(MCLMAC_t *mclmac)
     return E_PM_TRANSITION_SUCCESS;
 }
 
-int executePMState(MCLMAC_t *mclmac)
+int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
     assert(mclmac->frame != NULL);
+#endif
     assert(mclmac->_nSlots > 0);
-    #ifdef __LINUX__
-    assert(mclmac->frame->frameDuration.it_value.tv_usec > 0);
-    assert(mclmac->frame->frameDuration.it_value.tv_sec >= 0);
-    assert(mclmac->frame->slotDuration.it_value.tv_usec > 0);
-    assert(mclmac->frame->slotDuration.it_value.tv_sec >= 0);
-    assert(mclmac->frame->cfDuration.it_value.tv_usec > 0);
-    assert(mclmac->frame->cfDuration.it_value.tv_sec >= 0);
-#endif
-#ifdef __RIOT__
-    assert(mclmac->frame->frameDuration > 0);
-    assert(mclmac->frame->slotDuration > 0);
-    assert(mclmac->frame->cfDuration > 0);
-#endif
+    assert(mclmac->_frameDuration > 0);
+    assert(mclmac->_slotDuration > 0);
+    assert(mclmac->_cfDuration > 0);
 
     if (mclmac->powerMode.currentState == NONEP)
         return E_PM_EXECUTION_FAILED;
@@ -174,55 +179,40 @@ int executePMState(MCLMAC_t *mclmac)
     {
     case STARTP:
         // Set the number of slots and cfslots
-        setSlotsNumber(mclmac, mclmac->_nSlots);
-        setCFSlotsNumber(mclmac, mclmac->_nSlots);
+        mclmac_set_slots_number(mclmac, mclmac->_nSlots);
+        mclmac_set_cf_slots_number(mclmac, mclmac->_nSlots);
 
         // Set the value of the timers
-        setFrameDuration(mclmac, &mclmac->_frameDuration);
-        setSlotDuration(mclmac, &mclmac->_slotDuration);
-        setCFDuration(mclmac, &mclmac->_cfDuration);
+        mclmac_set_frame_duration(mclmac, mclmac->_frameDuration);
+        mclmac_set_slot_duration(mclmac, mclmac->_slotDuration);
+        mclmac_set_cf_duration(mclmac, mclmac->_cfDuration);
 
         // Initialize frame, slots, and cfslots counter to zero
-        mclmac->frame->currentFrame = 0;
-        mclmac->frame->currentSlot = 0;
-        mclmac->frame->currentCFSlot = 0;
+        ARROW(mclmac->frame)current_frame = 0;
+        ARROW(mclmac->frame)current_slot = 0;
+        ARROW(mclmac->frame)current_cf_slot = 0;
 
         // Pass immediatly to PASSIVE state
-        setNextPowerModeState(mclmac, PASSIVE);
-#ifdef __LINUX__
-        // Set timer for active state
-        signal(SIGALRM, _slotCallback);
-        setitimer(ITIMER_REAL, &mclmac->frame->slotDuration, NULL);
-#endif
-#ifdef __RIOT__
-        mclmac->frame->slotTimer = { .callback=_slotCallback, .arg=(void *)mclmac};
-        ztimer_set(ZTIMER_MSEC, &mclmac->frame->slotTimer, mclmac->frame->slotDuration);
-#endif
+        mclmac_set_next_powermode_state(mclmac, PASSIVE);
         break;
     
     case PASSIVE:
         // Reset the cf counter to zero
-        setCurrentCFSlot(mclmac, 0);
+        mclmac_set_current_cf_slot(mclmac, 0);
 #ifdef __LINUX__
         /* Set to sleep */
 #endif
-#ifdef __RIOT__
-        sx127x_set_sleep(mclmac->mac->modem);
-#endif
-        setNextPowerModeState(mclmac, NONEP);
+        mclmac_set_next_powermode_state(mclmac, NONEP);
         break;
     
     case ACTIVE:
-        createCFPacket(mclmac);
+        mclmac_create_cf_packet(mclmac);
+
 #ifdef __LINUX__
         // change radio to common channel
-#endif
-#ifdef __RIOT__
-        sx127x_set_channel(mclmac->mac->radio, mclmac->mac->cfChannel);
-        // sleep for 20 us while the radio changes channel (according to datasheet)
-        ztimer_sleep(ZTIME_USEC, 20);
-#endif
-        
+#endif        
+
+        mclmac_set_next_powermode_state(mclmac, TRANSMIT);
         break;
     default:
         break;
@@ -231,14 +221,14 @@ int executePMState(MCLMAC_t *mclmac)
     return E_PM_EXECUTION_SUCCESS;
 }
 
-void setMACState(MCLMAC_t *mclmac, state_t state)
+void mclmac_set_MAC_state(MCLMAC_t *mclmac, state_t state)
 {
     assert(mclmac != NULL);
     assert(state != NONE);
     mclmac->macState.currentState = state;
 }
 
-void setNextMACState(MCLMAC_t *mclmac, state_t next)
+void mclmac_set_next_MAC_state(MCLMAC_t *mclmac, state_t next)
 {
     assert(mclmac != NULL);
     assert(next != NONE);
@@ -247,21 +237,21 @@ void setNextMACState(MCLMAC_t *mclmac, state_t next)
     mclmac->macState.nextState = next;
 }
 
-state_t getMACState(MCLMAC_t *mclmac)
+state_t mclmac_get_MAC_state(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
     return mclmac->macState.currentState;
 }
 
-void setPowerModeState(MCLMAC_t *mclmac, PowerMode_t mode)
+void mclmac_set_powermode_state(MCLMAC_t *mclmac, PowerMode_t mode)
 {
     assert(mclmac != NULL);
  
     mclmac->powerMode.currentState = mode;
 }
 
-void setNextPowerModeState(MCLMAC_t *mclmac, PowerMode_t next)
+void mclmac_set_next_powermode_state(MCLMAC_t *mclmac, PowerMode_t next)
 {
     assert(mclmac != NULL);
     assert(next != STARTP);
@@ -269,433 +259,455 @@ void setNextPowerModeState(MCLMAC_t *mclmac, PowerMode_t next)
     mclmac->powerMode.nextState = next;
 }
 
-PowerMode_t getPowerModeState(MCLMAC_t *mclmac)
+PowerMode_t mclmac_get_powermode_state(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+
     return mclmac->powerMode.currentState;
 }
 
-void setCFChannel(MCLMAC_t *mclmac, uint32_t cfchannel)
+void mclmac_set_cf_channel(MCLMAC_t *mclmac, uint32_t cfchannel)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    mclmac->mac->cfChannel = cfchannel;
+    ARROW(mclmac->mac)cfChannel = cfchannel;
 }
 
-uint32_t getCFChannel(MCLMAC_t *mclmac)
+uint32_t mclmac_get_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    return mclmac->mac->cfChannel;
+    return ARROW(mclmac->mac)cfChannel;
 }
 
-void setTransmitChannel(MCLMAC_t *mclmac, uint32_t channel)
+void mclmac_set_transmit_channel(MCLMAC_t *mclmac, uint32_t channel)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    mclmac->mac->transmitChannel = channel;
+    ARROW(mclmac->mac)transmitChannel = channel;
 }
 
-uint32_t getTransmitChannel(MCLMAC_t *mclmac)
+uint32_t mclmac_get_transmit_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    return mclmac->mac->transmitChannel;
+    return ARROW(mclmac->mac)transmitChannel;
 }
 
-void setReceptionChannel(MCLMAC_t *mclmac, uint32_t rChannel)
+void mclmac_set_reception_channel(MCLMAC_t *mclmac, uint32_t rChannel)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    mclmac->mac->receiveChannel = rChannel;
+    ARROW(mclmac->mac)receiveChannel = rChannel;
 }
 
-uint32_t getReceptionChannel(MCLMAC_t *mclmac)
+uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    return mclmac->mac->receiveChannel;
+    return ARROW(mclmac->mac)receiveChannel;
 }
 
-void setAvailableChannels(MCLMAC_t *mclmac, uint32_t *channels, uint8_t nChannels)
+void mclmac_set_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t nChannels)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
     assert(channels != NULL);
+#endif
+#ifdef __RIOT__
+    assert(channels->size > 0);
+#endif
     assert(nChannels > 0);
 
-    mclmac->mac->numberChannels = nChannels;
-    mclmac->mac->channels = (uint32_t *)malloc(mclmac->mac->numberChannels * sizeof(uint32_t));
-    for (int i = 0; i < mclmac->mac->numberChannels; i++)
+    ARROW(mclmac->mac)numberChannels = nChannels;
+#ifdef __LINUX__
+    mclmac->mac->channels = (uint8_t *)malloc(mclmac->mac->numberChannels * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&mclmac->mac.channels, nChannels);
+#endif
+    for (int i = 0; i < ARROW(mclmac->mac)numberChannels; i++)
     {
-        mclmac->mac->channels[i] = channels[i];
+        uint8_t element = READ_ARRAY((SINGLE_POINTER channels), i);
+        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)channels, element, i);
     }
 }
 
-void getAvailableChannels(MCLMAC_t *mclmac, uint32_t **channels, uint8_t *nChannels)
+void mclmac_get_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t *nChannels)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->channels != NULL);
     assert(channels != NULL);
     assert(*channels != NULL);
+#endif
+#ifdef __RIOT__
+    assert(mclmac->mac.channels.size > 0);
+    assert(channels->size > 0);
+#endif
     assert(nChannels != NULL);
 
-    *nChannels = mclmac->mac->numberChannels;
+    *nChannels = ARROW(mclmac->mac)numberChannels;
     for (int i = 0; i < *nChannels; i++)
-        (*channels)[i] = mclmac->mac->channels[i];
+    {
+        uint8_t element = READ_ARRAY(REFERENCE ARROW(mclmac->mac)channels, i);
+        WRITE_ARRAY(SINGLE_POINTER channels, element, i);
+    }
 }
 
-void setNodeIDMCL(MCLMAC_t *mclmac, uint8_t id)
+void mclmac_set_nodeid(MCLMAC_t *mclmac, uint16_t id)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
-    assert(id >= 0);
+#endif
 
-    mclmac->mac->nodeID = id;
+    ARROW(mclmac->mac)nodeID = id;
 }
 
-uint8_t getNodeIDMCL(MCLMAC_t *mclmac)
+uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__    
     assert(mclmac->mac != NULL);
+#endif
 
-    return mclmac->mac->nodeID;
+    return ARROW(mclmac->mac)nodeID;
 }
 
-void setSelectedSlot(MCLMAC_t *mclmac, uint8_t selectedSlot)
+void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
-    assert(selectedSlot >= 0);
+#endif
 
-    mclmac->mac->selectedSlot = selectedSlot;
+    ARROW(mclmac->mac)selectedSlot = selectedSlot;
 
 }
 
-uint8_t getSelectedSlot(MCLMAC_t *mclmac)
+uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
     
-    return mclmac->mac->selectedSlot;
+    return ARROW(mclmac->mac)selectedSlot;
 }
 
-void setNumberOfHops(MCLMAC_t *mclmac, uint8_t hops)
+void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops)
 {
-    assert(mclmac != NULL),
+    assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
-    assert(hops >= 0);
+#endif
 
-    mclmac->mac->hopCount = hops;
+    ARROW(mclmac->mac)hopCount = hops;
 }
 
-uint8_t getNumberOfHops(MCLMAC_t *mclmac)
+uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    return mclmac->mac->hopCount;
+    return ARROW(mclmac->mac)hopCount;
 }
 
-void setCurrentFrame(MCLMAC_t *mclmac, uint32_t frame)
+void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number)
 {
     assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-
-    mclmac->frame->currentFrame = frame;
-}
-
-void increaseFrame(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-    assert(mclmac->frame->currentFrame >= 0);
-
-    mclmac->frame->currentFrame++;
-}
-
-void setCurrentSlot(MCLMAC_t *mclmac, uint8_t slot)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-
-    mclmac->frame->currentSlot = slot;
-}
-
-void increaseSlot(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-
-    mclmac->frame->currentSlot++;
-}
-
-void setSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-
-    mclmac->frame->slotsNumber = nSlots;
-}
-
-void setCFSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-    assert(nSlots > 0);
-
-    mclmac->frame->cfSlotsNumber = nSlots;
-}
-
-void setCurrentCFSlot(MCLMAC_t *mclmac, uint8_t nCFSlot)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-
-    mclmac->frame->currentCFSlot = nCFSlot;
-}
-
-void increaseCFSlot(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-    assert(mclmac->frame->currentCFSlot >= 0);
-
-    mclmac->frame->currentCFSlot++;
-}
-
-void setSlotDuration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval *slotDuration
+    assert(mclmac->frame != NULL);
+#endif
+
+    ARROW(mclmac->frame)current_frame = frame_number;
+}
+
+void mclmac_increase_frame(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+
+    ARROW(mclmac->frame)current_frame++;
+}
+
+void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+
+    ARROW(mclmac->frame)current_slot = current_slot;
+}
+
+void mclmac_increase_slot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+
+    ARROW(mclmac->frame)current_slot++;
+}
+
+void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t slots_number)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+    assert(slots_number > 0);
+
+    ARROW(mclmac->frame)slots_number = slots_number;
+}
+
+void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t cf_slots_number)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+    assert(cf_slots_number > 0);
+
+    ARROW(mclmac->frame)cf_slots_number = cf_slots_number;
+}
+
+void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+
+    ARROW(mclmac->frame)current_cf_slot = current_cf_slot;
+}
+
+void mclmac_increase_cf_slot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->frame != NULL);
+#endif
+
+    ARROW(mclmac->frame)current_cf_slot++;
+}
+
+void mclmac_set_slot_duration(MCLMAC_t *mclmac,
+#ifdef __LINUX__
+double slot_duration
 #endif
 #ifdef __RIOT__
-uint32_t *slotDuration
+uint32_t slot_duration
 #endif
 )
 {
     assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-    assert(slotDuration != NULL);
 #ifdef __LINUX__
-    assert((*slotDuration).it_value.tv_usec > 0);
-    assert((*slotDuration).it_value.tv_sec >= 0);
-    mclmac->frame->slotDuration.it_value.tv_usec = (*slotDuration).it_value.tv_usec;
-    mclmac->frame->slotDuration.it_value.tv_sec = (*slotDuration).it_value.tv_sec;
+    assert(mclmac->frame != NULL);
 #endif
-#ifdef __RIOT__
-    assert(slotDuration > 0);
-    mclmac->frame->slotDuration = *slotDuration:
-#endif
+    assert(slot_duration > 0);
+
+    ARROW(mclmac->frame)slot_duration = slot_duration;
 }
 
-void setFrameDuration(MCLMAC_t *mclmac,
+void mclmac_set_frame_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval *frameDuration
+double frame_duration
 #endif
 #ifdef __RIOT__
-uint32_t *frameDuration
+uint32_t frame_duration
 #endif
 )
 {
     assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-    assert(frameDuration != NULL);
 #ifdef __LINUX__
-    assert((*frameDuration).it_value.tv_usec > 0);
-    assert((*frameDuration).it_value.tv_usec >= 0);
-    mclmac->frame->frameDuration.it_value.tv_usec = (*frameDuration).it_value.tv_usec;
-    mclmac->frame->frameDuration.it_value.tv_sec = (*frameDuration).it_value.tv_sec;
+    assert(mclmac->frame != NULL);
 #endif
-#ifdef __RIOT__
-    assert(frameDuration > 0);
-    mclmac->frame->frameDuration = *frameDuration;
-#endif
+    assert(frame_duration > 0);
+
+    ARROW(mclmac->frame)frame_duration = frame_duration;
 }
 
-void setCFDuration(MCLMAC_t *mclmac,
+void mclmac_set_cf_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval *cfDuration
+double cf_duration
 #endif
 #ifdef __RIOT__
-uint32_t *cFDuration 
+uint32_t cf_duration 
 #endif
 )
 {
     assert(mclmac != NULL);
-    assert(mclmac->frame != NULL);
-    assert(cfDuration != NULL);
 #ifdef __LINUX__
-    assert((*cfDuration).it_value.tv_usec > 0);
-    assert((*cfDuration).it_value.tv_sec >= 0);
-    mclmac->frame->cfDuration.it_value.tv_usec = (*cfDuration).it_value.tv_usec;
-    mclmac->frame->cfDuration.it_value.tv_sec = (*cfDuration).it_value.tv_sec;
+    assert(mclmac->frame != NULL);
 #endif
-#ifdef __RIOT__
-    assert((*cfDuration) > 0);
-    mclmac->frame->cfDuration = *cfDuration;
-#endif
+    assert(cf_duration > 0);
+    ARROW(mclmac->frame)cf_duration = cf_duration;
 }
 
-void recordCollision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency)
+void mclmac_record_collision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency)
 {
     assert(mclmac != NULL);
     assert(collisionFrequency > 0);
-    assert(collisionSlot >= 0);
 
     mclmac->_collisionDetected = true;
     mclmac->_collisionSlot = collisionSlot;
     mclmac->_collisionFrequency = collisionFrequency;
 }
 
-void setDestinationID(MCLMAC_t *mclmac, uint8_t destinationID)
+void mclmac_set_destination_id(MCLMAC_t *mclmac, uint16_t id)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
+#endif
 
-    mclmac->mac->destinationID = destinationID;
+    ARROW(mclmac->mac)destinationID = id;
 }
 
-void setNetworkTime(MCLMAC_t *mclmac, uint32_t time)
+uint16_t mclmac_get_destination_id(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    assert(time >= 0);
+
+    return ARROW(mclmac->mac)destinationID;
+}
+
+void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time)
+{
+    assert(mclmac != NULL);
 
     mclmac->_networkTime = time;
 }
 
-uint32_t getNetworkTime(MCLMAC_t *mclmac)
+uint32_t mclmac_get_network_time(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
     return mclmac->_networkTime;
 }
 
-void createCFPacket(MCLMAC_t *mclmac)
+void mclmac_create_cf_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
-    assert(mclmac->mac->nodeID > 0);
-    assert(mclmac->mac->destinationID >= 0);
+#endif
+    assert(ARROW(mclmac->mac)nodeID > 0);
 
+#ifdef __LINUX__
     if (mclmac->mac->cfpkt != NULL)
-    {
-        free(mclmac->mac->cfpkt);
-        mclmac->mac->cfpkt = NULL;
-    }
+        cfpacket_destroy(&mclmac->mac->cfpkt);
+#endif
+#ifdef __RIOT__
+    cfpacket_destroy(&mclmac->mac.cfpkt);
+#endif
 
-    CFPacket_t *cfA;
-    initCF(&cfA);
-    createPacketCF(cfA, mclmac->mac->nodeID, mclmac->mac->destinationID, mclmac->_networkTime);
-    mclmac->mac->cfpkt = cfA;
+    cfpacket_init(&ARROW(mclmac->mac)cfpkt);
+    cfpacket_create(REFERENCE ARROW(mclmac->mac)cfpkt, ARROW(mclmac->mac)nodeID, ARROW(mclmac->mac)destinationID, mclmac->_networkTime);
 }
 
-void createControlPacket(MCLMAC_t *mclmac)
+void mclmac_create_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
 
     if (mclmac->mac->ctrlpkt != NULL)
-    {
-        free(mclmac->mac->cfpkt);
-        mclmac->mac->ctrlpkt = NULL;
-    }
+        controlpacket_destroy(&mclmac->mac->ctrlpkt);
+#endif
+#ifdef __RIOT__
+    controlpacket_destroy(&mclmac->mac.ctrlpkt);
+#endif
 
-
-    ControlPacket_t *ctrlpkt;
-    initCP(&ctrlpkt, mclmac->_nSlots, mclmac->_nChannels);
-    createPacketCP(ctrlpkt, mclmac->mac->nodeID, mclmac->_occupiedSlots, mclmac->_collisionSlot, 
-                    mclmac->_collisionFrequency, mclmac->mac->hopCount, mclmac->_networkTime, mclmac->_ack);
-    mclmac->mac->ctrlpkt = ctrlpkt;
+    controlpacket_init(&ARROW(mclmac->mac)ctrlpkt, mclmac->_nSlots, mclmac->_nChannels);
+    controlpacket_create(REFERENCE ARROW(mclmac->mac)ctrlpkt, ARROW(mclmac->mac)nodeID, &mclmac->_occupiedSlots, mclmac->_collisionSlot, 
+                    mclmac->_collisionFrequency, ARROW(mclmac->mac)hopCount, mclmac->_networkTime, mclmac->_ack);
 }
 
-void createDataPacket(MCLMAC_t *mclmac)
+void mclmac_create_data_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
 
     if (mclmac->mac->datapkt != NULL)
-    {
-        free(mclmac->mac->datapkt);
-        mclmac->mac->datapkt = NULL;
-    }
+        datapacket_destroy(&mclmac->mac->datapkt);
+#endif
+#ifdef __RIOT__
+    datapacket_destroy(&mclmac->mac.datapkt);
+#endif
 
-
-    DataPacket_t *datapkt;
-    initDP(&datapkt);
-    createPacketDP(datapkt, mclmac->_isFragment, mclmac->_numberFragments, mclmac->_fragmentNumber, NULL, 0);
-    mclmac->mac->datapkt = datapkt;
+    datapacket_init(&ARROW(mclmac->mac)datapkt);
+    datapacket_create(REFERENCE ARROW(mclmac->mac)datapkt, mclmac->_isFragment, mclmac->_numberFragments, mclmac->_fragmentNumber, NULL, 0);
 }
 
-void setPacketData(MCLMAC_t *mclmac, const uint8_t *data, uint8_t size)
+void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->datapkt != NULL);
-
-    // If size is zero and data array is already initialized, set to zero
-    if (size == 0 && mclmac->mac->datapkt->data != NULL)
-    {
-        memset(mclmac->mac->datapkt->data, 0, mclmac->mac->datapkt->dataLength);
-        return;
-    }
-
-    mclmac->mac->datapkt->dataLength = size;
-    mclmac->mac->datapkt->data = (uint8_t *)malloc(size * sizeof(uint8_t));
-    for (int i = 0; i < size; i++)
-    {
-        mclmac->mac->datapkt->data[i] = data[i];
-    }
+    assert(mclmac->mac->datapkt->data == NULL);
+#endif
+#ifdef __RIOT__
+    assert(mclmac->mac.datapkt.data.size == 0);
+#endif
+    assert(size > 0);
+    
+    datapacket_set_data(REFERENCE ARROW(mclmac->mac)datapkt, data, size);
 }
 
-void deleteDataFromPacket(MCLMAC_t *mclmac)
+void mclmac_delete_data_from_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->datapkt != NULL);
+#endif
 
-    deleteDataDP(mclmac->mac->datapkt);
+    datapacket_delete_data(REFERENCE ARROW(mclmac->mac)datapkt);
 }
 
-void clearDataFromPacket(MCLMAC_t *mclmac)
+void mclmac_clear_data_from_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __LINUX__
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->datapkt != NULL);
+#endif
 
-    clearDataDP(mclmac->mac->datapkt);
+    datapacket_clear_data(REFERENCE ARROW(mclmac->mac)datapkt);
 }
 
-void startCADMode(MCLMAC_t *mclmac)
+void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
 {
     // TO DO
+    (void) mclmac;
     return;
 }
-
-void _slotCallback(
-#ifdef __LINUX__
-    int signum
-#endif
-#ifdef __RIOT__
-    void *args
-#endif
-)
-{
-#ifdef __LINUX__
-    if (signum == SIGALRM)
-    {
-        slotalarm = 1;
-    }
-#endif
-#ifdef __RIOT__
-    MCLMAC_t *mclmac = (MCLMAC_t *)args;
-    setNextPowerModeState(mclmac, ACTIVE);
-#endif
-}
-#endif

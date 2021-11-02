@@ -17,6 +17,9 @@
 
 #include "Frame.h"
 #include "MAC_Internals.h"
+#include "memory.h"
+#include "memory_macros.h"
+#include "timeouts.h"
 
 #ifdef __LINUX__
 #include <unistd.h>
@@ -25,7 +28,6 @@
 #endif
 
 #ifdef __RIOT__
-//#include "config.h"
 #include "ztimer.h"
 #include "sx127x.h"
 #endif
@@ -53,31 +55,30 @@ typedef struct RadioState
 typedef struct MCLMAC
 {
     // Internals to the MAC
-    MAC_Internals_t *mac;
+    MAC_Internals_t     SINGLE_POINTER mac;
     // For communicating with other layers
-    uint8_t *dataQueue;
-    Frame_t *frame;
-    MACState_t macState;
-    RadioPowerMode_t powerMode;
+    Frame_t             SINGLE_POINTER frame;
+    MACState_t          macState;
+    RadioPowerMode_t    powerMode;
 
     // Private members
-    uint8_t _nodeID;
-    bool _collisionDetected;
-    uint8_t _collisionSlot;
-    uint32_t _collisionFrequency;
-    uint32_t _networkTime;
-    size_t _dataQSize;
-    uint8_t _nSlots;
-    uint8_t _nChannels;
-    uint8_t _ack;
-    uint8_t *_occupiedSlots;
-    bool _isFragment;
-    uint8_t _numberFragments;
-    uint8_t _fragmentNumber;
+    uint8_t             _nodeID;
+    bool                _collisionDetected;
+    uint8_t             _collisionSlot;
+    uint32_t            _collisionFrequency;
+    uint32_t            _networkTime;
+    size_t              _dataQSize;
+    uint8_t             _nSlots;
+    uint8_t             _nChannels;
+    uint8_t             _ack;
+    ARRAY                _occupiedSlots;
+    bool                _isFragment;
+    uint8_t             _numberFragments;
+    uint8_t             _fragmentNumber;
 #ifdef __LINUX__
-    struct itimerval _frameDuration;
-    struct itimerval _slotDuration;
-    struct itimerval _cfDuration;
+    int _frameDuration;
+    int _slotDuration;
+    int _cfDuration;
 #endif
 #ifdef __RIOT__
     uint32_t _frameDuration;
@@ -86,7 +87,7 @@ typedef struct MCLMAC
 #endif
 }MCLMAC_t;
 
-void macInit(MCLMAC_t **mclmac, 
+void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
 #ifdef __LINUX__
     uint8_t *radio,
 #endif
@@ -95,131 +96,110 @@ void macInit(MCLMAC_t **mclmac,
 #endif
     size_t dataQSize, uint8_t _nSlots, uint8_t _nChannels
 );
-void destroyMCLMAC(MCLMAC_t **mclmac);
-void clearMCLMAC(MCLMAC_t *mclmac);
+
+void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);
+void MCLMAC_clear(MCLMAC_t *mclmac);
 
 // Protocol Execution
 // DevicePowerMode State Machine
-void initPMStateMachine(MCLMAC_t *mclmac);
-int updatePMStateMachine(MCLMAC_t *mclmac);
-int executePMState(MCLMAC_t *mclmac);
+void mclmac_init_powermode_state_machine(MCLMAC_t *mclmac);
+int mclmac_update_powermode_state_machine(MCLMAC_t *mclmac);
+int mclmac_execute_powermode_state(MCLMAC_t *mclmac);
 
 // State machines
-void setMACState(MCLMAC_t *mclmac, state_t state);
-void setNextMACState(MCLMAC_t *mclmac, state_t next);
-state_t getMACState(MCLMAC_t *mclmac);
-void setPowerModeState(MCLMAC_t *mclmac, PowerMode_t mode);
-void setNextPowerModeState(MCLMAC_t *mclmac, PowerMode_t next);
-PowerMode_t getPowerModeState(MCLMAC_t *mclmac);
+void mclmac_set_MAC_state(MCLMAC_t *mclmac, state_t state);
+void mclmac_set_next_MAC_state(MCLMAC_t *mclmac, state_t next);
+state_t mclmac_get_MAC_state(MCLMAC_t *mclmac);
+void mclmac_set_powermode_state(MCLMAC_t *mclmac, PowerMode_t mode);
+void mclmac_set_next_powermode_state(MCLMAC_t *mclmac, PowerMode_t next);
+PowerMode_t mclmac_get_powermode_state(MCLMAC_t *mclmac);
 
 // Channels
-void setCFChannel(MCLMAC_t *mclmac, uint32_t cfChannel);
-uint32_t getCFChannel(MCLMAC_t *mclmac);
-void setTransmitChannel(MCLMAC_t *mclmac, uint32_t channel);
-uint32_t getTransmitChannel(MCLMAC_t *mclmac);
-void setReceptionChannel(MCLMAC_t *mclmac, uint32_t rChannel);
-uint32_t getReceptionChannel(MCLMAC_t *mclmac);
-void setAvailableChannels(MCLMAC_t *mclmac, uint32_t *channels, uint8_t nChannels);
-void getAvailableChannels(MCLMAC_t *mclmac, uint32_t **channels, uint8_t *nChannels);
+void mclmac_set_cf_channel(MCLMAC_t *mclmac, uint32_t cfChannel);
+uint32_t mclmac_get_cf_channel(MCLMAC_t *mclmac);
+void mclmac_set_transmit_channel(MCLMAC_t *mclmac, uint32_t channel);
+uint32_t mclmac_get_transmit_channel(MCLMAC_t *mclmac);
+void mclmac_set_reception_channel(MCLMAC_t *mclmac, uint32_t rChannel);
+uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac);
+void mclmac_set_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t nChannels);
+void mclmac_get_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t *nChannels);
 
 // Properties and configuration
-void setNodeIDMCL(MCLMAC_t *mclmac, uint8_t id);
-uint8_t getNodeIDMCL(MCLMAC_t *mclmac);
-void setSelectedSlot(MCLMAC_t *mclmac, uint8_t selectedSlot);
-uint8_t getSelectedSlot(MCLMAC_t *mclmac);
-void setNumberOfHops(MCLMAC_t *mclmac, uint8_t hops);
-uint8_t getNumberOfHops(MCLMAC_t *mclmac);
+void mclmac_set_nodeid(MCLMAC_t *mclmac, uint16_t id);
+uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac);
+void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot);
+uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac);
+void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops);
+uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac);
 // ------>
-void computeFreeSlotsAndChannels(MCLMAC_t *mclmac);
+void mclmac_compute_free_slots_and_channels(MCLMAC_t *mclmac);
 // <-----
-void setCurrentFrame(MCLMAC_t *mclmac, uint32_t frame);
-void increaseFrame(MCLMAC_t *mclmac);
-void setCurrentSlot(MCLMAC_t *mclmac, uint8_t slot);
-void increaseSlot(MCLMAC_t *mclmac);
-void setSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots);
-void setCFSlotsNumber(MCLMAC_t *mclmac, uint8_t nSlots);
-void setCurrentCFSlot(MCLMAC_t *mclmac, uint8_t nCFSlot);
-void increaseCFSlot(MCLMAC_t *mclmac);
-void setSlotDuration(MCLMAC_t *mclmac,
+void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number);
+void mclmac_increase_frame(MCLMAC_t *mclmac);
+void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot);
+void mclmac_increase_slot(MCLMAC_t *mclmac);
+void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t slots_number);
+void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t cf_slots_number);
+void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot);
+void mclmac_increase_cf_slot(MCLMAC_t *mclmac);
+void mclmac_set_slot_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval *slotDuration
+double slotDuration
 #endif
 #ifdef __RIOT__
-uint32_t *slotDuration
+uint32_t slotDuration
 #endif
 );
-void setFrameDuration(MCLMAC_t *mclmac,
+void mclmac_set_frame_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval *frameDuration
+double frame_duration
 #endif
 #ifdef __RIOT__
-uint32_t *frameDuration
+uint32_t frame_duration
 #endif
 );
-void setCFDuration(MCLMAC_t *mclmac,
+void mclmac_set_cf_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-struct itimerval *cfDuration
+double cf_duration
 #endif
 #ifdef __RIOT__
-uint32_t *cFDuration 
+uint32_t cf_duration 
 #endif
-); 
-void recordCollision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency);
-void setDestinationID(MCLMAC_t *mclmac, uint8_t id);
-uint8_t getDestinationID(MCLMAC_t *mclmac);
-void setNetworkTime(MCLMAC_t *mclmac, uint32_t time);
-uint32_t getNetworkTime(MCLMAC_t *mclmac);
+);
+void mclmac_record_collision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency);
+void mclmac_set_destination_id(MCLMAC_t *mclmac, uint16_t id);
+uint16_t mclmac_get_destination_id(MCLMAC_t *mclmac);
+void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time);
+uint32_t mclmac_get_network_time(MCLMAC_t *mclmac);
 
 // Packet functions
-void createCFPacket(MCLMAC_t *mclmac);
-void createControlPacket(MCLMAC_t *mclmac);
-void createDataPacket(MCLMAC_t *mclmac);
-void setPacketData(MCLMAC_t *mclmac, const uint8_t *data, uint8_t size);
-void deleteDataFromPacket(MCLMAC_t *mclmac);
-void clearDataFromPacket(MCLMAC_t *mclmac);
-void copyData(MCLMAC_t *mclmac, const uint8_t *data);
-void sendControlPacket(MCLMAC_t *mclmac);
-void sendCFPacket(MCLMAC_t *mclmac);
-void sendDataPacket(MCLMAC_t *mclmac);
-void receiveControlMessage(MCLMAC_t *mclmac);
-void receiveCFMessage(MCLMAC_t *mclmac);
-void receiveDataMessage(MCLMAC_t *mclmac);
+void mclmac_create_cf_packet(MCLMAC_t *mclmac);
+void mclmac_create_control_packet(MCLMAC_t *mclmac);
+void mclmac_create_data_packet(MCLMAC_t *mclmac);
+void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size);
+void mclmac_delete_data_from_packet(MCLMAC_t *mclmac);
+void mclmac_clear_data_from_packet(MCLMAC_t *mclmac);
+
+void mclmac_copy_data(MCLMAC_t *mclmac, const ARRAY* data);
+void mclmac_send_control_packet(MCLMAC_t *mclmac);
+void mclmac_send_cf_packet(MCLMAC_t *mclmac);
+void mclmac_send_data_packet(MCLMAC_t *mclmac);
+void mclmac_receive_control_message(MCLMAC_t *mclmac);
+void mclmac_receive_cf_message(MCLMAC_t *mclmac);
+void mclmac_receive_data_message(MCLMAC_t *mclmac);
 
 // Channel selection
-void changeToTransmitChannel(MCLMAC_t *mclmac);
-void changeToReceiveChannel(MCLMAC_t *mclmac);
-void chanteToCFChannel(MCLMAC_t *mclmac);
+void mclmac_change_transmit_channel(MCLMAC_t *mclmac);
+void mclmac_change_receive_channel(MCLMAC_t *mclmac);
+void mclmac_change_cf_channel(MCLMAC_t *mclmac);
 
 // Radio modes
-void startCADMode(MCLMAC_t *mclmac);
-void startSplitPhase(MCLMAC_t *mclmac);
-void startCFPhase(MCLMAC_t *mclmac);
-bool CADDetected(MCLMAC_t *mclmac);
+void mclmac_start_CAD_mode(MCLMAC_t *mclmac);
+void mclmac_start_split_phase(MCLMAC_t *mclmac);
+void mclmac_start_cf_phase(MCLMAC_t *mclmac);
+bool mclmac_CAD_detected(MCLMAC_t *mclmac);
 
 /* Private functions */
-void _selectSlotAndChannel(MCLMAC_t *mclmac);
-void _slotCallback(
-#ifdef __LINUX__
-    int signum
-#endif
-#ifdef __RIOT__
-    void *args
-#endif
-);
-
-void _cfSlotCallback(
-#ifdef __LINUX__
-    int signum
-#endif
-#ifdef __RIOT__
-    void *args
-#endif
-);
-
-#ifdef __LINUX__
-// For alarms
-int slotalarm;
-int cfslotalarm;
-#endif
+void _select_slot_and_channel(MCLMAC_t *mclmac);
 
 #endif  // MCLMAC_H
