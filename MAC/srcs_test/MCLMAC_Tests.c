@@ -1223,7 +1223,6 @@ void test_mclmac_create_cf_packet(void)
     assert(ARROW(ARROW(mclmac)mac)cfpkt != NULL);
 #endif
     assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)nodeID > 0);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID >= 0);
 
     MCLMAC_destroy(&mclmac);
 }
