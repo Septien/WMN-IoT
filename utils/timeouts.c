@@ -407,6 +407,8 @@ void timeout_signal_handler(
      * The timer is one-shot; it_interval == 0.
     */
    timespec_set(&when, next);
+   if (when == 0)
+    return;
    ztimer_set(CLOCK, &timeouts.timeout_timer, when);
 #endif
 }
@@ -445,10 +447,6 @@ int timeout_init(void)
     /* Set callback and arguments */
     timeouts.timeout_timer.callback = timeout_signal_handler;
     timeouts.timeout_timer.arg = NULL;
-
-    /* Disarm timer */
-    uint32_t arm = 0;
-    ztimer_set(CLOCK, &timeouts.timeout_timer, arm);
 #endif
     return 0;
 }
