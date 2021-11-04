@@ -40,6 +40,10 @@ $(info $$MAC_PATH is [${MAC_PATH}])
 
 # Libraries to include
 # utils
+ifdef TEST
+LIBS += utilsT
+endif
+
 LIBS += utils
 # MAC (optionally mactests)
 ifdef TEST

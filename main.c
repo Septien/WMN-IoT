@@ -15,17 +15,18 @@
 #include "assert.h"
 #include "timeouts.h"
 #include "mclmac_tests.h"
+#include "utils_tests.h"
 
 #ifdef __RIOT__
-#include "utils_tests.h"
 #include "memory.h"
 #endif
 
 int main(void)
 {
     printf("Testing the MAC protocol (MCLMAC).\n");
-    timeout_init();
-#ifdef __LINUX__ 
+    //timeout_init();
+#ifdef __LINUX__
+    utils_tests(); 
     mac_tests();
 #endif
 #ifdef __RIOT__

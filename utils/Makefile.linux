@@ -22,30 +22,36 @@ $(info $$INC_UTILS is [$(INC_UTILS)])
 # sources location
 SRCD = $(utils_current_dir)
 ifdef TEST
-SRCDT += $(utils_current_dir)/srcs_test_utils
+SRCDT += $(utils_current_dir)/srcs_tests_utils
+$(info $$SRCDT is [$(SRCDT)])
 endif
 $(info $$SRCD is [$(SRCD)])
 
 # sources
 SRC := $(utils_current_dir)/timeouts.c
 ifdef TEST
+SRCT := $(utils_current_dir)/utils_tests.c $(utils_current_dir)/timeouts_test.c
 endif
 $(info $$SRC is [$(SRC)])
 
 DEPS_U := $(INC_UTILS)/timeouts.h
 ifdef TEST
+DEPST_U := $(INCT_UTILS)/timeouts_test.h
 endif
 
 OBJU_DIR := $(utils_current_dir)/obj
 ifdef TEST
+OBJUT_DIR := $(utils_current_dir)/obj
 endif
 
 OBJSU := $(OBJU_DIR)/timeouts.o
 ifdef TEST
+OBJSUT := $(OBJUT_DIR)/utils_tests.o $(OBJUT_DIR)/timeouts_test.o
 endif
 
 TARGETS := directories_utils $(LIB_UTILS)/libutils
 ifdef TEST
+TARGETS += $(LIB_UTILS)/libutilsT
 endif
 $(info $$TARGETS is [$(TARGETS)])
 
@@ -61,6 +67,9 @@ $(LIB_UTILS)/libutils: $(OBJSU)
 	$(RL) $@.a
 
 ifdef TEST
+$(LIB_UTILS)/libutilsT: $(OBJSUT)
+	$(AR) $@.a $^
+	$(RL) $@.a
 endif
 
 $(OBJU_DIR)/%.o: $(SRCD)/%.c
@@ -69,4 +78,8 @@ $(OBJU_DIR)/%.o: $(SRCD)/%.c
 $(OBJU_DIR)/%.o: $(INC_UTILS)/%.h
 
 ifdef TEST
+$(OBJUT_DIR)/%.o: $(SRCDT)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(OBJUT_DIR)/%.o: $(INCT_UTILS)/%.h
 endif
