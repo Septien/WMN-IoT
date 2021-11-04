@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "assert.h"
 
 #include "timeouts.h"
 
@@ -37,6 +38,19 @@ void test_timeout(void)
         {
             printf("Timeout2 passed. Removing and Breaking.\n");
             timeout_unset(timeout2);
+            break;
+        }
+    }
+
+    timeout1 = timeout_set(useconds1);
+    assert(timeout1 == 0);
+
+    while (1)
+    {
+        if (timeout_passed(timeout1) == 1)
+        {
+            printf("Second test passed.\n");
+            timeout_unset(timeout1);
             break;
         }
     }
