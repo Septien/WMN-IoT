@@ -53,7 +53,7 @@ typedef struct timeout
 double timespec_diff(const struct timespec after, const struct timespec before);
 #endif
 #ifdef __RIOT__
-uint32_t timespec_diff(const uint32_t after, const uint32_t before);
+int32_t timespec_diff(const int32_t after, const int32_t before);
 #endif
 
 void timespec_add(
@@ -61,7 +61,7 @@ void timespec_add(
     struct timespec *const to, const double seconds
 #endif
 #ifdef __RIOT__
-    uint32_t *const to, const uint32_t seconds
+    int32_t *const to, const int32_t seconds
 #endif
 );
 
@@ -70,7 +70,7 @@ void timespec_set(
     struct timespec *const to, const double seconds
 #endif
 #ifdef __RIOT__
-    uint32_t *const to, const uint32_t seconds
+    int32_t *const to, const int32_t seconds
 #endif
 );
 

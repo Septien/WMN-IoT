@@ -18,7 +18,7 @@ static timeout_t timeouts;
 double timespec_diff(const struct timespec after, const struct timespec before)
 #endif
 #ifdef __RIOT__
-uint32_t timespec_diff(const uint32_t after, const uint32_t before)
+int32_t timespec_diff(const int32_t after, const int32_t before)
 #endif
 {
 #ifdef __LINUX__
@@ -39,7 +39,7 @@ void timespec_add(
     struct timespec *const to, const double seconds
 #endif
 #ifdef __RIOT__
-    uint32_t *const to, const uint32_t seconds
+    int32_t *const to, const int32_t seconds
 #endif
 )
 {
@@ -81,7 +81,7 @@ void timespec_set(
     struct timespec *const to, const double seconds
 #endif
 #ifdef __RIOT__
-    uint32_t *const to, const uint32_t seconds
+    int32_t *const to, const int32_t seconds
 #endif
 )
 {
@@ -226,9 +226,9 @@ uint32_t timeout_set(const uint32_t seconds)
     int                 timeout, i;
 #endif
 #ifdef __RIOT__
-    uint32_t            now, then;
-    uint32_t            when;
-    uint32_t            next;
+    int32_t             now, then;
+    int32_t             when;
+    int32_t             next;
     uint32_t            timeout, i;
 #endif
 
@@ -276,7 +276,7 @@ uint32_t timeout_set(const uint32_t seconds)
             const double secs = timespec_diff(timeouts.timeout_time[i], now);
 #endif
 #ifdef __RIOT__
-            const uint32_t secs = timespec_diff(timeouts.timeout_time[i], now);
+            const int32_t secs = timespec_diff(timeouts.timeout_time[i], now);
 #endif
             if (secs >= 0.0 && secs < next)
                 next = secs;
@@ -374,9 +374,9 @@ void timeout_signal_handler(
 #ifdef __RIOT__
     (void) arg;
     uint32_t    now;
-    uint32_t    when;
+    int32_t     when;
     uint32_t    i;
-    uint32_t    next;
+    int32_t     next;
 
     now = ztimer_now(CLOCK);
 
@@ -387,14 +387,14 @@ void timeout_signal_handler(
     for (i = 0; i < TIMEOUTS; i++)
         if ((__sync_or_and_fetch(&timeouts.timeout_state[i], 0) & (TIMEOUT_USED | TIMEOUT_ARMED | TIMEOUT_PASSED)) == (TIMEOUT_USED | TIMEOUT_ARMED))
         {
-            const uint32_t seconds = timespec_diff(timeouts.timeout_time[i], now);
-            if (seconds <= 0.0)
+            const int32_t seconds = timespec_diff(timeouts.timeout_time[i], now);
+            if (seconds <= 0)
             {
                 /* Timeout [i] fires! */
                 __sync_or_and_fetch(&timeouts.timeout_state[i], TIMEOUT_PASSED);
             }
             else
-            if (next <= 0.0 || seconds < next)
+            if (next <= 0 || seconds < next)
             {
                 /* This is the soonest timeout in the future. */
                 next = seconds;
@@ -406,10 +406,10 @@ void timeout_signal_handler(
      *          which in turn will disarm the timer.
      * The timer is one-shot; it_interval == 0.
     */
-   timespec_set(&when, next);
-   if (when == 0)
-    return;
-   ztimer_set(CLOCK, &timeouts.timeout_timer, when);
+    timespec_set(&when, next);
+    if (when <= 0)
+        return;
+    ztimer_set(CLOCK, &timeouts.timeout_timer, when);
 #endif
 }
 
