@@ -76,14 +76,14 @@ typedef struct MCLMAC
     uint8_t             _numberFragments;
     uint8_t             _fragmentNumber;
 #ifdef __LINUX__
-    int _frameDuration;
-    int _slotDuration;
-    int _cfDuration;
+    double              _frameDuration;
+    double              _slotDuration;
+    double              _cfDuration;
 #endif
 #ifdef __RIOT__
-    uint32_t _frameDuration;
-    uint32_t _slotDuration;
-    uint32_t _cfDuration;
+    uint32_t            _frameDuration;
+    uint32_t            _slotDuration;
+    uint32_t            _cfDuration;
 #endif
 }MCLMAC_t;
 
