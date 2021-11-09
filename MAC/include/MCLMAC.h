@@ -76,6 +76,7 @@ typedef struct MCLMAC
     uint8_t             _numberFragments;
     uint8_t             _fragmentNumber;
     ARRAY               _packets;
+    uint8_t             _packets_read;
     uint16_t            _max_number_packets_buffer;
     ARRAY               _packets_received;
     uint16_t            _num_packets_received;
