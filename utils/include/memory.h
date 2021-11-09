@@ -22,7 +22,7 @@
 #define BLOCK_SIZE          (1U)
 
 #ifndef MAX_NUMBER_BLOCKS
-#define MAX_NUMBER_BLOCKS   1024
+#define MAX_NUMBER_BLOCKS   10240
 #endif
 
 typedef struct memory
