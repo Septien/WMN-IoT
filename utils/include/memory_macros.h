@@ -20,6 +20,9 @@
 #define ARRAY                           uint8_t *
 #define WRITE_ARRAY(ptr, element, i)    (ptr)[(i)] = (element)
 #define READ_ARRAY(ptr, i)              (ptr)[(i)]
+
+/* Convert microseconds to seconds */
+#define TIME(t)                         (t)/1000000.0
 #endif
 
 #ifdef __RIOT__
@@ -39,6 +42,9 @@ inline uint8_t readE(array_t *ptr, uint8_t i)
 #define ARRAY                           array_t
 #define WRITE_ARRAY(ptr, element, i)    write_element((ptr), (element), (i))
 #define READ_ARRAY(ptr, i)              readE((ptr), (i))
+
+/* T is in microseconds */
+#define TIME(t)                         (t)
 #endif
 
 #endif
