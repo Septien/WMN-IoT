@@ -45,9 +45,13 @@ void test_MCLMAC_init(void)
     assert(ARROW(mclmac)_nChannels == _nChannels);
 #ifdef __LINUX__
     assert(mclmac->_occupiedSlots != NULL);
+    assert(mclmac->_packets == NULL);
+    assert(mclmac->_packets_received == NULL);
 #endif
 #ifdef __RIOT__
     assert(mclmac._occupiedSlots.size > 0);
+    assert(mclmac._packets.size == 0);
+    assert(mclmac._packets.size == 0);
 #endif
 
     MCLMAC_destroy(&mclmac);
@@ -1724,9 +1728,11 @@ void test_mclmac_execute_powermode_state(void)
    assert(mclmac->mac->datapkt == NULL);
    assert(mclmac->mac->ctrlpkt == NULL);
    assert(mclmac->_packets != NULL);
+   assert(mclmac->_packets_received != NULL);
 #endif
 #ifdef __RIOT__
     assert(mclmac._packets.size > 0);
+    assert(mclmac._packets_received.size > 0);
 #endif
     assert(ARROW(ARROW(mclmac)frame)slots_number == ARROW(mclmac)_nSlots);
     assert(ARROW(ARROW(mclmac)frame)cf_slots_number == ARROW(mclmac)_nSlots);
@@ -1748,6 +1754,10 @@ void test_mclmac_execute_powermode_state(void)
     *       -With the received packets from the upper layers, create an array containing
     *        the ids of the nodes to send the packet.
     */
+    int i;
+    for (i = 0; i < ARROW(mclmac)_max_number_packets_buffer; i++)
+        WRITE_ARRAY(REFERENCE ARROW(mclmac)_packets_received, rand(), i);
+    ARROW(mclmac)_num_packets_received = 5;
     mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
@@ -1755,7 +1765,7 @@ void test_mclmac_execute_powermode_state(void)
     assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
     int count = 0;
     // Check that there is less than 5 packets.
-    for (int i = 0; i < ARROW(mclmac)_max_number_packets_buffer; i++)
+    for (i = 0; i < ARROW(mclmac)_max_number_packets_buffer; i++)
     {
         uint8_t element = READ_ARRAY(REFERENCE ARROW(mclmac)_packets, i);
         if (element == '\0')
@@ -1765,6 +1775,8 @@ void test_mclmac_execute_powermode_state(void)
             break;
     }
     assert(count >= 1 && count <= 5);
+    // For the packets 'written' into the queue
+    assert(ARROW(mclmac)_num_packets_received < 5);
 #ifdef __LINUX__
     // Assert mode is sleep
 #endif
@@ -1916,6 +1928,76 @@ void test_stub_mclmac_read_queue_element(void)
     assert(nelements == 0);
     assert(bytes == 0);
     assert(read_from == size - 2);
+
+#ifdef __LINUX__
+    free(mclmac->_packets);
+#endif
+#ifdef __RIOT__
+    free_array(&mclmac._packets);
+#endif
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_stub_mclmac_write_queue_element(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+    size_t size = 5 * 256;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    int ret;
+#ifdef __LINUX__
+    mclmac->_packets_received = (uint8_t *)malloc(size * sizeof(uint8_t));
+    if (mclmac->_packets_received == NULL)
+    {
+        printf("LINUX: Unable to create array _packets_received. LINUX.\n");
+        return;
+    }
+#endif
+#ifdef __RIOT__
+    ret = create_array(&mclmac._packets_received, size);
+    if (ret == 0)
+    {
+        printf("Unable to create array _packets_received, RIOT.\n");
+        return;
+    }
+#endif
+    ARROW(mclmac)_num_packets_received = 5;
+    // Fill the array with random data
+    for (size_t i = 0; i < size; i++)
+        WRITE_ARRAY(REFERENCE ARROW(mclmac)_packets_received, rand(), i);
+
+        /**
+         * Test case 1:
+         *  -If size = 0, return 0
+        */
+       ret = stub_mclmac_write_queue_element(REFERENCE mclmac, 0);
+       assert(ret == 0);
+
+       /**
+        * Test case 2:
+        *   -Read one element of the array. It should changer:
+        *       -Return 1;
+       */
+      ret = stub_mclmac_write_queue_element(REFERENCE mclmac, size);
+      assert(ret == 1);
+
+#ifdef __LINUX__
+    free(mclmac->_packets_received);
+#endif
+#ifdef __RIOT__ 
+    free_array(&mclmac._packets_received);
+#endif
 
     MCLMAC_destroy(&mclmac);
 }
@@ -2120,5 +2202,10 @@ void executeTestsMCLMAC(void)
     printf("Testing stub_mclmac_read_queue_element function.\n");
     test_stub_mclmac_read_queue_element();
     printf("Test passed.\n");
+
+    printf("Testing stub_mclmac_write_queue_element function.\n");
+    test_stub_mclmac_write_queue_element();
+    printf("Test passed.\n");
+
     return;
 }

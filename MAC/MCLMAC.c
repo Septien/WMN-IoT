@@ -42,6 +42,8 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __LINUX__
     (*mclmac)->_occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
     memset((*mclmac)->_occupiedSlots, 0, bytes);
+    (*mclmac)->_packets = NULL;
+    (*mclmac)->_packets_received = NULL;
 #endif
 #ifdef __RIOT__
     create_array(&mclmac->_occupiedSlots, bytes);
@@ -201,7 +203,12 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         // Create an array of size of at most 5 packet of 256 bytes each
 #ifdef __LINUX__
         mclmac->_packets = (uint8_t *)malloc(mclmac->_max_number_packets_buffer * sizeof(uint8_t));
-        if (mclmac == NULL)
+        if (mclmac->_packets == NULL)
+        {
+            exit(0);
+        }
+        mclmac->_packets_received = (uint8_t *)malloc(mclmac->_max_number_packets_buffer * sizeof(uint8_t));
+        if (mclmac->_packets_received == NULL)
         {
             exit(0);
         }
@@ -212,12 +219,17 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         {
             exit(0);
         }
+        ret = create_array(&mclmac->_packets_received, mclmac->_max_number_packets_buffer);
+        if (ret == 0)
+        {
+            exit(0);
+        }
 #endif
 
         // Initialize the timeouts API
         timeout_init();
 
-        // Arm the slot timer
+        // Arm the slot timer for the first time.
         ARROW(mclmac->frame)slot_timer = timeout_set(ARROW(mclmac->frame)slot_duration);
         break;
     
@@ -250,6 +262,14 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 uint8_t nelement = stub_mclmac_read_queue_element(mclmac, &bytes, mclmac->_max_number_packets_buffer, &read_from);
                 if (nelement == 1)
                     packets_read++;
+            }
+
+            /* 'Write' packets into queue. */
+            if (mclmac->_num_packets_received > 0)
+            {
+                uint8_t nelements = stub_mclmac_write_queue_element(mclmac, mclmac->_max_number_packets_buffer);
+                if (nelements == 1)
+                    mclmac->_num_packets_received--;
             }
         }
 
@@ -802,9 +822,29 @@ int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t
         element = (element == 0 ? 2 : element);
         WRITE_ARRAY(REFERENCE mclmac->_packets, element, (*read_from) + i + 6);
     }
-    WRITE_ARRAY(REFERENCE mclmac->_packets, 0, (*read_from) + datasize + 6);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, '\0', (*read_from) + datasize + 6);
     *bytes = 7 + datasize;
     *read_from += *bytes;
     
+    return 1;
+}
+
+int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size)
+{
+    assert(mclmac != NULL);
+
+    if (size <= 0)
+        return 0;
+    
+    size_t i;
+    /* "Write the packet into de queue* (just pretend to do something.) */
+    for (i = 0; i < 255; i++)
+        WRITE_ARRAY(REFERENCE mclmac->_packets_received, 0, i);
+    /* Displace the rest of the elements to the front. */
+    for (i = 256; i < size; i++)
+    {
+        uint8_t element = READ_ARRAY(REFERENCE mclmac->_packets_received, i);
+        WRITE_ARRAY(REFERENCE mclmac->_packets_received, element, i - 255);
+    }
     return 1;
 }
