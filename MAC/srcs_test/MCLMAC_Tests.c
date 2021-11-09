@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
+#include "string.h"
 
 #include "MCLMAC.h"
 
@@ -1701,9 +1702,9 @@ void test_mclmac_execute_powermode_state(void)
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
-    ARROW(mclmac)_frameDuration = 100;
-    ARROW(mclmac)_slotDuration = 100;
-    ARROW(mclmac)_cfDuration = 100;
+    ARROW(mclmac)_frameDuration = TIME(1000000);
+    ARROW(mclmac)_slotDuration = TIME(500000);
+    ARROW(mclmac)_cfDuration = TIME(100000);
     mclmac_set_powermode_state(REFERENCE mclmac, NONEP);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_FAILED);
@@ -1722,6 +1723,10 @@ void test_mclmac_execute_powermode_state(void)
    assert(mclmac->mac->cfpkt == NULL);
    assert(mclmac->mac->datapkt == NULL);
    assert(mclmac->mac->ctrlpkt == NULL);
+   assert(mclmac->_packets != NULL);
+#endif
+#ifdef __RIOT__
+    assert(mclmac._packets.size > 0);
 #endif
     assert(ARROW(ARROW(mclmac)frame)slots_number == ARROW(mclmac)_nSlots);
     assert(ARROW(ARROW(mclmac)frame)cf_slots_number == ARROW(mclmac)_nSlots);
@@ -1736,13 +1741,30 @@ void test_mclmac_execute_powermode_state(void)
     /* State PASSIVE. Execute the following tasks:
     *   -Set the radio to SLEEP mode.
     *   -Start the slot timer.
-    *   -Set next state to NONEP.
+    *   -On a loop, do the following:
+    *       -Check whether the timeout expired.
+    *       -Once the timeout expires, unarm the timeout and end the cycle.
+    *       -Possible do other activities, like reading/writing packets from/to other layers.
+    *       -With the received packets from the upper layers, create an array containing
+    *        the ids of the nodes to send the packet.
     */
     mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)powerMode.nextState == NONEP);
+    assert(ARROW(mclmac)powerMode.nextState == ACTIVE);
     assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
+    int count = 0;
+    // Check that there is less than 5 packets.
+    for (int i = 0; i < ARROW(mclmac)_max_number_packets_buffer; i++)
+    {
+        uint8_t element = READ_ARRAY(REFERENCE ARROW(mclmac)_packets, i);
+        if (element == '\0')
+            count++;
+        uint8_t element2 = READ_ARRAY(REFERENCE ARROW(mclmac)_packets, i + 1);
+        if (element == '\0' && element2 == '\0')
+            break;
+    }
+    assert(count >= 1 && count <= 5);
 #ifdef __LINUX__
     // Assert mode is sleep
 #endif
@@ -1793,6 +1815,107 @@ void test_mclmac_execute_powermode_state(void)
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == ARROW(ARROW(mclmac)mac)destinationID);
     assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_stub_mclmac_read_queue_element(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    size_t size = ARROW(mclmac)_max_number_packets_buffer;
+
+#ifdef __LINUX__
+    mclmac->_packets = (uint8_t *)malloc(size * sizeof(uint8_t));
+    memset(mclmac->_packets, 0, size);
+#endif
+#ifdef __RIOT__
+    int ret = create_array(&mclmac._packets, size);
+    if (ret == 0)
+    {
+        printf("Unable to create array.\n");
+        return;
+    }
+    for (uint j = 0; j < size; j++)
+        write_element(&mclmac._packets, 0, j);
+#endif
+
+    uint16_t bytes;      // store how many bytes read from queue
+    uint32_t read_from, old_read_from;
+    /* Test case 1: 
+    *   When last_pos is size - 1
+    *       -nelements should be 0.
+    *       -bytes should be 0.
+    *       -last_pos should not change.
+    * */
+    read_from = size - 1;
+    int nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    assert(nelements == 0);
+    assert(bytes == 0);
+    assert(read_from == size - 1);
+
+    /* Test case 2: 
+    *   -The array is emtpy. The function should generate the elements randomly.
+    *   It should return:
+    *       -nelements = 1.
+    *       -last_pos should be equal to bytes.
+    *       -bytes should be greater than 0.
+    *       -The last element, at bytes - 1, should contain '\0'.
+    *  */
+    read_from = 0;
+    old_read_from = read_from;
+    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    assert(nelements == 1);
+    assert(bytes > 0);
+    assert(read_from == bytes);
+    uint8_t end = READ_ARRAY(REFERENCE ARROW(mclmac)_packets, bytes - 1);
+    assert(end == '\0');
+    int i;
+    for (i = old_read_from; i < bytes - 1; i++)
+    {
+        assert(READ_ARRAY(REFERENCE ARROW(mclmac)_packets, i) != 0);
+    }
+
+    /**
+     * Test case 3:
+     * -The array alreaady contains elements, it should add the data at the first empty place.
+     *  It should return:
+     *      -nelements = 1.
+     *      -read_from should increase by bytes sise.
+     *      -bytes should be greater than zero.
+     *      -The last element, at red_from - 1, should be '\0'.
+     * */
+    old_read_from = read_from;
+    bytes = 0;
+    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    assert(nelements == 1);
+    assert(bytes > 0);
+    assert(read_from == old_read_from + bytes);
+    end = READ_ARRAY(REFERENCE ARROW(mclmac)_packets, read_from - 1);
+    assert(end == '\0');
+    end = READ_ARRAY(REFERENCE ARROW(mclmac)_packets, read_from - 2);
+    assert(end != 0);
+
+    /**
+     * Test case 4:
+     *  -If the number of elements to add to the array is greater than the available 
+     *  memory on the array, return 0.
+    */
+    read_from = size - 2;
+    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    assert(nelements == 0);
+    assert(bytes == 0);
+    assert(read_from == size - 2);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -1993,6 +2116,9 @@ void executeTestsMCLMAC(void)
     printf("Testing mclmac_execute_powermode_state function.\n");
     test_mclmac_execute_powermode_state();
     printf("Test passed.\n");
-
+    
+    printf("Testing stub_mclmac_read_queue_element function.\n");
+    test_stub_mclmac_read_queue_element();
+    printf("Test passed.\n");
     return;
 }

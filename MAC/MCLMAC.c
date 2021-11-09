@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "MCLMAC.h"
 
@@ -35,6 +36,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     (SINGLE_POINTER mclmac)->powerMode.currentState = STARTP;
     (SINGLE_POINTER mclmac)->_nChannels = _nChannels;
     (SINGLE_POINTER mclmac)->_nSlots = _nSlots;
+    (SINGLE_POINTER mclmac)->_max_number_packets_buffer = 5 * 256;      // Maximum 5 packets of siza 256 each
 
     int bytes = get_number_bytes(_nChannels * _nSlots);
 #ifdef __LINUX__
@@ -171,6 +173,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     assert(mclmac->_frameDuration > 0);
     assert(mclmac->_slotDuration > 0);
     assert(mclmac->_cfDuration > 0);
+    assert(mclmac->_max_number_packets_buffer > 0);
 
     if (mclmac->powerMode.currentState == NONEP)
         return E_PM_EXECUTION_FAILED;
@@ -194,15 +197,65 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
+
+        // Create an array of size of at most 5 packet of 256 bytes each
+#ifdef __LINUX__
+        mclmac->_packets = (uint8_t *)malloc(mclmac->_max_number_packets_buffer * sizeof(uint8_t));
+        if (mclmac == NULL)
+        {
+            exit(0);
+        }
+#endif
+#ifdef __RIOT__
+        int ret = create_array(&mclmac->_packets, mclmac->_max_number_packets_buffer);
+        if (ret == 0)
+        {
+            exit(0);
+        }
+#endif
+
+        // Initialize the timeouts API
+        timeout_init();
+
+        // Arm the slot timer
+        ARROW(mclmac->frame)slot_timer = timeout_set(ARROW(mclmac->frame)slot_duration);
         break;
     
     case PASSIVE:
         // Reset the cf counter to zero
         mclmac_set_current_cf_slot(mclmac, 0);
+
 #ifdef __LINUX__
-        /* Set to sleep */
+        /* Set readio to sleep */
 #endif
-        mclmac_set_next_powermode_state(mclmac, NONEP);
+#ifdef __RIOT__
+        /* Set radio to sleep */
+#endif
+        bool sleep = true;
+        uint8_t packets_read = 0;
+        uint16_t bytes = 0;
+        uint32_t read_from = 0;
+        while (sleep)
+        {
+            if (timeout_passed(ARROW(mclmac->frame)slot_timer) == 1)
+            {
+                /* Terminate the cycle and unarm the timeout */
+                timeout_unset(ARROW(mclmac->frame)slot_timer);
+                sleep = false;
+            }
+
+            /* Read at most 5 packets from the queue. */
+            if (packets_read < 5)
+            {
+                uint8_t nelement = stub_mclmac_read_queue_element(mclmac, &bytes, mclmac->_max_number_packets_buffer, &read_from);
+                if (nelement == 1)
+                    packets_read++;
+            }
+        }
+
+        /* Set once again the slot timer before leaving the state. */
+        ARROW(mclmac->frame)slot_timer = timeout_set(ARROW(mclmac->frame)slot_duration);
+        mclmac_set_next_powermode_state(mclmac, ACTIVE);
         break;
     
     case ACTIVE:
@@ -710,4 +763,48 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
     // TO DO
     (void) mclmac;
     return;
+}
+
+int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t size, uint32_t *read_from)
+{
+    assert(mclmac != NULL);
+    assert(bytes != NULL);
+    assert(read_from != NULL);
+    assert(size > 0);
+
+    if ((*read_from) == size - 1)
+    {
+        *bytes = 0;
+        return 0;
+    }
+    uint16_t datasize = rand() % 250;
+    if ((size - (*read_from)) < (datasize + 7U))
+    {
+        *bytes = 0;
+        return 0;
+    }
+
+    /* Node id */
+    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), *read_from);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), (*read_from) + 1);
+    /* Is fragment */
+    WRITE_ARRAY(REFERENCE mclmac->_packets, (rand() != 0 ? 1 : 0), (*read_from) + 2);
+    /* total fragment */
+    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), (*read_from) + 3);
+    /* Fragment number */
+    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), (*read_from) + 4);
+    /* data size */
+    WRITE_ARRAY(REFERENCE mclmac->_packets, (uint8_t)datasize, (*read_from) + 5);
+    uint8_t i;
+    for (i = 0; i < datasize; i++)
+    {
+        uint8_t element = rand();
+        element = (element == 0 ? 2 : element);
+        WRITE_ARRAY(REFERENCE mclmac->_packets, element, (*read_from) + i + 6);
+    }
+    WRITE_ARRAY(REFERENCE mclmac->_packets, 0, (*read_from) + datasize + 6);
+    *bytes = 7 + datasize;
+    *read_from += *bytes;
+    
+    return 1;
 }

@@ -75,6 +75,8 @@ typedef struct MCLMAC
     bool                _isFragment;
     uint8_t             _numberFragments;
     uint8_t             _fragmentNumber;
+    ARRAY               _packets;
+    uint16_t             _max_number_packets_buffer;
 #ifdef __LINUX__
     double              _frameDuration;
     double              _slotDuration;
@@ -198,6 +200,8 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac);
 void mclmac_start_split_phase(MCLMAC_t *mclmac);
 void mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool mclmac_CAD_detected(MCLMAC_t *mclmac);
+
+int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t size, uint32_t *read_from);
 
 /* Private functions */
 void _select_slot_and_channel(MCLMAC_t *mclmac);
