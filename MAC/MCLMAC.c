@@ -193,9 +193,10 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_cf_duration(mclmac, mclmac->_cfDuration);
 
         // Initialize frame, slots, and cfslots counter to zero
-        ARROW(mclmac->frame)current_frame = 0;
-        ARROW(mclmac->frame)current_slot = 0;
-        ARROW(mclmac->frame)current_cf_slot = 0;
+        mclmac_set_current_frame(mclmac, 0);
+        mclmac_set_current_slot(mclmac, 0);
+        mclmac_set_current_cf_slot(mclmac, 0);
+        mclmac->_packets_read = 0;
 
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
@@ -272,6 +273,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     mclmac->_num_packets_received--;
             }
         }
+        mclmac->_packets_read += packets_read;
 
         /* Set once again the slot timer before leaving the state. */
         ARROW(mclmac->frame)slot_timer = timeout_set(ARROW(mclmac->frame)slot_duration);
@@ -279,7 +281,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         break;
     
     case ACTIVE:
-        mclmac_create_cf_packet(mclmac);
+        
 
 #ifdef __LINUX__
         // change radio to common channel
