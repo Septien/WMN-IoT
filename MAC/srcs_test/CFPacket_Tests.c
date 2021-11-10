@@ -19,7 +19,6 @@ void test_cfpacket_init(void)
 #ifdef __RIOT__
     assert(cfpkt.nodeID == 0);
     assert(cfpkt.destinationID == 0);
-    assert(cfpkt.frequency == 0);
 #endif
 
     cfpacket_destroy(&cfpkt);
@@ -37,7 +36,6 @@ void test_cfpacket_destroy(void)
 #ifdef __RIOT__
     assert(cfpkt.nodeID == 0);
     assert(cfpkt.destinationID == 0);
-    assert(cfpkt.frequency == 0);
 #endif
 }
 
@@ -48,13 +46,11 @@ void test_cfpacket_create(void)
 
     uint16_t nodeID = (uint16_t)rand();
     uint16_t destinationID = (uint16_t)rand();
-    uint32_t frequency = (uint32_t)rand();
 
-    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID, frequency);
+    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
 
     assert(ARROW(cfpkt)nodeID == nodeID);
     assert(ARROW(cfpkt)destinationID == destinationID);
-    assert(ARROW(cfpkt)frequency == frequency);
 
     cfpacket_destroy(&cfpkt);
 }
@@ -66,9 +62,8 @@ void test_cfpacket_clear(void)
 
     uint16_t nodeID = (uint16_t)rand();
     uint16_t destinationID = (uint16_t)rand();
-    uint32_t netTime = (uint32_t)rand();
 
-    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID, netTime);
+    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
 
     cfpacket_clear(REFERENCE cfpkt);
 
@@ -133,33 +128,6 @@ void test_cfpacket_get_destinationid(void)
     cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_set_frequency(void)
-{
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
-
-    uint32_t frequency = rand();
-    cfpacket_set_frequency(REFERENCE cfpkt, frequency);
-    assert(ARROW(cfpkt)frequency == frequency);
-
-    cfpacket_destroy(&cfpkt);
-}
-
-void test_cfpacket_get_frequency(void)
-{
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
-
-    uint32_t frequency = rand();
-    cfpacket_set_frequency(REFERENCE cfpkt, frequency);
-    
-    uint32_t freqA;
-    freqA = cfpacket_get_frequency(REFERENCE cfpkt);
-    assert(freqA == frequency);
-
-    cfpacket_destroy(&cfpkt);
-}
-
 void test_cfpacket_get_packet_bytestring(void)
 {
     CFPacket_t SINGLE_POINTER cfpkt;
@@ -167,11 +135,9 @@ void test_cfpacket_get_packet_bytestring(void)
 
     uint16_t nodeID = (uint16_t)rand();
     uint16_t destinationID = (uint16_t)rand();
-    uint32_t frequency = (uint32_t)rand();
-    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID, frequency);
+    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
 
     size_t size = sizeof(nodeID) + sizeof(destinationID);
-    size += sizeof(frequency);
     ARRAY byteString;
     size_t size2;
 
@@ -184,10 +150,6 @@ void test_cfpacket_get_packet_bytestring(void)
     assert(READ_ARRAY(REFERENCE byteString, 1) == (nodeID & 0x00ff));
     assert(READ_ARRAY(REFERENCE byteString, 2) == (destinationID & 0xff00) >> 8);
     assert(READ_ARRAY(REFERENCE byteString, 3) == (destinationID & 0x00ff));
-    assert(READ_ARRAY(REFERENCE byteString, 4) == (frequency & 0xff000000 >> 24));
-    assert(READ_ARRAY(REFERENCE byteString, 5) == (frequency & 0x00ff0000 >> 16));
-    assert(READ_ARRAY(REFERENCE byteString, 6) == (frequency & 0x0000ff00 >> 8));
-    assert(READ_ARRAY(REFERENCE byteString, 7) == (frequency & 0x000000ff));
     assert(size2 == size);
 
 #ifdef __LINUX__
@@ -206,7 +168,6 @@ void test_cfpacket_construct_packet_from_bytestring(void)
     cfpacket_init(&cfpkt);
 
     size_t size = 2 * sizeof(uint16_t);
-    size += sizeof(uint32_t);
 
     ARRAY byteString;
 #ifdef __LINUX__
@@ -215,22 +176,16 @@ void test_cfpacket_construct_packet_from_bytestring(void)
 #ifdef __RIOT__
     create_array(&byteString, size);
 #endif
-    uint32_t frequency = (uint32_t) rand();
     uint16_t nodeid = (uint16_t) rand();
     uint16_t destinationid = (uint16_t) rand();
     WRITE_ARRAY(REFERENCE byteString, (nodeid & 0xff00) >> 8,              0);
     WRITE_ARRAY(REFERENCE byteString, (nodeid & 0x00ff),                   1);
     WRITE_ARRAY(REFERENCE byteString, (destinationid & 0xff00) >> 8,       2);
     WRITE_ARRAY(REFERENCE byteString, (destinationid & 0x00ff),            3);
-    WRITE_ARRAY(REFERENCE byteString, ((frequency & 0xff000000) >> 24),    4);
-    WRITE_ARRAY(REFERENCE byteString, ((frequency & 0x00ff0000) >> 16),    5);
-    WRITE_ARRAY(REFERENCE byteString, ((frequency & 0x0000ff00) >> 8),     6);
-    WRITE_ARRAY(REFERENCE byteString, (frequency & 0x000000ff),            7);
 
     cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString, size);
     assert(ARROW(cfpkt)nodeID        == nodeid);
     assert(ARROW(cfpkt)destinationID == destinationid);
-    assert(ARROW(cfpkt)frequency     == frequency);
 
 #ifdef __LINUX__
     free(byteString);
@@ -276,14 +231,6 @@ void executeTestsCF(void)
 
     printf("Testing cfpacket_get_destinationid function.\n"),
     test_cfpacket_get_destinationid();
-    printf("Test passed.\n");
-
-    printf("Testing _cfpacket_set_frequency function.\n");
-    test_cfpacket_set_frequency();
-    printf("Test passed.\n");
-
-    printf("Testing cfpacket_get_frequency function.\n");
-    test_cfpacket_get_frequency();
     printf("Test passed.\n");
 
     printf("Testing cfpacket_get_packet_bytestring function.\n");

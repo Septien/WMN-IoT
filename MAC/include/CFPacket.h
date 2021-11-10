@@ -23,19 +23,16 @@ typedef struct CFPacket
 {
     uint16_t nodeID;
     uint16_t destinationID;
-    uint32_t frequency;
 }CFPacket_t;
 
 void cfpacket_init(CFPacket_t DOUBLE_POINTER pkt);
 void cfpacket_destroy(CFPacket_t DOUBLE_POINTER pkt);
-void cfpacket_create(CFPacket_t *pkt, uint16_t nodeID, uint16_t destinationID, uint32_t frequency);
+void cfpacket_create(CFPacket_t *pkt, uint16_t nodeID, uint16_t destinationID);
 void cfpacket_clear(CFPacket_t *pkt);
 void cfpacket_set_nodeid(CFPacket_t *pkt, uint16_t nodeID);
 uint16_t cfpacket_get_nodeid(CFPacket_t *pkt);
 void cfpacket_set_destinationid(CFPacket_t *pkt, uint16_t destinationID);
 uint16_t cfpacket_get_destinationid(CFPacket_t *pkt);
-void cfpacket_set_frequency(CFPacket_t *pkt, uint32_t frequency);
-uint32_t cfpacket_get_frequency(CFPacket_t *pkt);
 void cfpacket_get_packet_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t *size);
 void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t size);
 
