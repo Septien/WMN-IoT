@@ -15,6 +15,7 @@ LIB_MAC = $(mac_current_dir)/lib
 # include directories
 INC_DIR = $(mac_current_dir)/include
 $(info $$INC_DIR is [${INC_DIR}])
+
 ifdef TEST
 INCT_DIR = $(INC_DIR)/testsinclude
 $(info $$INCT_DIR is [${INCT_DIR}])
@@ -23,23 +24,31 @@ endif
 # source directories
 SRC_DIR = $(mac_current_dir)
 $(info $$SRC_DIR is [${SRC_DIR}])
+
 ifdef TEST
 SRCT_DIR = $(mac_current_dir)/srcs_test
 $(info $$SRCT_DIR is [${SRCT_DIR}])
 endif
 
 # Source files
-SRC = $(mac_current_dir)/CFPacket.c $(mac_current_dir)/ControlPacket.c $(mac_current_dir)/DataPacket.c $(mac_current_dir)/MAC_Internals.c $(mac_current_dir)/MCLMAC.c
+SRCA = CFPacket.c ControlPacket.c DataPacket.c MAC_Internals.c MCLMAC.c
+SRC = $(addprefix $(mac_current_dir)/, $(SRCA))
 $(info $$SRC is [${SRC}])
+
 ifdef TEST
-SRCT += $(SRCT_DIR)/mclmac_tests.c $(SRCT_DIR)/CFPacket_Tests.c $(SRCT_DIR)/ControlPacket_Tests.c $(SRCT_DIR)/DataPacket_Tests.c $(SRCT_DIR)/MAC_Internals_Tests.c $(SRCT_DIR)/MCLMAC_Tests.c
+SRCTA = mclmac_tests.c CFPacket_Tests.c ControlPacket_Tests.c DataPacket_Tests.c MAC_Internals_Tests.c MCLMAC_Tests.c
+SRCT+= $(addprefix $(SRCT_DIR)/, $(SRCTA))
 $(info $$SRCT is [${SRCT}])
 endif
 
 # Dependencies
-DEPS = $(INC_UTILS)/memory_macros.h $(INC_DIR)/CFPacket.h $(INC_DIR)/ControlPacket.h $(INC_DIR)/DataPacket.h $(INC_DIR)/MAC_Internals.h $(INC_DIR)/MCLMAC.h
+DEPSA = CFPacket.h ControlPacket.h DataPacket.h MAC_Internals.h MCLMAC.h
+DEPS = $(INC_UTILS)/memory_macros.h
+DEPS += $(addprefix $(INC_DIR)/, $(DEPSA))
+
 ifdef TEST
-DEPST = $(INCT_DIR)/mclmac_tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/CFPacket_Tests.h $(INCT_DIR)/DataPacket_Tests.h $(INCT_DIR)/MAC_Internals_Tests.h $(INCT_DIR)/MCLMAC_Tests.h
+DEPSTA = mclmac_tests.h CFPacket_Tests.h DataPacket_Tests.h MAC_Internals_Tests.h MCLMAC_Tests.h
+DEPST = $(addprefix $(INCT_DIR)/, $(DEPSTA))
 endif
 $(info $$DEPS is [${DEPS}])
 
@@ -51,10 +60,13 @@ OBJT_DIR = $(mac_current_dir)/obj
 $(info $$OBJT_DIR is ${OBJT_DIR})
 endif
 
-OBJS = $(OBJ_DIR)/CFPacket.o $(OBJ_DIR)/ControlPacket.o $(OBJ_DIR)/DataPacket.o $(OBJ_DIR)/MAC_Internals.o $(OBJ_DIR)/MCLMAC.o
+OBJA = CFPacket.o ControlPacket.o DataPacket.o MAC_Internals.o MCLMAC.o
+OBJS = $(addprefix $(OBJ_DIR)/, $(OBJA))
 $(info $$OBJS is ${OBJS})
+
 ifdef TEST
-OBJST = $(OBJT_DIR)/mclmac_tests.o $(OBJT_DIR)/CFPacket_Tests.o $(OBJT_DIR)/ControlPacket_Tests.o $(OBJT_DIR)/DataPacket_Tests.o $(OBJT_DIR)/MAC_Internals_Tests.o $(OBJT_DIR)/MCLMAC_Tests.o
+OBJSTA = mclmac_tests.o CFPacket_Tests.o ControlPacket_Tests.o DataPacket_Tests.o MAC_Internals_Tests.o MCLMAC_Tests.o
+OBJST = $(addprefix $(OBJT_DIR)/, $(OBJSTA))
 $(info $$OBJST is ${OBJST})
 endif
 

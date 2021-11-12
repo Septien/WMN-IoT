@@ -21,32 +21,43 @@ $(info $$INC_UTILS is [$(INC_UTILS)])
 
 # sources location
 SRCD = $(utils_current_dir)
+$(info $$SRCD is [$(SRCD)])
+
 ifdef TEST
 SRCDT += $(utils_current_dir)/srcs_tests_utils
 $(info $$SRCDT is [$(SRCDT)])
 endif
-$(info $$SRCD is [$(SRCD)])
 
 # sources
-SRC := $(utils_current_dir)/timeouts.c
-ifdef TEST
-SRCT := $(utils_current_dir)/utils_tests.c $(utils_current_dir)/timeouts_test.c
-endif
+SRCA = timeouts.c
+SRC = $(addprefix $(utils_current_dir)/, $(SRCA))
 $(info $$SRC is [$(SRC)])
 
-DEPS_U := $(INC_UTILS)/timeouts.h
 ifdef TEST
-DEPST_U := $(INCT_UTILS)/timeouts_test.h
+SRCTA = utils_test.c timeouts_test.c
+SRCT = $(addprefix $(utils_current_dir)/, $(SRCTA))
+endif
+
+DEPS_UA = timeouts.h
+DEPS_U = $(addprefix $(INC_UTILS)/, $(DEPS_UA))
+
+ifdef TEST
+DEPST_UA = timeouts_test.h
+DEPST_U = $(addprefix $(INCT_UTILS)/, $(DEPST_UA))
 endif
 
 OBJU_DIR := $(utils_current_dir)/obj
+
 ifdef TEST
 OBJUT_DIR := $(utils_current_dir)/obj
 endif
 
-OBJSU := $(OBJU_DIR)/timeouts.o
+OBJSUA = timeouts.o
+OBJSU := $(addprefix $(OBJU_DIR)/, $(OBJSUA))
+
 ifdef TEST
-OBJSUT := $(OBJUT_DIR)/utils_tests.o $(OBJUT_DIR)/timeouts_test.o
+OBJSUTA = utils_tests.o timeouts_test.o
+OBJSUT = $(addprefix $(OBJUT_DIR)/, $(OBJSUTA))
 endif
 
 TARGETS := directories_utils $(LIB_UTILS)/libutils
