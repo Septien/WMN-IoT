@@ -40,7 +40,7 @@ void mac_tests(void)
     executeTestsMCLMAC();
 
     printf("\nTesting the implementatiof of the MAC's PowerMode State Machine.\n");
-    exectetests_mac_powermode_statemachine();
+    executetests_mac_powermode_statemachine();
 
     return;
 }
