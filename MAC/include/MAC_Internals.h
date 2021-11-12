@@ -37,7 +37,7 @@ typedef struct MAC_Internals
     uint8_t *radio;
     /* TODO: Add an implementation that runs the radio from a common computer */
 #endif
-    // Packets send by the protocol
+    // Packets used by the protocol
     ControlPacket_t SINGLE_POINTER ctrlpkt;
     CFPacket_t      SINGLE_POINTER cfpkt;
     DataPacket_t    SINGLE_POINTER datapkt;

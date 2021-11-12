@@ -1302,6 +1302,33 @@ void test_mclmac_create_data_packet(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_mclmac_clear_cf_packet(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    mclmac_set_nodeid(REFERENCE mclmac, 1);
+    mclmac_set_destination_id(REFERENCE mclmac, 2);
+    mclmac_create_cf_packet(REFERENCE mclmac);
+
+    mclmac_clear_cf_packet(REFERENCE mclmac);
+    // Assert the data is clear
+    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)nodeID == 0);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)nodeID == 0);
+
+    MCLMAC_destroy(&mclmac);
+}
+
 void test_mclmac_set_packet_data(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1706,9 +1733,9 @@ void test_mclmac_execute_powermode_state(void)
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
-    ARROW(mclmac)_frameDuration = TIME(1000000);
-    ARROW(mclmac)_slotDuration = TIME(500000);
-    ARROW(mclmac)_cfDuration = TIME(100000);
+    ARROW(mclmac)_frameDuration = TIME(1600000);
+    ARROW(mclmac)_slotDuration = TIME(200000);
+    ARROW(mclmac)_cfDuration = TIME(5000);
     mclmac_set_powermode_state(REFERENCE mclmac, NONEP);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_FAILED);
@@ -1742,6 +1769,7 @@ void test_mclmac_execute_powermode_state(void)
     assert(ARROW(ARROW(mclmac)frame)current_frame == 0);
     assert(ARROW(ARROW(mclmac)frame)current_slot == 0);
     assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
+    assert(ARROW(mclmac)_packets_read == 0);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
     /* State PASSIVE. Execute the following tasks:
@@ -1758,6 +1786,7 @@ void test_mclmac_execute_powermode_state(void)
     for (i = 0; i < ARROW(mclmac)_max_number_packets_buffer; i++)
         WRITE_ARRAY(REFERENCE ARROW(mclmac)_packets_received, rand(), i);
     ARROW(mclmac)_num_packets_received = 5;
+
     mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
@@ -1775,6 +1804,7 @@ void test_mclmac_execute_powermode_state(void)
             break;
     }
     assert(count >= 1 && count <= 5);
+    assert(ARROW(mclmac)_packets_read >= 0);
     // For the packets 'written' into the queue
     assert(ARROW(mclmac)_num_packets_received < 5);
 #ifdef __LINUX__
@@ -1788,13 +1818,13 @@ void test_mclmac_execute_powermode_state(void)
 #endif
 
     /** State ACTIVE. Executes the following tasks:
-     *      - Initiates the slot for synchornization and data transmission.
-     *      - Initiates the slot timer.
      *      - Initialize the cf packet.
-     *      - Initiates the cf phase: in which:
+     *      - Initiates the cf phase, in which:
      *          - Changes the radio to the common channel.
      *          - Sets the cf counter to zero.
      *          - Initiates the cf timer.
+     *          - Checks whether there is a packet on the queue, if so, create cf packet, and set 
+     *            send flag to true.
      *          - It checks wether the current cf slot is equal to the 
      *            selected slot, in which case it transmits a cf packet with destination ID.
      *            Set the next state to TRANSMIT.
@@ -1809,13 +1839,16 @@ void test_mclmac_execute_powermode_state(void)
      *            for the next time we send a control packet to tell the network. Save the number
      *            cf packets received.
      */
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1);
     mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
     mclmac_set_powermode_state(REFERENCE mclmac, ACTIVE);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(r == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(ARROW(mclmac)frame)current_cf_slot == ARROW(ARROW(mclmac)frame)cf_slots_number);
+    assert(READ_ARRAY(REFERENCE ARROW(mclmac)_packets, 0) == ARROW(ARROW(mclmac)mac)destinationID);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == 0);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE || ARROW(mclmac)powerMode.nextState == TRANSMIT || ARROW(mclmac)powerMode.nextState == RECEIVE);
 #ifdef __LINUX__
-    assert(mclmac->mac->cfpkt != NULL);
+    //assert(mclmac->mac->cfpkt != NULL);
     // Check channel is changed
 #endif
 #ifdef __RIOT__
@@ -1823,10 +1856,10 @@ void test_mclmac_execute_powermode_state(void)
     /*uint32_t channel = sx127x_get_channel(mclmac->mac->radio);
     assert(channel == mclmac->mac->cfChannel);*/
 #endif
-    mclmac_set_current_cf_slot(REFERENCE mclmac, ARROW(ARROW(mclmac)mac)selectedSlot);
+    /*mclmac_set_current_cf_slot(REFERENCE mclmac, ARROW(ARROW(mclmac)mac)selectedSlot);
     r = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == ARROW(ARROW(mclmac)mac)destinationID);
-    assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);*/
 
     MCLMAC_destroy(&mclmac);
 }
@@ -1997,6 +2030,185 @@ void test_stub_mclmac_write_queue_element(void)
 #endif
 #ifdef __RIOT__ 
     free_array(&mclmac._packets_received);
+#endif
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_change_cf_channel(void)
+{
+        MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+
+    stub_mclmac_change_cf_channel(REFERENCE mclmac);
+    
+    // Check the state is standby
+    // Check the channel is cf
+
+    MCLMAC_destroy(&mclmac);
+}
+void test_mclmac_start_cf_phase(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+
+    stub_mclmac_change_cf_channel(REFERENCE mclmac);
+
+    stub_mclmac_start_cf_phase(REFERENCE mclmac);
+
+    // Check for the frequency
+
+    // Check the state of the radio is rx-single
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_send_cf_message(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    mclmac_set_nodeid(REFERENCE mclmac, 1);
+    mclmac_set_destination_id(REFERENCE mclmac, 2);
+    mclmac_create_cf_packet(REFERENCE mclmac);
+
+    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+
+    stub_mclmac_change_cf_channel(REFERENCE mclmac);
+
+    stub_mclmac_start_cf_phase(REFERENCE mclmac);
+
+    /* Send the packet the destination id is already known, and the 
+       cf phase is already started. */
+    stub_mclmac_send_cf_message(REFERENCE mclmac);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_stub_mclmac_receive_cf_message(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+
+    mclmac_set_nodeid(REFERENCE mclmac, 1);
+    mclmac_set_destination_id(REFERENCE mclmac, 2);
+
+    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+
+    stub_mclmac_change_cf_channel(REFERENCE mclmac);
+
+    stub_mclmac_start_cf_phase(REFERENCE mclmac);
+
+    /* Receive the packet the destination id is already known, and the 
+       cf phase is already started. */
+    stub_mclmac_receive_cf_message(REFERENCE mclmac);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_receive_cf_message(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    size_t dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+    size_t size = 5 * sizeof(uint16_t);
+
+    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    int ret;
+#ifdef __LINUX__
+    mclmac->_cf_messages = (uint8_t *)malloc(size * sizeof(uint8_t));
+    if (mclmac->_cf_messages == NULL)
+    {
+        printf("Unable to create _cf_messages queue. Linux.\n");
+        exit(0);
+    }
+    memset(mclmac->_cf_messages, 0, size);
+#endif
+#ifdef __RIOT__
+    ret = create_array(&mclmac._cf_messages, size);
+    if (ret == 0)
+    {
+        printf("Unable to craeate _cf_messages queue. RIOT.\n");
+        exit(0);
+    }
+#endif
+    mclmac_create_cf_packet(REFERENCE mclmac);
+
+    for (int i = 0; i < ITERATIONS; i++)
+    {
+        ret = stub_mclmac_receive_cf_message(REFERENCE mclmac);
+        if (ret)
+        {
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 0) > 0);
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 1) > 0);
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 2) > 0);
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 3) > 0);
+        }
+        else
+        {
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 0) == 0);
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 1) == 0);
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 2) == 0);
+            assert(READ_ARRAY(REFERENCE ARROW(mclmac)_cf_messages, 3) == 0);
+        }
+    }
+
+#ifdef __LINUX__
+    free(mclmac->_cf_messages);
+#endif
+#ifdef __RIOT__
+    free_array(&mclmac._cf_messages);
 #endif
 
     MCLMAC_destroy(&mclmac);
@@ -2179,6 +2391,10 @@ void executeTestsMCLMAC(void)
     test_mclmac_create_data_packet();
     printf("Test passed.\n");
 
+    printf("Testing mclmac_clear_cf_packet function.\n");
+    test_mclmac_clear_cf_packet();
+    printf("Test passed.\n");
+
     printf("Testing mclmac_set_packet_data function.\n");
     test_mclmac_set_packet_data();
     printf("Test passed.\n");
@@ -2207,5 +2423,20 @@ void executeTestsMCLMAC(void)
     test_stub_mclmac_write_queue_element();
     printf("Test passed.\n");
 
+    printf("Testing mclmac_change_cf_channel function.\n");
+    test_mclmac_change_cf_channel();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_start_cf_phase function.\n");
+    test_mclmac_start_cf_phase();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_send_cf_message function.\n");
+    test_mclmac_send_cf_message();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_receive_cf_message function.\n");
+    test_mclmac_receive_cf_message();
+    printf("Test passed.\n");
     return;
 }

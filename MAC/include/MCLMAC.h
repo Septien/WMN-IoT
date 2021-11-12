@@ -75,6 +75,11 @@ typedef struct MCLMAC
     bool                _isFragment;
     uint8_t             _numberFragments;
     uint8_t             _fragmentNumber;
+    /* CF messages */
+    bool                _cf_message_received;
+    ARRAY               _cf_messages;
+    uint8_t             _max_cf_messages;
+    /* Messages received from other nodes */
     ARRAY               _packets;
     uint8_t             _packets_read;
     uint16_t            _max_number_packets_buffer;
@@ -181,27 +186,28 @@ uint32_t mclmac_get_network_time(MCLMAC_t *mclmac);
 void mclmac_create_cf_packet(MCLMAC_t *mclmac);
 void mclmac_create_control_packet(MCLMAC_t *mclmac);
 void mclmac_create_data_packet(MCLMAC_t *mclmac);
+void mclmac_clear_cf_packet(MCLMAC_t *mclmac);
 void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size);
 void mclmac_delete_data_from_packet(MCLMAC_t *mclmac);
 void mclmac_clear_data_from_packet(MCLMAC_t *mclmac);
 
 void mclmac_copy_data(MCLMAC_t *mclmac, const ARRAY* data);
 void mclmac_send_control_packet(MCLMAC_t *mclmac);
-void mclmac_send_cf_packet(MCLMAC_t *mclmac);
+void stub_mclmac_send_cf_message(MCLMAC_t *mclmac);
+bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac);
 void mclmac_send_data_packet(MCLMAC_t *mclmac);
 void mclmac_receive_control_message(MCLMAC_t *mclmac);
-void mclmac_receive_cf_message(MCLMAC_t *mclmac);
-void mclmac_receive_data_message(MCLMAC_t *mclmac);
+bool mclmac_receive_data_message(MCLMAC_t *mclmac);
 
 // Channel selection
 void mclmac_change_transmit_channel(MCLMAC_t *mclmac);
 void mclmac_change_receive_channel(MCLMAC_t *mclmac);
-void mclmac_change_cf_channel(MCLMAC_t *mclmac);
+void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac);
 
 // Radio modes
 void mclmac_start_CAD_mode(MCLMAC_t *mclmac);
 void mclmac_start_split_phase(MCLMAC_t *mclmac);
-void mclmac_start_cf_phase(MCLMAC_t *mclmac);
+void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool mclmac_CAD_detected(MCLMAC_t *mclmac);
 
 int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t size, uint32_t *read_from);

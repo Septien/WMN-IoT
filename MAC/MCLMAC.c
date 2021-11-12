@@ -37,6 +37,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     (SINGLE_POINTER mclmac)->_nChannels = _nChannels;
     (SINGLE_POINTER mclmac)->_nSlots = _nSlots;
     (SINGLE_POINTER mclmac)->_max_number_packets_buffer = 5 * 256;      // Maximum 5 packets of siza 256 each
+    (SINGLE_POINTER mclmac)->_max_cf_messages = 5 * 2 * sizeof(uint16_t);
 
     int bytes = get_number_bytes(_nChannels * _nSlots);
 #ifdef __LINUX__
@@ -198,9 +199,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_current_cf_slot(mclmac, 0);
         mclmac->_packets_read = 0;
 
-        // Pass immediatly to PASSIVE state
-        mclmac_set_next_powermode_state(mclmac, PASSIVE);
-
         // Create an array of size of at most 5 packet of 256 bytes each
 #ifdef __LINUX__
         mclmac->_packets = (uint8_t *)malloc(mclmac->_max_number_packets_buffer * sizeof(uint8_t));
@@ -230,20 +228,15 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         // Initialize the timeouts API
         timeout_init();
 
+        // Pass immediatly to PASSIVE state
+        mclmac_set_next_powermode_state(mclmac, PASSIVE);
         // Arm the slot timer for the first time.
         ARROW(mclmac->frame)slot_timer = timeout_set(ARROW(mclmac->frame)slot_duration);
         break;
     
     case PASSIVE:
-        // Reset the cf counter to zero
         mclmac_set_current_cf_slot(mclmac, 0);
-
-#ifdef __LINUX__
-        /* Set readio to sleep */
-#endif
-#ifdef __RIOT__
         /* Set radio to sleep */
-#endif
         bool sleep = true;
         uint8_t packets_read = 0;
         uint16_t bytes = 0;
@@ -281,14 +274,72 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         break;
     
     case ACTIVE:
-        
+        // Change to the cf channel
+        //mclmac_change_cf_channel(mclmac);
+        // Reset the cf counter to zero
+        mclmac_set_current_cf_slot(mclmac, 0);
+        bool to_send = false;
+        /*bool to_receive = false;*/
+        /* Check if there are packets on the queue. */
+        if (mclmac->_packets_read > 0)
+        {
+            // Get the id of the destination from the first packet
+            uint8_t destinationID = READ_ARRAY(REFERENCE mclmac->_packets, 0);
+            mclmac_set_destination_id(mclmac, destinationID);
+            mclmac_create_cf_packet(mclmac);
+            to_send = true;
+        }
+
+
+        // Craete and arm the cf_slot_timer
+        ARROW(mclmac->frame)cf_timer = timeout_set(ARROW(mclmac->frame)cf_duration);
+        bool active = true;
+        bool transmit = false;
+        bool receive = false;
+        while (active)
+        {
+            // Check if timeout passed
+            if (timeout_passed(ARROW(mclmac->frame)cf_timer))
+            {
+                timeout_unset(ARROW(mclmac->frame)cf_timer);
+                mclmac_increase_cf_slot(mclmac);
+                ARROW(mclmac->frame)cf_timer = timeout_set(ARROW(mclmac->frame)cf_duration);
+            }
+            // Check if cf phase is over
+            if (ARROW(mclmac->frame)current_cf_slot == ARROW(mclmac->frame)cf_slots_number)
+            {
+                active = false;
+            }
+            // check if current cf slot corresponds to the selected slot
+            if (ARROW(mclmac->frame)current_cf_slot == ARROW(mclmac->mac)selectedSlot)
+            {
+                if (to_send)
+                {
+                    stub_mclmac_send_cf_message(mclmac);
+                    transmit = true;
+                }
+            }
+            // Check if a message is received
+            if (stub_mclmac_receive_cf_message(mclmac))
+            {
+                receive = true;
+                mclmac_set_transmit_channel(mclmac, rand());
+            }
+        }
+
+        if (transmit)
+            mclmac_set_next_powermode_state(mclmac, TRANSMIT);        
+        else if (receive)
+            mclmac_set_next_powermode_state(mclmac, RECEIVE);
+        else
+            mclmac_set_next_powermode_state(mclmac, PASSIVE);
 
 #ifdef __LINUX__
         // change radio to common channel
 #endif        
-
-        mclmac_set_next_powermode_state(mclmac, TRANSMIT);
+        //mclmac_clear_cf_packet(mclmac);
         break;
+
     default:
         break;
     }
@@ -704,7 +755,7 @@ void mclmac_create_cf_packet(MCLMAC_t *mclmac)
 #endif
 
     cfpacket_init(&ARROW(mclmac->mac)cfpkt);
-    cfpacket_create(REFERENCE ARROW(mclmac->mac)cfpkt, ARROW(mclmac->mac)nodeID, ARROW(mclmac->mac)destinationID, mclmac->_networkTime);
+    cfpacket_create(REFERENCE ARROW(mclmac->mac)cfpkt, ARROW(mclmac->mac)nodeID, ARROW(mclmac->mac)destinationID);
 }
 
 void mclmac_create_control_packet(MCLMAC_t *mclmac)
@@ -740,6 +791,18 @@ void mclmac_create_data_packet(MCLMAC_t *mclmac)
 
     datapacket_init(&ARROW(mclmac->mac)datapkt);
     datapacket_create(REFERENCE ARROW(mclmac->mac)datapkt, mclmac->_isFragment, mclmac->_numberFragments, mclmac->_fragmentNumber, NULL, 0);
+}
+
+void mclmac_clear_cf_packet(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->cfpkt != NULL);
+#endif
+
+    cfpacket_clear(REFERENCE ARROW(mclmac->mac)cfpkt);
+    return;
 }
 
 void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
@@ -849,4 +912,65 @@ int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size)
         WRITE_ARRAY(REFERENCE mclmac->_packets_received, element, i - 255);
     }
     return 1;
+}
+
+void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(ARROW(mclmac->mac)radio != NULL);
+    assert(ARROW(mclmac->mac)cfChannel >= 902000000 && ARROW(mclmac->mac)cfChannel <= 928000000);
+
+    // Change the radio frequency
+
+    // Change the radio state to standby
+
+}
+
+void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    assert(ARROW(mclmac->mac)radio != NULL);
+
+    // Change the radio state to rx single
+}
+
+void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->mac != NULL);
+#endif
+    
+    mclmac_clear_cf_packet(mclmac);
+}
+
+bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    mclmac->_cf_message_received = ((rand() % 256) > 128 ? true : false);
+    if (mclmac->_cf_message_received)
+    {
+        uint8_t element = rand() % 256;
+        element = (element == 0 ? 1 : element);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, element, 0);
+        element = rand() % 256;
+        element = (element == 0 ? 1 : element);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, element, 1);
+        element = rand() % 256;
+        element = (element == 0 ? 1 : element);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, element, 2);
+        element = rand() % 256;
+        element = (element == 0 ? 1 : element);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, element, 3);
+    }
+    else
+    {
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, 0, 0);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, 0, 1);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, 0, 2);
+        WRITE_ARRAY(REFERENCE mclmac->_cf_messages, 0, 3);
+    }
+
+    return mclmac->_cf_message_received;
 }
