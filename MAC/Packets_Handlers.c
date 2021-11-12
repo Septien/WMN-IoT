@@ -69,7 +69,6 @@ void mclmac_clear_cf_packet(MCLMAC_t *mclmac)
 #endif
 
     cfpacket_clear(REFERENCE ARROW(mclmac->mac)cfpkt);
-    return;
 }
 
 void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
