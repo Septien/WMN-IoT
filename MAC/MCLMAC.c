@@ -461,21 +461,30 @@ int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t
         return 0;
     }
 
+    uint8_t element;
     /* Node id */
-    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), *read_from);
-    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), (*read_from) + 1);
+    element = rand();
+    element = (element == 0 ? 1 : element);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, element, *read_from);
+    element = rand();
+    element = (element == 0 ? 1 : element);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, element, (*read_from) + 1);
     /* Is fragment */
-    WRITE_ARRAY(REFERENCE mclmac->_packets, (rand() != 0 ? 1 : 0), (*read_from) + 2);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, ((rand() % 256) > 124 ? 1 : 2), (*read_from) + 2);
     /* total fragment */
-    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), (*read_from) + 3);
+    element = rand();
+    element = (element == 0 ? 1 : element);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, element, (*read_from) + 3);
     /* Fragment number */
-    WRITE_ARRAY(REFERENCE mclmac->_packets, rand(), (*read_from) + 4);
+    element = rand();
+    element = (element == 0 ? 1 : element);
+    WRITE_ARRAY(REFERENCE mclmac->_packets, element, (*read_from) + 4);
     /* data size */
     WRITE_ARRAY(REFERENCE mclmac->_packets, (uint8_t)datasize, (*read_from) + 5);
     uint8_t i;
     for (i = 0; i < datasize; i++)
     {
-        uint8_t element = rand();
+        element = rand();
         element = (element == 0 ? 2 : element);
         WRITE_ARRAY(REFERENCE mclmac->_packets, element, (*read_from) + i + 6);
     }
