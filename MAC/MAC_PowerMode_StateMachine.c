@@ -146,11 +146,18 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         {
             exit(0);
         }
+        memset(mclmac->_packets, 0, mclmac->_max_number_packets_buffer);
         mclmac->_packets_received = (uint8_t *)malloc(mclmac->_max_number_packets_buffer * sizeof(uint8_t));
         if (mclmac->_packets_received == NULL)
         {
             exit(0);
         }
+        mclmac->_cf_messages = (uint8_t *)malloc(mclmac->_max_cf_messages * sizeof(uint8_t));
+        if (mclmac->_cf_messages == NULL)
+        {
+            exit(0);
+        }
+        memset(mclmac->_cf_messages, 0, mclmac->_max_cf_messages);
 #endif
 #ifdef __RIOT__
         int ret = create_array(&mclmac->_packets, mclmac->_max_number_packets_buffer);
@@ -159,6 +166,11 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             exit(0);
         }
         ret = create_array(&mclmac->_packets_received, mclmac->_max_number_packets_buffer);
+        if (ret == 0)
+        {
+            exit(0);
+        }
+        ret = create_array(&mclmac->_cf_messages, mclmac->_max_cf_messages);
         if (ret == 0)
         {
             exit(0);
