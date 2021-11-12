@@ -28,7 +28,7 @@
 #ifdef __RIOT__
 #include "memory.h"
 
-inline uint8_t readE(array_t *ptr, uint8_t i)
+inline uint8_t readE(array_t *ptr, const unsigned int i)
 {
     uint8_t element;
     read_element(ptr, &element, i);
