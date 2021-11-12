@@ -21,6 +21,7 @@
 #include "MAC_Internals_Tests.h"
 #include "MCLMAC_Tests.h"
 #include "MAC_PowerMode_StateMachine_Tests.h"
+#include "Packets_Handlers_Tests.h"
 
 void mac_tests(void)
 {
@@ -39,7 +40,10 @@ void mac_tests(void)
     printf("\nTesting the implementation of the MCLMAC structure.\n");
     executeTestsMCLMAC();
 
-    printf("\nTesting the implementatiof of the MAC's PowerMode State Machine.\n");
+    printf("\nTesting the implementation of the MAC's Packets Handlers.\n");
+    executetests_packets_handlers();
+
+    printf("\nTesting the implementation of the MAC's PowerMode State Machine.\n");
     executetests_mac_powermode_statemachine();
 
     return;
