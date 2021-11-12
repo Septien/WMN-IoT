@@ -32,13 +32,13 @@ endif
 
 # Source files
 SRCA = CFPacket.c ControlPacket.c DataPacket.c MAC_Internals.c MCLMAC.c MAC_PowerMode_StateMachine.c
-SRCA += Packets_Handlers.c
+SRCA += Packets_Handlers.c MAC_StateMachine.c
 SRC = $(addprefix $(mac_current_dir)/, $(SRCA))
 $(info $$SRC is [${SRC}])
 
 ifdef TEST
 SRCTA = mclmac_tests.c CFPacket_Tests.c ControlPacket_Tests.c DataPacket_Tests.c MAC_Internals_Tests.c
-SRCTA += MCLMAC_Tests.c MAC_PowerMode_StateMachine_Tests.c Packets_Handlers_Tests.c
+SRCTA += MCLMAC_Tests.c MAC_PowerMode_StateMachine_Tests.c Packets_Handlers_Tests.c MAC_StateMachine_Tests.c
 SRCT+= $(addprefix $(SRCT_DIR)/, $(SRCTA))
 $(info $$SRCT is [${SRCT}])
 endif
@@ -50,7 +50,7 @@ DEPS += $(addprefix $(INC_DIR)/, $(DEPSA))
 
 ifdef TEST
 DEPSTA = mclmac_tests.h CFPacket_Tests.h DataPacket_Tests.h MAC_Internals_Tests.h MCLMAC_Tests.h 
-DEPSTA += MAC_PowerMode_StateMachine_Tests.h Packets_Handlers_Tests.h
+DEPSTA += MAC_PowerMode_StateMachine_Tests.h Packets_Handlers_Tests.h MAC_StateMachine_Tests.h
 DEPST = $(addprefix $(INCT_DIR)/, $(DEPSTA))
 endif
 $(info $$DEPS is [${DEPS}])
@@ -64,13 +64,13 @@ $(info $$OBJT_DIR is ${OBJT_DIR})
 endif
 
 OBJA = CFPacket.o ControlPacket.o DataPacket.o MAC_Internals.o MCLMAC.o MAC_PowerMode_StateMachine.o
-OBJA += Packets_Handlers.o
+OBJA += Packets_Handlers.o MAC_StateMachine.o
 OBJS = $(addprefix $(OBJ_DIR)/, $(OBJA))
 $(info $$OBJS is ${OBJS})
 
 ifdef TEST
 OBJSTA = mclmac_tests.o CFPacket_Tests.o ControlPacket_Tests.o DataPacket_Tests.o MAC_Internals_Tests.o
-OBJSTA += MCLMAC_Tests.o MAC_PowerMode_StateMachine_Tests.o Packets_Handlers_Tests.o
+OBJSTA += MCLMAC_Tests.o MAC_PowerMode_StateMachine_Tests.o Packets_Handlers_Tests.o MAC_StateMachine_Tests.o
 OBJST = $(addprefix $(OBJT_DIR)/, $(OBJSTA))
 $(info $$OBJST is ${OBJST})
 endif

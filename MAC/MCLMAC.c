@@ -89,30 +89,6 @@ void MCLMAC_clear(MCLMAC_t *mclmac)
     mclmac->_networkTime = 0;
 }
 
-
-void mclmac_set_MAC_state(MCLMAC_t *mclmac, state_t state)
-{
-    assert(mclmac != NULL);
-    assert(state != NONE);
-    mclmac->macState.currentState = state;
-}
-
-void mclmac_set_next_MAC_state(MCLMAC_t *mclmac, state_t next)
-{
-    assert(mclmac != NULL);
-    assert(next != NONE);
-    assert(next != START);
-
-    mclmac->macState.nextState = next;
-}
-
-state_t mclmac_get_MAC_state(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-
-    return mclmac->macState.currentState;
-}
-
 void mclmac_set_cf_channel(MCLMAC_t *mclmac, uint32_t cfchannel)
 {
     assert(mclmac != NULL);
