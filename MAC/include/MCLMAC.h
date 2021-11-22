@@ -81,7 +81,7 @@ typedef struct MCLMAC
     uint8_t             _nChannels;
     uint8_t             _hopCount;
     uint32_t            _frequencies[8];
-    uint8_t             _occupiedSlots[8];
+    uint16_t             _occupiedSlots[8];
     // IPC Queues
 }MCLMAC_t;
 

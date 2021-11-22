@@ -30,11 +30,6 @@ void test_MCLMAC_init(void)
     assert(mclmac->mac != NULL);
     //assert(mclmac->frame != NULL);
 #endif
-    /*assert(ARROW(ARROW(mclmac)frame)current_slot == 0);
-    assert(ARROW(ARROW(mclmac)frame)current_frame == 0);
-    assert(ARROW(ARROW(mclmac)frame)slots_number == 0);
-    assert(ARROW(ARROW(mclmac)frame)current_cf_slot == 0);
-    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == 0);*/
     assert(ARROW(mclmac)powerMode.currentState == STARTP);
     assert(ARROW(mclmac)macState.currentState == START);
     assert(ARROW(mclmac)_nodeID == nodeid);
@@ -42,6 +37,12 @@ void test_MCLMAC_init(void)
     assert(ARROW(mclmac)_networkTime == 0);
     assert(ARROW(mclmac)_nSlots == _nSlots);
     assert(ARROW(mclmac)_nChannels == _nChannels);
+    assert(ARROW(mclmac)_hopCount == 0);
+    for (int i = 0; i < 8; i++)
+    {
+        assert(ARROW(mclmac)_frequencies[i] == 0);
+        assert(ARROW(mclmac)_occupiedSlots[i] == 0);
+    }
 #ifdef __LINUX__
     /*assert(mclmac->_packets == NULL);
     assert(mclmac->_packets_received == NULL);*/
