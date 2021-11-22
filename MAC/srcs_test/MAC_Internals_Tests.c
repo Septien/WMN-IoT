@@ -10,7 +10,14 @@
 void test_MAC_internals_init(void)
 {
     MAC_Internals_t SINGLE_POINTER mac;
-    MAC_internals_init(&mac);
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+
+    MAC_internals_init(&mac, &radio);
 
     // Create these packets until necessary
 #ifdef __LINUX__
@@ -19,8 +26,13 @@ void test_MAC_internals_init(void)
     assert(mac->datapkt == NULL);
     assert(mac->cfpkt == NULL);
 #endif
-    assert(ARROW(mac)nodeID == 1);
-    assert(ARROW(mac)destinationID == 0);
+    assert(ARROW(mac)selectedSlot == 0);
+    assert(ARROW(mac)transmitChannel == 0);
+    assert(ARROW(mac)receiveChannel == 0);
+    assert(ARROW(mac)cfChannel == 0);
+    assert(ARROW(mac)_collisionDetected == false);
+    assert(ARROW(mac)_collisionSlot == 0);
+    assert(ARROW(mac)_collisionFrequency == 0);
 
     MAC_internals_destroy(&mac);
 }
@@ -28,56 +40,42 @@ void test_MAC_internals_init(void)
 void test_MAC_internals_destroy(void)
 {
     MAC_Internals_t SINGLE_POINTER mac;
-    MAC_internals_init(&mac);
 #ifdef __LINUX__
-    mac->channels = (uint8_t *)malloc(128 * sizeof(uint8_t));
-    mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    create_array(&mac.channels, 128);
-    create_array(&mac.slots, 32);
+    sx127x_t radio;
 #endif
+
+    MAC_internals_init(&mac, &radio);
 
     MAC_internals_destroy(&mac);
 #ifdef __LINUX__
     assert(mac == NULL);
-#endif
-#ifdef __RIOT__
-    assert(mac.channels.size == 0);
-    assert(mac.slots.size == 0);
 #endif
 }
 
 void test_MAC_internals_clear(void)
 {
     MAC_Internals_t SINGLE_POINTER mac;
-    MAC_internals_init(&mac);
 #ifdef __LINUX__
-    mac->channels = (uint8_t *)malloc(4 * 32 * sizeof(uint32_t));
-    mac->slots = (uint8_t *)malloc(32 * sizeof(uint8_t));
+    uint8_t radio;
 #endif
 #ifdef __RIOT__
-    create_array(&mac.channels, 4 * 32);
-    create_array(&mac.slots, 32);
+    sx127x_t radio;
 #endif
 
+    MAC_internals_init(&mac, &radio);
+
     MAC_internals_clear(REFERENCE mac);
-#ifdef __LINUX__
-    assert(mac->channels == NULL);
-    assert(mac->slots == NULL);
-#endif
-#ifdef __RIOT__
-    assert(mac.channels.size == 0);
-    assert(mac.slots.size == 0);
-#endif
-    assert(ARROW(mac)numberChannels == 0);
-    assert(ARROW(mac)numberSlots == 0);
-    assert(ARROW(mac)nodeID == 0);
     assert(ARROW(mac)selectedSlot == 0);
     assert(ARROW(mac)transmitChannel == 0);
     assert(ARROW(mac)cfChannel == 0);
     assert(ARROW(mac)cfChannel == 0);
-    assert(ARROW(mac)hopCount == 0);
+    assert(ARROW(mac)_collisionDetected == false);
+    assert(ARROW(mac)_collisionSlot == 0);
+    assert(ARROW(mac)_collisionFrequency == 0);
+    assert(ARROW(mac)_cf_message_received == false);
 
     MAC_internals_destroy(&mac);
 }

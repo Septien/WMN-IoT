@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "Frame.h"
 #include "MAC_Internals.h"
 #include "memory.h"
 #include "memory_macros.h"
@@ -32,7 +31,7 @@
 #include "sx127x.h"
 #endif
 
-typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY_AND_SELECTION, MEDIUMACCESS, NONE} state_t;
+typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY, TIMESLOT_AND_CHANNEL_SELECTION, MEDIUMACCESS, FINISH, NONE} state_t;
 
 typedef enum POWERMODE {STARTP, PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP, FINISHP, IDLEP} PowerMode_t;
 
@@ -51,50 +50,39 @@ typedef struct RadioState
     PowerMode_t nextState;
 }RadioPowerMode_t;
 
-
+/**
+ * @brief Use this data structure for the overall MAC layer.
+ *        It contains:
+ *          -The MAC, use in MEDIUM_ACCESS, data structure-
+ *          -Variables containing the current and next state of the MAC
+ *           and the power mode state machines.
+ *          -IPC Queue and all associated data (size, pid, etc.), for receiving from other layers.
+ *          -IPC Queue and all associated data (size, pid, etc.), for sending to other layers.
+ *          -The available frequencies.
+ *          -The number of frequencies.
+ *          -The maximum number of slots.
+ *          -Information about the occupied slots and frequencies.
+ *          -The nodeID of the current node.
+ *          -The network time.
+ *          -The number of hops to source.
+ */
 typedef struct MCLMAC
 {
     // Internals to the MAC
     MAC_Internals_t     SINGLE_POINTER mac;
-    // For communicating with other layers
-    Frame_t             SINGLE_POINTER frame;
     MACState_t          macState;
     RadioPowerMode_t    powerMode;
 
     // Private members
-    uint8_t             _nodeID;
-    bool                _collisionDetected;
-    uint8_t             _collisionSlot;
-    uint32_t            _collisionFrequency;
+    uint16_t            _nodeID;
     uint32_t            _networkTime;
     size_t              _dataQSize;
     uint8_t             _nSlots;
     uint8_t             _nChannels;
-    uint8_t             _ack;
-    ARRAY                _occupiedSlots;
-    bool                _isFragment;
-    uint8_t             _numberFragments;
-    uint8_t             _fragmentNumber;
-    /* CF messages */
-    bool                _cf_message_received;
-    ARRAY               _cf_messages;
-    uint8_t             _max_cf_messages;
-    /* Messages received from other nodes */
-    ARRAY               _packets;
-    uint8_t             _packets_read;
-    uint16_t            _max_number_packets_buffer;
-    ARRAY               _packets_received;
-    uint16_t            _num_packets_received;
-#ifdef __LINUX__
-    double              _frameDuration;
-    double              _slotDuration;
-    double              _cfDuration;
-#endif
-#ifdef __RIOT__
-    uint32_t            _frameDuration;
-    uint32_t            _slotDuration;
-    uint32_t            _cfDuration;
-#endif
+    uint8_t             _hopCount;
+    uint32_t            _frequencies[8];
+    uint8_t             _occupiedSlots[8];
+    // IPC Queues
 }MCLMAC_t;
 
 void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
@@ -104,7 +92,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    size_t dataQSize, uint8_t _nSlots, uint8_t _nChannels
+    uint16_t nodeid, size_t dataQSize, uint8_t _nSlots, uint8_t _nChannels
 );
 
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);

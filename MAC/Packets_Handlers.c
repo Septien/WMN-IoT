@@ -5,7 +5,7 @@
 
 #include "MCLMAC.h"
 
-void mclmac_create_cf_packet(MCLMAC_t *mclmac)
+/*void mclmac_create_cf_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -69,7 +69,7 @@ void mclmac_clear_cf_packet(MCLMAC_t *mclmac)
 #endif
 
     cfpacket_clear(REFERENCE ARROW(mclmac->mac)cfpkt);
-}
+}*/
 
 void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
 {

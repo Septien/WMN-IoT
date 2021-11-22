@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "Frame.h"
 #include "ControlPacket.h"
 #include "CFPacket.h"
 #include "DataPacket.h"
@@ -27,6 +28,20 @@
 #include "sx127x.h"
 #endif
 
+/**
+ * @brief Use this data structure within the MEDIUM_ACCESS state.
+ *          It should contain:
+ *              -Queues for cf and data packets.
+ *              -A control packet.
+ *              -A frame data structure.
+ *              -The selected slot.
+ *              -The selected frequency.
+ *              -The channel to transmit.
+ *              -The channel to receive.
+ *              -The cf channel.
+ *              -Whether a collision is detected, if so, the slot and frequency.
+ *              -The duration of frames, slots, and cfslots.
+ */
 typedef struct MAC_Internals
 {
     // Physical device
@@ -41,21 +56,36 @@ typedef struct MAC_Internals
     ControlPacket_t SINGLE_POINTER ctrlpkt;
     CFPacket_t      SINGLE_POINTER cfpkt;
     DataPacket_t    SINGLE_POINTER datapkt;
+    Frame_t         SINGLE_POINTER frame;
     // Status variables
-    uint8_t         numberChannels;
-    ARRAY           channels;
-    uint16_t        nodeID;
-    uint16_t        destinationID;
     uint8_t         selectedSlot;
     uint32_t        transmitChannel;
     uint32_t        receiveChannel;
     uint32_t        cfChannel;
-    ARRAY           slots;
-    uint8_t         numberSlots;
-    uint8_t         hopCount;
+    // Collision
+    bool            _collisionDetected;
+    uint8_t         _collisionSlot;
+    uint32_t        _collisionFrequency;
+    /* CF messages */
+    bool            _cf_message_received;
+    ARRAY           _cf_messages;
+    uint8_t         _max_cf_messages;
+    /* Messages received from other nodes */
+    ARRAY           _packets;
+    uint8_t         _packets_read;
+    uint16_t        _max_number_packets_buffer;
+    ARRAY           _packets_received;
+    uint16_t        _num_packets_received;
 }MAC_Internals_t;
 
-void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac);
+void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac, 
+#ifdef __LINUX__
+    uint8_t *radio
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio
+#endif
+);
 void MAC_internals_clear(MAC_Internals_t *mac);
 void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac);
 

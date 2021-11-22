@@ -2,7 +2,14 @@
 #include <assert.h>
 #include <string.h>
 
-void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac)
+void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
+#ifdef __LINUX__
+    uint8_t *radio
+#endif
+#ifdef __RIOT__
+    sx127x_t *radio
+#endif
+)
 {
 #ifdef __LINUX__
     *mac = (MAC_Internals_t *)malloc(sizeof(MAC_Internals_t));
@@ -13,11 +20,15 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac)
     (*mac)->cfpkt = NULL;
     (*mac)->ctrlpkt = NULL;
     (*mac)->datapkt = NULL;
-    (*mac)->channels = NULL;
-    (*mac)->slots = NULL;
+    (*mac)->frame = (Frame_t *)malloc(sizeof(Frame_t));
+    if ((*mac)->frame == NULL)
+        return;
 #endif
-    // Set to one so other parts of the code (during testing) can run, if not previously initialize
-    (SINGLE_POINTER mac)->nodeID = 1;
+    memset(REFERENCE (SINGLE_POINTER mac)->frame, 0, sizeof(Frame_t));
+
+    (SINGLE_POINTER mac)->radio = radio;
+    (SINGLE_POINTER mac)->_max_number_packets_buffer = 5 * 256;      // Maximum 5 packets of siza 256 each
+    (SINGLE_POINTER mac)->_max_cf_messages = 5 * 2 * sizeof(uint16_t);
 }
 
 void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
@@ -27,17 +38,15 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
     assert(*mac != NULL);
 
     /* Destroy packets data structures */
-    if ((SINGLE_POINTER mac)->ctrlpkt != NULL)
+    if ((*mac)->ctrlpkt != NULL)
         controlpacket_destroy(&(*mac)->ctrlpkt);
-    if ((SINGLE_POINTER mac)->cfpkt != NULL)
+    if ((*mac)->cfpkt != NULL)
         cfpacket_destroy(&(*mac)->cfpkt);
-    if ((SINGLE_POINTER mac)->datapkt != NULL)
+    if ((*mac)->datapkt != NULL)
         datapacket_destroy(&(*mac)->datapkt);
-    // Destroy internal arrays
-    if ((*mac)->channels != NULL)
-        free((*mac)->channels);
-    if ((*mac)->slots != NULL)
-        free((*mac)->slots);
+    // Destroy Frame
+    if ((*mac)->frame != NULL)
+        free((*mac)->frame);
     free((*mac));
     *mac = NULL;
 #endif
@@ -45,10 +54,6 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
     controlpacket_destroy(&mac->ctrlpkt);
     cfpacket_destroy(&mac->cfpkt);
     datapacket_destroy(&mac->datapkt);
-    if (mac->channels.size > 0)
-        free_array(&mac->channels);
-    if (mac->slots.size > 0)
-        free_array(&mac->slots);
 #endif
 }
 
@@ -56,21 +61,18 @@ void MAC_internals_clear(MAC_Internals_t *mac)
 {
     // Keep radio, it is not physically possible to change the radio once deployed.
     assert(mac != NULL);
-    //--
-#ifdef __LINUX__
-    if (mac->channels != NULL)
-        free(mac->channels);
-    mac->channels = NULL;
-    mac->numberChannels = 0;
-    if (mac->slots != NULL)
-        free(mac->slots);
-    mac->slots = NULL;
-#endif
-#ifdef __RIOT__
-    if (mac->channels.size > 0)
-        free_array(&mac->channels);
-    if (mac->slots.size > 0)
-        free_array(&mac->slots);
-#endif
-    memset(mac, 0, sizeof(MAC_Internals_t));
+
+    ARROW(mac->frame)current_slot = 0;
+    ARROW(mac->frame)current_frame = 0;
+    ARROW(mac->frame)current_cf_slot = 0;
+    ARROW(mac->frame)cf_slots_number = 0;
+    ARROW(mac->frame)slots_number = 0;
+    mac->selectedSlot = 0;
+    mac->transmitChannel = 0;
+    mac->receiveChannel = 0;
+    mac->cfChannel = 0;
+    mac->_collisionDetected = false;
+    mac->_collisionSlot = 0;
+    mac->_collisionFrequency = 0;
+    mac->_cf_message_received = false;
 }

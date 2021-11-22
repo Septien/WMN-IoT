@@ -8,7 +8,7 @@
 
 #include "MCLMAC.h"
 
-void test_mclmac_create_cf_packet(void)
+/*void test_mclmac_create_cf_packet(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
@@ -280,11 +280,11 @@ void test_mclmac_clear_data_from_packet(void)
 #endif
 
     MCLMAC_destroy(&mclmac);
-}
+}*/
 
 void executetests_packets_handlers(void)
 {
-    printf("Testing mclmac_create_cf_packet function.\n");
+    /*pintf("Testing mclmac_create_cf_packet function.\n");
     test_mclmac_create_cf_packet();
     printf("Test passed.\n");
 
@@ -310,7 +310,7 @@ void executetests_packets_handlers(void)
 
     printf("Testing mclmac_clear_data_from_packet function.\n");
     test_mclmac_clear_data_from_packet();
-    printf("Test passed.\n");   
+    printf("Test passed.\n");*/
 
     return;
 }

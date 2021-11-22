@@ -16,11 +16,12 @@ void test_mclmac_set_MAC_state(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
 
     state_t state = START;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
@@ -31,7 +32,10 @@ void test_mclmac_set_MAC_state(void)
     state = SYNCHRONIZATION;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
-    state = DISCOVERY_AND_SELECTION;
+    state = DISCOVERY;
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.currentState == state);
+    state = TIMESLOT_AND_CHANNEL_SELECTION;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
     state = MEDIUMACCESS;
@@ -50,11 +54,12 @@ void test_mclmac_set_next_MAC_state(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
 
     state_t state = INITIALIZATION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
@@ -62,7 +67,10 @@ void test_mclmac_set_next_MAC_state(void)
     state = SYNCHRONIZATION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.nextState == state);
-    state = DISCOVERY_AND_SELECTION;
+    state = DISCOVERY;
+    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
+    assert(ARROW(mclmac)macState.nextState == state);
+    state = TIMESLOT_AND_CHANNEL_SELECTION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.nextState == state);
     state = MEDIUMACCESS;
@@ -81,11 +89,12 @@ void test_mclmac_get_MAC_state(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
     uint8_t _nSlots = 8;
     uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
 
     state_t state = START, stateA;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
@@ -102,11 +111,16 @@ void test_mclmac_get_MAC_state(void)
     stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
-    state = DISCOVERY_AND_SELECTION;
+    state = DISCOVERY;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
 
+    state = TIMESLOT_AND_CHANNEL_SELECTION;
+    mclmac_set_MAC_state(REFERENCE mclmac, state);
+    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
+    assert(stateA == state);
+    
     state = MEDIUMACCESS;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     stateA = mclmac_get_MAC_state(REFERENCE mclmac);
