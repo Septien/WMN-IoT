@@ -33,6 +33,11 @@ void test_MAC_internals_init(void)
     assert(ARROW(mac)_collisionDetected == false);
     assert(ARROW(mac)_collisionSlot == 0);
     assert(ARROW(mac)_collisionFrequency == 0);
+    assert(ARROW(mac)_cf_message_received == false);
+    assert(ARROW(mac)_max_cf_messages == 5 * 2 * sizeof(uint16_t));
+    assert(ARROW(mac)_max_number_packets_buffer == 5 * 256);
+    assert(ARROW(mac)_packets_read == 0);
+    assert(ARROW(mac)_num_packets_received == 0);
 
     MAC_internals_destroy(&mac);
 }
