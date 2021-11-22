@@ -30,7 +30,7 @@
 
 /**
  * @brief Use this data structure within the MEDIUM_ACCESS state.
- *          It should contain:
+ *          It contains:
  *              -Queues for cf and data packets.
  *              -A control packet.
  *              -A frame data structure.
