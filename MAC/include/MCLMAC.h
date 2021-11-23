@@ -31,9 +31,11 @@
 #include "sx127x.h"
 #endif
 
-typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY, TIMESLOT_AND_CHANNEL_SELECTION, MEDIUMACCESS, FINISH, NONE} state_t;
+typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY, TIMESLOT_AND_CHANNEL_SELECTION, MEDIUM_ACCESS, FINISH, NONE} state_t;
 
 typedef enum POWERMODE {STARTP, PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP, FINISHP, IDLEP} PowerMode_t;
+
+enum MAC_STATEMACHINE_ERRORS{E_MAC_TRANSITION_SUCCESS, E_MAC_TRANSITION_ERROR, E_MAC_NO_TRANSITION, E_MAC_INVALID_STATE, E_MAC_NO_UPDATE};
 
 enum POWERMODE_ERRORS {E_PM_TRANSITION_SUCCESS, E_PM_TRANSITION_ERROR, E_PM_NO_TRANSITION, E_PM_INVALID_STATE};
 enum PM_EXECUTION_ERRORS {E_PM_EXECUTION_SUCCESS, E_PM_EXECUTION_FAILED};
@@ -99,12 +101,16 @@ void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);
 void MCLMAC_clear(MCLMAC_t *mclmac);
 
 // Protocol Execution
-// DevicePowerMode State Machine
+// MAC state machine
+void mclmac_init_mac_state_machine(MCLMAC_t *mclmac);
+int mclmac_update_mac_state_machine(MCLMAC_t *mclmac);
+int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac);
+// Device PowerMode State Machine
 void mclmac_init_powermode_state_machine(MCLMAC_t *mclmac);
 int mclmac_update_powermode_state_machine(MCLMAC_t *mclmac);
 int mclmac_execute_powermode_state(MCLMAC_t *mclmac);
 
-// State machines
+// State machines status
 void mclmac_set_MAC_state(MCLMAC_t *mclmac, state_t state);
 void mclmac_set_next_MAC_state(MCLMAC_t *mclmac, state_t next);
 state_t mclmac_get_MAC_state(MCLMAC_t *mclmac);
