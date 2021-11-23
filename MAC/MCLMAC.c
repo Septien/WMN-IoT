@@ -26,11 +26,13 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
     (SINGLE_POINTER mclmac)->_nodeID = nodeid;
     (SINGLE_POINTER mclmac)->_dataQSize = dataQSize;
-    (SINGLE_POINTER mclmac)->macState.currentState = START;
-    (SINGLE_POINTER mclmac)->powerMode.currentState = STARTP;
     (SINGLE_POINTER mclmac)->_nChannels = _nChannels;
     (SINGLE_POINTER mclmac)->_nSlots = _nSlots;
     (SINGLE_POINTER mclmac)->_hopCount = 0;
+
+    // Initialize state machines
+    mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
+    mclmac_init_powermode_state_machine((SINGLE_POINTER mclmac));
 
     memset((SINGLE_POINTER mclmac)->_frequencies, 0, 8 * sizeof(uint32_t));
     //int bytes = get_number_bytes(_nChannels * _nSlots);

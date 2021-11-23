@@ -30,8 +30,6 @@ void test_MCLMAC_init(void)
     assert(mclmac->mac != NULL);
     //assert(mclmac->frame != NULL);
 #endif
-    assert(ARROW(mclmac)powerMode.currentState == STARTP);
-    assert(ARROW(mclmac)macState.currentState == START);
     assert(ARROW(mclmac)_nodeID == nodeid);
     assert(ARROW(mclmac)_dataQSize == dataQsize);
     assert(ARROW(mclmac)_networkTime == 0);
