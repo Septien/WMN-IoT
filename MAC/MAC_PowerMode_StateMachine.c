@@ -173,17 +173,13 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             exit(0);
         }
 #endif
-
-        // Initialize the timeouts API
-        timeout_init();
-
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
         // Arm the slot timer for the first time.
         ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)slot_duration);
         break;
     
-    case PASSIVE:
+    case PASSIVE: ;
         mclmac_set_current_cf_slot(mclmac, 0);
         /* Set radio to sleep */
         bool sleep = true;
@@ -222,7 +218,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_next_powermode_state(mclmac, ACTIVE);
         break;
     
-    case ACTIVE:
+    case ACTIVE: ;
         // Change to the cf channel
         stub_mclmac_change_cf_channel(mclmac);
         stub_mclmac_start_cf_phase(mclmac);
@@ -290,7 +286,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         //mclmac_clear_cf_packet(mclmac);
         break;
 
-    default:
+    default: ;
         break;
     }
 

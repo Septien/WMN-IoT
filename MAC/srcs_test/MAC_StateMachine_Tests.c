@@ -523,6 +523,103 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ret == E_MAC_TRANSITION_SUCCESS);
     assert(ARROW(mclmac)macState.currentState == FINISH);
     assert(ARROW(mclmac)macState.nextState == FINISH);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_start_state_mac_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+
+    int ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /**
+     * We are now at the START state and should execute its functionality.
+     * The tasks to execute by the state are the following:
+     *  -Fill the array with the allowed frequencies.
+     *  -Once the variables are correctly initialize, set the next state to INITIALIZE.
+     *  -Return success.
+     */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    for (int i = 0; i < 8; i++)
+        assert(ARROW(mclmac)_frequencies[i] >= 902000000 && ARROW(mclmac)_frequencies[i] <= 928000000);
+    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+
+    timeout_done();
+
+    MCLMAC_destroy(&mclmac);
+    
+}
+
+void test_initializtion_state_mac_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+    uint8_t _nSlots = 8;
+    uint8_t _nChannels = 8;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    // Pass to START state and execute
+    int ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    // Pass to INITIALIZATION state
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    /**
+     * We are now at the INITIALIZATION state.
+     * This state hears for cf packets on the network; once such packet is found, 
+     * pass directly to SINCHRONIZATION state.
+     * The state does the following:
+     *      -Set the radio frequency to cf frequency.
+     *      -Put the radio on rx_single to hear for incomming packets.
+     *      -Verify that the packet is valid (it should contain four bytes, the first two for 
+     *      nodeid and the last two for destinationid.)
+     *      -If the packet is not valid, set once again the radio to rx_single and continue
+     *      listening.
+     *      -Once a valid packet is found, pass to the SYNCHRONIZATION state.
+     *      -Set a timer to a timer at INITIALIZATION_WAIT seconds, if timer expires, exit and return failure.
+     *      -If timer expires, both nextState and currentState should remain unchanged.
+     *      -Return success if packet is found.
+     */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    // Assert the frequency is cf.
+    // Assert radio is in standby
+    // Make it fail by expiring the initialization timeout 
+    assert(ret == E_MAC_EXECUTION_FAILED);
+    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
+    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    // Make it success
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
+
+    timeout_done();
+
+    MCLMAC_destroy(&mclmac);
 }
 
 void executetests_mac_statemachine(void)
@@ -543,8 +640,17 @@ void executetests_mac_statemachine(void)
     test_mclmac_get_MAC_state();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_udpate_mac_state_machine.\n");
+    printf("Testing mclmac_udpate_mac_state_machine function.\n");
     test_mclmac_update_mac_state_machine();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_execute_state_machine function.\n");
+    printf("Testing the START state.\n");
+    test_start_state_mac_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the INITIALIZATION state.\n");
+    test_initializtion_state_mac_stmachine();
     printf("Test passed.\n");
 
     return;
