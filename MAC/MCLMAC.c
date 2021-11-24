@@ -29,6 +29,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     (SINGLE_POINTER mclmac)->_nChannels = _nChannels;
     (SINGLE_POINTER mclmac)->_nSlots = _nSlots;
     (SINGLE_POINTER mclmac)->_hopCount = 0;
+    (SINGLE_POINTER mclmac)->_networkTime = 0;
 
     // Initialize state machines
     mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
@@ -36,7 +37,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 
     memset((SINGLE_POINTER mclmac)->_frequencies, 0, 8 * sizeof(uint32_t));
     //int bytes = get_number_bytes(_nChannels * _nSlots);
-    memset((SINGLE_POINTER mclmac)->_occupiedSlots, 0, 8 * sizeof(uint16_t));
+    memset((SINGLE_POINTER mclmac)->_occupied_frequencies_slots, 0, 8 * 8 * sizeof(uint16_t));
 }
  
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac)

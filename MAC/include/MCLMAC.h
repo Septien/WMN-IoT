@@ -36,6 +36,7 @@ typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, DISCOVERY, TIMESLOT_
 typedef enum POWERMODE {STARTP, PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP, FINISHP, IDLEP} PowerMode_t;
 
 enum MAC_STATEMACHINE_ERRORS{E_MAC_TRANSITION_SUCCESS, E_MAC_TRANSITION_ERROR, E_MAC_NO_TRANSITION, E_MAC_INVALID_STATE, E_MAC_NO_UPDATE};
+enum MAC_EXECUTION_ERRORS{E_MAC_EXECUTION_SUCCESS, E_MAC_EXECUTION_FAILED};
 
 enum POWERMODE_ERRORS {E_PM_TRANSITION_SUCCESS, E_PM_TRANSITION_ERROR, E_PM_NO_TRANSITION, E_PM_INVALID_STATE};
 enum PM_EXECUTION_ERRORS {E_PM_EXECUTION_SUCCESS, E_PM_EXECUTION_FAILED};
@@ -83,7 +84,7 @@ typedef struct MCLMAC
     uint8_t             _nChannels;
     uint8_t             _hopCount;
     uint32_t            _frequencies[8];
-    uint16_t             _occupiedSlots[8];
+    uint16_t            _occupied_frequencies_slots[8][8];
     // IPC Queues
 }MCLMAC_t;
 
@@ -199,10 +200,9 @@ void mclmac_change_receive_channel(MCLMAC_t *mclmac);
 void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac);
 
 // Radio modes
-void mclmac_start_CAD_mode(MCLMAC_t *mclmac);
 void mclmac_start_split_phase(MCLMAC_t *mclmac);
 void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
-bool mclmac_CAD_detected(MCLMAC_t *mclmac);
+bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
 int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t size, uint32_t *read_from);
 int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size);
