@@ -35,11 +35,13 @@ void test_MCLMAC_init(void)
     assert(ARROW(mclmac)_networkTime == 0);
     assert(ARROW(mclmac)_nSlots == _nSlots);
     assert(ARROW(mclmac)_nChannels == _nChannels);
+    assert(ARROW(mclmac)_networkTime == 0);
     assert(ARROW(mclmac)_hopCount == 0);
     for (int i = 0; i < 8; i++)
     {
         assert(ARROW(mclmac)_frequencies[i] == 0);
-        assert(ARROW(mclmac)_occupiedSlots[i] == 0);
+        for (int j = 0; j < 8; j++)
+            assert(ARROW(mclmac)_occupied_frequencies_slots[i][j] == 0);
     }
 #ifdef __LINUX__
     /*assert(mclmac->_packets == NULL);
