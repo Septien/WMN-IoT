@@ -135,10 +135,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
     
     switch (mclmac->macState.currentState)
     {
-    case START:
-        /* Store the allowed frequencies. */
-        for (int i = 0; i < 8; i++)
-            mclmac->_frequencies[i] = 902000000 + (rand() % 1000);
+    case START: ;
         // Initialize the timeouts API
         timeout_init();
         mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
