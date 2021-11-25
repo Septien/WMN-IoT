@@ -29,6 +29,11 @@
  *          nodes which nodes will transmit, and to whom. This define specifies the percentage
  *          it takes from the slot's time.
  * 
+ *        -CF_SLOT_DURATION:
+ *          The duration of a CF slot. It is computed according to the percentage the CF phase, 
+ *          the duration of a slot, and the number of slots. Be sure that the resulting number is
+ *          an integer, for better behavior of the network.
+ * 
  *        -DATA_PACKET_QUEUE_SIZE:
  *          The maximum number of elements the queue of data packets will hold in a given moment.
  * 
@@ -66,12 +71,12 @@
 /* The following three variables are in milliseconds, the value can later 
     be chaned of units. */
 #ifndef FRAME_DURATION
-#define FRAME_DURATION          1000000
+#define FRAME_DURATION          1280000
 #endif
 
 /* The slot duration depends on the frame duration and the desired number of slots. */
 #ifndef SLOT_DURATION
-#define SLOT_DURATION           FRAME_DURATION / MAX_NUMBER_SLOTS
+#define SLOT_DURATION           (FRAME_DURATION / MAX_NUMBER_SLOTS)
 #endif
 
 #ifndef INITIALIZATION_TIMEOUT
@@ -80,6 +85,10 @@
 
 #ifndef CF_PHASE_PERCENTAGE
 #define CF_PHASE_PERCENTAGE     0.2
+#endif
+
+#ifndef CF_SLOT_DURATION
+#define CF_SLOT_DURATION        (CF_PHASE_PERCENTAGE * SLOT_DURATION) / (MAX_NUMBER_SLOTS)
 #endif
 
 #ifndef DATA_PACKET_QUEUE_SIZE
