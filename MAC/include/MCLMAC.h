@@ -19,6 +19,7 @@
 #include "memory.h"
 #include "memory_macros.h"
 #include "timeouts.h"
+#include "config_mac.h"
 
 #ifdef __LINUX__
 #include <unistd.h>
@@ -83,8 +84,8 @@ typedef struct MCLMAC
     uint8_t             _nSlots;
     uint8_t             _nChannels;
     uint8_t             _hopCount;
-    uint32_t            _frequencies[8];
-    uint16_t            _occupied_frequencies_slots[8][8];
+    uint32_t            _frequencies[MAX_NUMBER_FREQS];
+    uint16_t            _occupied_frequencies_slots[MAX_NUMBER_FREQS][MAX_NUMBER_SLOTS];
     // IPC Queues
 }MCLMAC_t;
 
@@ -95,7 +96,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    uint16_t nodeid, size_t dataQSize, uint8_t _nSlots, uint8_t _nChannels
+    uint16_t nodeid, size_t dataQSize
 );
 
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);

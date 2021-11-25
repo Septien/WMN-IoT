@@ -11,7 +11,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    uint16_t nodeid, size_t dataQSize, uint8_t _nSlots, uint8_t _nChannels
+    uint16_t nodeid, size_t dataQSize
 )
 {
 #ifdef __LINUX__
@@ -26,8 +26,8 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
     (SINGLE_POINTER mclmac)->_nodeID = nodeid;
     (SINGLE_POINTER mclmac)->_dataQSize = dataQSize;
-    (SINGLE_POINTER mclmac)->_nChannels = _nChannels;
-    (SINGLE_POINTER mclmac)->_nSlots = _nSlots;
+    (SINGLE_POINTER mclmac)->_nChannels = MAX_NUMBER_FREQS;
+    (SINGLE_POINTER mclmac)->_nSlots = MAX_NUMBER_SLOTS;
     (SINGLE_POINTER mclmac)->_hopCount = 0;
     (SINGLE_POINTER mclmac)->_networkTime = 0;
 
@@ -35,9 +35,15 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
     mclmac_init_powermode_state_machine((SINGLE_POINTER mclmac));
 
-    memset((SINGLE_POINTER mclmac)->_frequencies, 0, 8 * sizeof(uint32_t));
-    //int bytes = get_number_bytes(_nChannels * _nSlots);
-    memset((SINGLE_POINTER mclmac)->_occupied_frequencies_slots, 0, 8 * 8 * sizeof(uint16_t));
+    memset((SINGLE_POINTER mclmac)->_occupied_frequencies_slots, 0, MAX_NUMBER_FREQS * MAX_NUMBER_SLOTS * sizeof(uint16_t));
+    (SINGLE_POINTER mclmac)->_frequencies[0] = FREQ1;
+    (SINGLE_POINTER mclmac)->_frequencies[1] = FREQ2;
+    (SINGLE_POINTER mclmac)->_frequencies[2] = FREQ3;
+    (SINGLE_POINTER mclmac)->_frequencies[3] = FREQ4;
+    (SINGLE_POINTER mclmac)->_frequencies[4] = FREQ5;
+    (SINGLE_POINTER mclmac)->_frequencies[5] = FREQ6;
+    (SINGLE_POINTER mclmac)->_frequencies[6] = FREQ7;
+    (SINGLE_POINTER mclmac)->_frequencies[7] = FREQ8;
 }
  
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac)

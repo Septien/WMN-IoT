@@ -44,7 +44,7 @@ $(info $$SRCT is [${SRCT}])
 endif
 
 # Dependencies
-DEPSA = CFPacket.h ControlPacket.h DataPacket.h MAC_Internals.h MCLMAC.h
+DEPSA = CFPacket.h ControlPacket.h DataPacket.h MAC_Internals.h MCLMAC.h config_mac.h
 DEPS = $(INC_UTILS)/memory_macros.h
 DEPS += $(addprefix $(INC_DIR)/, $(DEPSA))
 
