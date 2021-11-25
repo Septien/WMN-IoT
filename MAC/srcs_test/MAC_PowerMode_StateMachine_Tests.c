@@ -19,10 +19,8 @@ void test_mclmac_init_powermode_state_machine(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
     assert(ARROW(mclmac)powerMode.currentState == STARTP);
@@ -42,10 +40,8 @@ void test_mclmac_set_powermode_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     PowerMode_t mode = PASSIVE;
     mclmac_set_powermode_state(REFERENCE mclmac, mode);
@@ -77,10 +73,8 @@ void test_mclmac_set_next_powermode_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     PowerMode_t mode = ACTIVE;
     mclmac_set_next_powermode_state(REFERENCE mclmac, mode);
@@ -108,10 +102,8 @@ void test_mclmac_get_powermode_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     PowerMode_t mode = PASSIVE, modeR;
     mclmac_set_powermode_state(REFERENCE mclmac, mode);
@@ -147,10 +139,8 @@ void test_mclmac_update_powermode_state_machine(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
@@ -380,10 +370,8 @@ void test_mclmac_execute_powermode_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
@@ -512,6 +500,7 @@ void test_mclmac_execute_powermode_state(void)
     assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == ARROW(ARROW(mclmac)mac)destinationID);
     assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);*/
 
+    timeout_done();
     MCLMAC_destroy(&mclmac);
 }
 

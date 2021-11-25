@@ -18,10 +18,8 @@ void test_mclmac_init_MAC_state_machine(void)
 #endif
     uint16_t nodeid = 0;
     size_t dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     assert(ARROW(mclmac)macState.currentState == START);
@@ -41,10 +39,8 @@ void test_mclmac_set_MAC_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     state_t state = START;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
@@ -79,10 +75,8 @@ void test_mclmac_set_next_MAC_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     state_t state = INITIALIZATION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
@@ -114,10 +108,8 @@ void test_mclmac_get_MAC_state(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     state_t state = START, stateA;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
@@ -163,10 +155,8 @@ void test_mclmac_update_mac_state_machine(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     /**
@@ -538,10 +528,8 @@ void test_start_state_mac_stmachine(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
 
@@ -577,10 +565,8 @@ void test_initializtion_state_mac_stmachine(void)
 #endif
     uint16_t nodeid = 0;
     size_t  dataQsize = 256;
-    uint8_t _nSlots = 8;
-    uint8_t _nChannels = 8;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize, _nSlots, _nChannels);
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     // Pass to START state and execute

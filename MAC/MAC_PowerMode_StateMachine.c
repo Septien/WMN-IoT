@@ -126,15 +126,16 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_cf_slots_number(mclmac, mclmac->_nSlots);
 
         // Set the value of the timers
-        mclmac_set_frame_duration(mclmac, TIME(1000));
-        mclmac_set_slot_duration(mclmac, TIME(500));
-        mclmac_set_cf_duration(mclmac, TIME(100));
+        mclmac_set_frame_duration(mclmac, TIME(FRAME_DURATION));
+        mclmac_set_slot_duration(mclmac, TIME(SLOT_DURATION));
+        mclmac_set_cf_duration(mclmac, TIME(CF_SLOT_DURATION));
 
         // Initialize frame, slots, and cfslots counter to zero
         mclmac_set_current_frame(mclmac, 0);
         mclmac_set_current_slot(mclmac, 0);
         mclmac_set_current_cf_slot(mclmac, 0);
         ARROW(mclmac->mac)_packets_read = 0;
+        timeout_init();
 
         // Create an array of size of at most 5 packet of 256 bytes each
 #ifdef __LINUX__
