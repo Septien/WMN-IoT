@@ -99,14 +99,33 @@
 #define CF_PACKET_QUEUE_SIZE    5
 #endif
 
-/* This variable cannot be changed via compiler commands, it needs directly editing.
-    All frequencies should be different. */
-static uint32_t frequencies[MAX_NUMBER_FREQS] = {
-    903000000, 905000000, 907000000, 912000000, 917000000, 922000000, 927000000, 928000000
-};
-
 #ifndef CF_FREQUENCY
 #define CF_FREQUENCY            902000000
+#endif
+
+#ifndef FREQ1
+#define FREQ1                   903000000
+#endif
+#ifndef FREQ2
+#define FREQ2                   905000000
+#endif
+#ifndef FREQ3
+#define FREQ3                   907000000
+#endif
+#ifndef FREQ4
+#define FREQ4                   912000000
+#endif
+#ifndef FREQ5
+#define FREQ5                   917000000
+#endif
+#ifndef FREQ6
+#define FREQ6                   922000000
+#endif
+#ifndef FREQ7
+#define FREQ7                   927000000
+#endif
+#ifndef FREQ8
+#define FREQ8                   928000000
 #endif
 
 /* Clock type for RIOT. */
