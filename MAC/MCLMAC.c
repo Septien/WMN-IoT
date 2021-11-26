@@ -35,7 +35,11 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
     mclmac_init_powermode_state_machine((SINGLE_POINTER mclmac));
 
-    memset((SINGLE_POINTER mclmac)->_occupied_frequencies_slots, 0, MAX_NUMBER_FREQS * MAX_NUMBER_SLOTS * sizeof(uint16_t));
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            (SINGLE_POINTER mclmac)->_occupied_frequencies_slots[i][j] = 0;
     (SINGLE_POINTER mclmac)->_frequencies[0] = FREQ1;
     (SINGLE_POINTER mclmac)->_frequencies[1] = FREQ2;
     (SINGLE_POINTER mclmac)->_frequencies[2] = FREQ3;

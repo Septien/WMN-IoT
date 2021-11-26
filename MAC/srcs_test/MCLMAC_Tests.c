@@ -26,7 +26,6 @@ void test_MCLMAC_init(void)
 #ifdef __LINUX__
     assert(mclmac != NULL);
     assert(mclmac->mac != NULL);
-    //assert(mclmac->frame != NULL);
 #endif
     assert(ARROW(mclmac)_nodeID == nodeid);
     assert(ARROW(mclmac)_dataQSize == dataQsize);
@@ -35,20 +34,14 @@ void test_MCLMAC_init(void)
     assert(ARROW(mclmac)_nChannels == MAX_NUMBER_FREQS);
     assert(ARROW(mclmac)_networkTime == 0);
     assert(ARROW(mclmac)_hopCount == 0);
-    for (int i = 0; i < MAX_NUMBER_FREQS; i++)
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    for (int i = 0; i < n; i++)
     {
         assert(ARROW(mclmac)_frequencies[i] >= 902000000 && ARROW(mclmac)_frequencies[i] <= 928000000);
-        for (int j = 0; j < MAX_NUMBER_SLOTS; j++)
+        for (int j = 0; j < m; j++)
             assert(ARROW(mclmac)_occupied_frequencies_slots[i][j] == 0);
     }
-#ifdef __LINUX__
-    /*assert(mclmac->_packets == NULL);
-    assert(mclmac->_packets_received == NULL);*/
-#endif
-#ifdef __RIOT__
-    /*assert(mclmac._packets.size == 0);
-    assert(mclmac._packets.size == 0);*/
-#endif
 
     MCLMAC_destroy(&mclmac);
 }
