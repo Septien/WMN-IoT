@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "config_mac.h"
 #include "memory_macros.h"
 #ifdef __RIOT__
 #include "memory.h"
@@ -29,11 +30,9 @@ typedef struct
     uint8_t     hopCount;
     uint32_t    networkTime;
     uint8_t     ack;
-    uint8_t     _nSlots;
-    uint8_t     _nChannels;
 } ControlPacket_t;
 
-void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt, uint8_t nSlots, uint8_t nChannels);
+void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt);
 void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt);
 void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack);
 void controlpacket_clear(ControlPacket_t *pkt);

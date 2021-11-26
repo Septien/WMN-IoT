@@ -12,8 +12,7 @@ void test_controlpacket_init(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
 
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 #ifdef __LINUX__
     assert(pkt != NULL);
     assert(ARROW(pkt)occupiedSlots != NULL);
@@ -21,8 +20,6 @@ void test_controlpacket_init(void)
 #ifdef __RIOT__
     assert(pkt.occupiedSlots.size > 0);
 #endif
-    assert(ARROW(pkt)_nSlots == slots);
-    assert(ARROW(pkt)_nChannels == channels);
 
     controlpacket_destroy(&pkt);
 }
@@ -30,8 +27,7 @@ void test_controlpacket_init(void)
 void test_controlpacket_destroy(void)
 {
     ControlPacket_t  SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     controlpacket_destroy(&pkt);
 
@@ -45,19 +41,16 @@ void test_controlpacket_destroy(void)
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
     assert(pkt.ack == 0);
-    assert(pkt._nSlots == 0);
-    assert(pkt._nChannels == 0);
 #endif
 }
 
 void test_controlpacket_create(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint16_t nodeID = 1;
-    uint8_t bytes = get_number_bytes(slots * channels);
+    uint8_t bytes = MAX_NUMBER_FREQS * (MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8));
     ARRAY occupiedSlots;
 #ifdef __LINUX__
     occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
@@ -103,11 +96,12 @@ void test_controlpacket_create(void)
 void test_controlpacket_clear(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint16_t nodeID = 1;
-    uint8_t bytes = get_number_bytes(channels * slots);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    uint8_t bytes = n * m;
     ARRAY occupiedSlots;
 #ifdef __LINUX__
     occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
@@ -117,7 +111,7 @@ void test_controlpacket_clear(void)
     int ret = create_array(&occupiedSlots, bytes);
     assert(ret == 1);
 #endif
-    for (unsigned int i = 0; i < slots; i++)
+    for (unsigned int i = 0; i < bytes; i++)
         WRITE_ARRAY(REFERENCE occupiedSlots, 0xf0, i);
 
     uint8_t collisionSlots = 0x01;
@@ -141,8 +135,6 @@ void test_controlpacket_clear(void)
     assert(ARROW(pkt)collisionSlot == 0);
     assert(ARROW(pkt)hopCount == 0);
     assert(ARROW(pkt)ack == 0);
-    assert(ARROW(pkt)_nSlots == 0);
-    assert(ARROW(pkt)_nChannels == 0);
 
 #ifdef __LINUX__
     free(occupiedSlots);
@@ -157,8 +149,7 @@ void test_controlpacket_clear(void)
 void test_controlpacket_set_nodeID(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     for (uint16_t i = 0; i < 255; i++)
     {
@@ -172,8 +163,7 @@ void test_controlpacket_set_nodeID(void)
 void test_controlpacket_get_nodeID(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     for (uint16_t i = 0; i < 255; i++)
     {
@@ -188,8 +178,7 @@ void test_controlpacket_get_nodeID(void)
 void test_controlpacket_set_collision_slot(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint8_t slot = 10;
     controlpacket_set_collision_slot(REFERENCE pkt, slot);
@@ -202,8 +191,7 @@ void test_controlpacket_set_collision_slot(void)
 void test_controlpacket_get_collision_slot(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint8_t slot = 10;
     controlpacket_set_collision_slot(REFERENCE pkt, slot);
@@ -217,10 +205,11 @@ void test_controlpacket_get_collision_slot(void)
 void test_controlpacket_set_occupied_slots(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
-    uint8_t bytes = get_number_bytes(slots * channels);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    uint8_t bytes = n * m;
     ARRAY occSlots;
     uint8_t i;
 #ifdef __LINUX__
@@ -248,10 +237,11 @@ void test_controlpacket_set_occupied_slots(void)
 void test_controlpacket_get_occupied_slots(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
-    uint8_t bytes = get_number_bytes(slots * channels);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    uint8_t bytes = n * m;
     ARRAY occSlots;
 #ifdef __LINUX__
     occSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
@@ -290,10 +280,9 @@ void test_controlpacket_get_occupied_slots(void)
 void test_controlpacket_set_collision_frequency(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
-    uint32_t freq = 915;
+    uint32_t freq = 915000000;
     controlpacket_set_collision_frequency(REFERENCE pkt, freq);
     assert(ARROW(pkt)collisionFrequency == freq);
 
@@ -303,10 +292,9 @@ void test_controlpacket_set_collision_frequency(void)
 void test_controlpacket_get_collision_frequency(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
-    uint32_t freq = 915;
+    uint32_t freq = 915000000;
     controlpacket_set_collision_frequency(REFERENCE pkt, freq);
     
     uint32_t freqr = controlpacket_get_collision_frequency(REFERENCE pkt);
@@ -319,8 +307,7 @@ void test_controlpacket_get_collision_frequency(void)
 void test_controlpacket_set_hop_count(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint8_t hops = 8;
     controlpacket_set_hop_count(REFERENCE pkt, hops);
@@ -332,8 +319,7 @@ void test_controlpacket_set_hop_count(void)
 void test_controlpacket_get_hop_count(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint8_t hops = 8;
     controlpacket_set_hop_count(REFERENCE pkt, hops);
@@ -348,8 +334,7 @@ void test_controlpacket_get_hop_count(void)
 void test_controlpacket_set_network_time(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -365,8 +350,7 @@ void test_controlpacket_set_network_time(void)
 void test_controlpacket_get_network_time(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -383,8 +367,7 @@ void test_controlpacket_get_network_time(void)
 void test_controlpacket_set_ACK(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint8_t ack = 1;
     controlpacket_set_ACK(REFERENCE pkt, ack);
@@ -396,8 +379,7 @@ void test_controlpacket_set_ACK(void)
 void test_controlpacket_get_ACK(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 8, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     uint8_t ack = 1;
     controlpacket_set_ACK(REFERENCE pkt, ack);
@@ -412,13 +394,14 @@ void test_controlpacket_get_ACK(void)
 void test_controlpacket_get_packet_bytestring(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 9, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     int i;
-    uint8_t bytes = get_number_bytes(slots * channels);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
     uint16_t nodeID = (uint16_t) rand();
     ARRAY occupiedSlots;
+    uint8_t bytes = n * m;
 #ifdef __LINUX__
      occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
 #endif
@@ -480,11 +463,12 @@ void test_controlpacket_get_packet_bytestring(void)
 void test_controlpacket_construct_packet_from_bytestring(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
-    size_t slots = 9, channels = 17;
-    controlpacket_init(&pkt, slots, channels);
+    controlpacket_init(&pkt);
 
     int i;
-    uint8_t bytes = get_number_bytes(slots * channels);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    uint8_t bytes = n * m;
     uint16_t nodeID = rand();
     ARRAY occupiedSlots;
 #ifdef __LINUX__

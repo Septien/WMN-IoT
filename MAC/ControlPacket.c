@@ -12,7 +12,7 @@ uint8_t get_number_bytes(uint8_t n)
     return (n + add) / 8;
 }
 
-void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt, uint8_t nSlots, uint8_t nChannels)
+void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt)
 {
 #ifdef __LINUX__
     (*pkt) = (ControlPacket_t *)malloc(sizeof(ControlPacket_t));
@@ -23,10 +23,8 @@ void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt, uint8_t nSlots, uint
     }
 #endif
     memset(SINGLE_POINTER pkt, 0, sizeof(ControlPacket_t));
-    (SINGLE_POINTER pkt)->_nSlots = nSlots;
-    (SINGLE_POINTER pkt)->_nChannels = nChannels;
     // Create a one-dimension array of size nSlot*nChannels to store the occupied slots per channel
-    uint8_t bytes = get_number_bytes(nSlots * nChannels);
+    uint8_t bytes = MAX_NUMBER_FREQS * (MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8));
 #ifdef __LINUX__
     (*pkt)->occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
 #endif
@@ -64,7 +62,7 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupied
 #endif
 
     pkt->nodeID = nodeID;
-    uint8_t bytes = get_number_bytes(pkt->_nChannels * pkt->_nSlots);
+    uint8_t bytes = MAX_NUMBER_FREQS * (MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8));
     for (int i = 0; i < bytes; i++)
     {
         uint8_t element = READ_ARRAY(SINGLE_POINTER occupiedSlots, i);
@@ -81,13 +79,6 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupied
 void controlpacket_clear(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
-#ifdef __LINUX__
-    free(pkt->occupiedSlots);
-    pkt->occupiedSlots = NULL;
-#endif
-#ifdef __RIOT__
-    free_array(&pkt->occupiedSlots);
-#endif
     memset(pkt, 0, sizeof(ControlPacket_t));
 }
 
@@ -124,13 +115,12 @@ void controlpacket_set_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots
     assert(pkt != NULL);
     assert(occupiedSlots != NULL);
 
-    uint8_t bytes = get_number_bytes(pkt->_nChannels * pkt->_nSlots);
+    uint8_t bytes = MAX_NUMBER_FREQS * (MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8));
     for (uint8_t i = 0; i < bytes; i++)
     {
         uint8_t element = READ_ARRAY(SINGLE_POINTER occupiedSlots, i);
         WRITE_ARRAY(REFERENCE pkt->occupiedSlots, element, i);
     }
-    //memcpy(REFERENCE pkt->occupiedSlots, SINGLE_POINTER occupiedSlots, get_number_bytes(pkt->_nChannels * pkt->_nSlots));
 }
 
 void controlpacket_get_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots)
@@ -141,13 +131,12 @@ void controlpacket_get_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots
     assert(*occupiedSlots != NULL);
 #endif
 
-    uint8_t bytes = get_number_bytes(pkt->_nChannels * pkt->_nSlots);
+    uint8_t bytes = MAX_NUMBER_FREQS * (MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8));
     for (uint8_t i = 0; i < bytes; i++)
     {
         uint8_t element = READ_ARRAY(REFERENCE pkt->occupiedSlots, i);
         WRITE_ARRAY(SINGLE_POINTER occupiedSlots, element, i);
     }
-    //memcpy(SINGLE_POINTER occupiedSlots, REFERENCE pkt->occupiedSlots, get_number_bytes(pkt->_nChannels * pkt->_nSlots));
 }
 
 void controlpacket_set_collision_frequency(ControlPacket_t *pkt, uint32_t frequency)
@@ -210,9 +199,11 @@ uint8_t controlpacket_get_ACK(ControlPacket_t *pkt)
 void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, size_t *size)
 {
     assert(pkt != NULL);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
     // Get string size and allocate memory
     size_t size1 = 0;
-    uint8_t bytes = get_number_bytes(pkt->_nSlots * pkt->_nChannels);
+    uint8_t bytes = n * m;
     size1 += sizeof(pkt->nodeID),
     size1 += (size_t)bytes;
     size1 += sizeof(pkt->collisionSlot);
@@ -263,7 +254,9 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     assert(size > 0);
 
     // Get size of collisionSlots array and initialize array
-    uint8_t bytes = get_number_bytes(pkt->_nSlots * pkt->_nChannels);
+    int n = MAX_NUMBER_FREQS;
+    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    uint8_t bytes = n * m;
     
     // Fill the content of the packet
     pkt->nodeID = (READ_ARRAY(SINGLE_POINTER byteString, 0) << 8) | READ_ARRAY(SINGLE_POINTER byteString, 1);
