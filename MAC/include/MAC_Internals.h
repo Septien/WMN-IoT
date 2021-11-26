@@ -62,6 +62,7 @@ typedef struct MAC_Internals
     uint32_t        transmitChannel;
     uint32_t        receiveChannel;
     uint32_t        cfChannel;
+    uint16_t        indexChannel;
     // Collision
     bool            _collisionDetected;
     uint8_t         _collisionSlot;
