@@ -123,7 +123,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     case STARTP:
         // Set the number of slots and cfslots
         mclmac_set_slots_number(mclmac, mclmac->_nSlots);
-        mclmac_set_cf_slots_number(mclmac, mclmac->_nSlots);
+        mclmac_set_cf_slots_number(mclmac, mclmac->_nChannels);
 
         // Set the value of the timers
         mclmac_set_frame_duration(mclmac, TIME(FRAME_DURATION));

@@ -401,7 +401,7 @@ void test_mclmac_execute_powermode_state(void)
     assert(mclmac.mac._packets_received.size > 0);
 #endif
     /*assert(ARROW(ARROW(mclmac)frame)slots_number == ARROW(mclmac)_nSlots);
-    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == ARROW(mclmac)_nSlots);
+    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == ARROW(mclmac)_nChannels);
     assert(ARROW(ARROW(mclmac)frame)frame_duration == ARROW(mclmac)_frameDuration);
     assert(ARROW(ARROW(mclmac)frame)slot_duration == ARROW(mclmac)_slotDuration);
     assert(ARROW(ARROW(mclmac)frame)cf_duration == ARROW(mclmac)_cfDuration);*/
