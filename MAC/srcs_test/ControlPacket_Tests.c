@@ -37,6 +37,8 @@ void test_controlpacket_destroy(void)
 #ifdef __RIOT__
     assert(pkt.occupiedSlots.size == 0);
     assert(pkt.nodeID == 0);
+    assert(pkt.currentFrame == 0);
+    assert(pkt.currentSlot == 0);
     assert(pkt.collisionSlot == 0);
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
@@ -61,13 +63,15 @@ void test_controlpacket_create(void)
     int i;
     for (i = 0; i < bytes; i++)
         WRITE_ARRAY(REFERENCE occupiedSlots, 0xf0, i);
+    uint32_t frame = 20;
+    uint8_t slot = 8;
     uint8_t collisionSlot = 10;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
     uint8_t ack = 0;
     uint32_t netTime = rand();
 
-    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, collisionSlot, collisionFrequency, hopCount, netTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, ack);
 
 #ifdef __LINUX__
     assert(pkt != NULL);
@@ -78,6 +82,8 @@ void test_controlpacket_create(void)
 #endif
     for (i = 0; i < bytes; i++)
         assert(READ_ARRAY(REFERENCE ARROW(pkt)occupiedSlots, i) == 0xf0);
+    assert(ARROW(pkt)currentFrame == frame);
+    assert(ARROW(pkt)currentSlot == slot);
     assert(ARROW(pkt)collisionSlot == collisionSlot);
     assert(ARROW(pkt)collisionFrequency == collisionFrequency);
     assert(ARROW(pkt)hopCount == hopCount);
@@ -114,13 +120,15 @@ void test_controlpacket_clear(void)
     for (unsigned int i = 0; i < bytes; i++)
         WRITE_ARRAY(REFERENCE occupiedSlots, 0xf0, i);
 
+    uint32_t frame = 20;
+    uint8_t slot = 8;
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
     uint32_t netTime = rand();
     uint8_t ack = 1;
 
-    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, collisionSlots, collisionFrequency, hopCount, netTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, ack);
 
     controlpacket_clear(REFERENCE pkt);
 
@@ -170,6 +178,72 @@ void test_controlpacket_get_nodeID(void)
         controlpacket_set_nodeID(REFERENCE pkt, i);
         uint16_t nodeid = controlpacket_get_nodeID(REFERENCE pkt);
         assert(nodeid == i);
+    }
+
+    controlpacket_destroy(&pkt);
+}
+
+void test_controlpacket_set_current_frame(void)
+{
+    ControlPacket_t SINGLE_POINTER pkt;
+    controlpacket_init(&pkt);
+
+    int n = rand() % 1024;
+    for (int i = 0; i < n; i++)
+    {
+        uint32_t frame = rand();
+        controlpacket_set_current_frame(REFERENCE pkt, frame);
+        assert(ARROW(pkt)currentFrame == frame);
+    }
+
+    controlpacket_destroy(&pkt);
+}
+
+void test_controlpacket_get_current_frame(void)
+{
+    ControlPacket_t SINGLE_POINTER pkt;
+    controlpacket_init(&pkt);
+
+    int n = rand() % 1024;
+    for (int i = 0; i < n; i++)
+    {
+        uint32_t frame = rand();
+        controlpacket_set_current_frame(REFERENCE pkt, frame);
+        uint32_t frameA = controlpacket_get_current_frame(REFERENCE pkt);
+        assert(frameA == frame);
+    }
+
+    controlpacket_destroy(&pkt);
+}
+
+void test_controlpacket_set_current_slot(void)
+{
+    ControlPacket_t SINGLE_POINTER pkt;
+    controlpacket_init(&pkt);
+
+    int n = rand()%1024;
+    for (int i = 0; i < n; i++)
+    {
+        uint8_t slot = rand();
+        controlpacket_set_current_slot(REFERENCE pkt, slot);
+        assert(ARROW(pkt)currentSlot == slot);
+    }
+
+    controlpacket_destroy(&pkt);
+}
+
+void test_controlpacket_get_current_slot(void)
+{
+    ControlPacket_t SINGLE_POINTER pkt;
+    controlpacket_init(&pkt);
+
+    int n = rand()%1024;
+    for (int i = 0; i < n; i++)
+    {
+        uint8_t slot = rand();
+        controlpacket_set_current_slot(REFERENCE pkt, slot);
+        uint8_t slotA = controlpacket_get_current_slot(REFERENCE pkt);
+        assert(slotA == slot);
     }
 
     controlpacket_destroy(&pkt);
@@ -410,6 +484,9 @@ void test_controlpacket_get_packet_bytestring(void)
 #endif
     for (i = 0; i < bytes; i++)
         WRITE_ARRAY(REFERENCE occupiedSlots, 0xff, i);
+    
+    uint32_t frame = 20;
+    uint8_t slot = 8;
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 0xf0f0f0f0;
     uint8_t freq[4];
@@ -418,7 +495,7 @@ void test_controlpacket_get_packet_bytestring(void)
     uint8_t time[4];
     uint8_t ack = 0;
 
-    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, collisionSlots, collisionFrequency, hopCount, netTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, ack);
 
     freq[0] = (collisionFrequency & 0xff000000) >> 24;
     freq[1] = (collisionFrequency & 0x00ff0000) >> 16;
@@ -568,6 +645,22 @@ void executeTestsCP(void)
 
     printf("Testing controlpacket_get_nodeID function.\n");
     test_controlpacket_get_nodeID();
+    printf("Test passed.\n");
+
+    printf("Testing controlpacket_set_current_frame function.\n");
+    test_controlpacket_set_current_frame();
+    printf("Test passed.\n");
+
+    printf("Teting controlpacket_get_current_frame function.\n");
+    test_controlpacket_get_current_frame();
+    printf("Test passed.\n");
+
+    printf("Testing controlpacket_set_current_slot function.\n");
+    test_controlpacket_set_current_slot();
+    printf("Test passed.\n");
+    
+    printf("Testing controlpacket_get_current_slot function.\n");
+    test_controlpacket_get_current_slot();
     printf("Test passed.\n");
 
     printf("Testing controlpacket_set_collision_slot function.\n");

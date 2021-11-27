@@ -52,7 +52,7 @@ void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
 }
 
 // Fill the packet with the given parameters
-void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, 
+void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint32_t frame, uint8_t slot,uint8_t collisionSlots, 
                           uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack)
 {
     assert(pkt != NULL);
@@ -68,6 +68,8 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupied
         uint8_t element = READ_ARRAY(SINGLE_POINTER occupiedSlots, i);
         WRITE_ARRAY(REFERENCE pkt->occupiedSlots, element, i);
     }
+    pkt->currentFrame = frame;
+    pkt->currentSlot = slot;
     pkt->collisionSlot = collisionSlots;
     pkt->collisionFrequency = collisionFrequency;
     pkt->hopCount = hopCount;
@@ -79,6 +81,12 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupied
 void controlpacket_clear(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
+#ifdef __LINUX__
+    free(pkt->occupiedSlots);
+#endif
+#ifdef __RIOT__
+    free_array(&pkt->occupiedSlots);
+#endif
     memset(pkt, 0, sizeof(ControlPacket_t));
 }
 
@@ -94,6 +102,34 @@ uint16_t controlpacket_get_nodeID(ControlPacket_t *pkt)
     assert(pkt != NULL);
     
     return pkt->nodeID;
+}
+
+void controlpacket_set_current_frame(ControlPacket_t *pkt, uint32_t frame)
+{
+    assert(pkt != NULL);
+
+    pkt->currentFrame = frame;
+}
+
+uint32_t controlpacket_get_current_frame(ControlPacket_t *pkt)
+{
+    assert(pkt != NULL);
+
+    return pkt->currentFrame;
+}
+
+void controlpacket_set_current_slot(ControlPacket_t *pkt, uint8_t slot)
+{
+    assert(pkt != NULL);
+    
+    pkt->currentSlot = slot;
+}
+
+uint8_t controlpacket_get_current_slot(ControlPacket_t *pkt)
+{
+    assert(pkt != NULL);
+
+    return pkt->currentSlot;
 }
 
 void controlpacket_set_collision_slot(ControlPacket_t *pkt, uint8_t slot)

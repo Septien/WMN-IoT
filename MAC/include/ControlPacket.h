@@ -25,6 +25,8 @@ typedef struct
 {
     uint16_t     nodeID;
     ARRAY       occupiedSlots;
+    uint32_t    currentFrame;
+    uint8_t     currentSlot;
     uint8_t     collisionSlot;
     uint32_t    collisionFrequency;
     uint8_t     hopCount;
@@ -34,10 +36,14 @@ typedef struct
 
 void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt);
 void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt);
-void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack);
+void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, ARRAY* occupiedSlots, uint32_t frame, uint8_t slot, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint8_t ack);
 void controlpacket_clear(ControlPacket_t *pkt);
 void controlpacket_set_nodeID(ControlPacket_t *pkt, uint16_t nodeID);
 uint16_t controlpacket_get_nodeID(ControlPacket_t *pkt);
+void controlpacket_set_current_frame(ControlPacket_t *pkt, uint32_t frame);
+uint32_t controlpacket_get_current_frame(ControlPacket_t *pkt);
+void controlpacket_set_current_slot(ControlPacket_t *pkt, uint8_t slot);
+uint8_t controlpacket_get_current_slot(ControlPacket_t *pkt);
 void controlpacket_set_collision_slot(ControlPacket_t *pkt, uint8_t slot);
 uint8_t controlpacket_get_collision_slot(ControlPacket_t *pkt);
 void controlpacket_set_occupied_slots(ControlPacket_t *pkt, ARRAY* occupiedSlots);
