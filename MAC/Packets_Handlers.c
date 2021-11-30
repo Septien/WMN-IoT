@@ -108,3 +108,49 @@ void mclmac_clear_data_from_packet(MCLMAC_t *mclmac)
 
     datapacket_clear_data(REFERENCE ARROW(mclmac->mac)datapkt);
 }
+
+/**
+ * @brief For the SYNCHRONIZATION state. It will receive all the incoming 
+ *      control packets from the network, one at the time, and store the received
+ *      data on the ctrlpkt. With that data, the node will fill its information
+ *      about the network, so it can join it.
+ *      For simulate the reception of packets, this function will create 
+ *      an byte string that will contain the associated data, and create 
+ *      the packet with it. The following static variables are necessary:
+ *          -A variable containing the network time, which is the total number
+ *          of slots that has passed.
+ *          -The number of hops, which will vary a little in each call.
+ *          -The current slot and current frame, which will be random at the beginning.
+ *          -We also need to record the slot and frequency at which the packet is received.
+ *      The rest of the fields will be randomly generated.
+ * @param mclmac 
+ * @param ctrlpkt 
+ */
+void stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt, uint8_t *current_slot, uint32_t *frequency)
+{
+    assert(mclmac != NULL);
+    assert(ctrlpkt != NULL);
+    assert(frequency != NULL);
+    assert(current_slot != NULL);
+
+    static uint32_t frame = 0;
+    static uint8_t slot = 0;
+    static uint8_t hopCount = 100;
+    static uint32_t network_time = 220;
+    
+    uint8_t freqN = rand() % MAX_NUMBER_FREQS;
+    *frequency = mclmac->_frequencies[freqN];
+    *current_slot = slot;
+    controlpacket_set_current_frame(ctrlpkt, frame);
+    controlpacket_set_current_slot(ctrlpkt, slot);
+    controlpacket_set_hop_count(ctrlpkt, hopCount);
+    controlpacket_set_network_time(ctrlpkt, network_time);
+
+    slot++;
+    network_time++;
+    if ((slot % MAX_NUMBER_SLOTS) == 0)
+    {
+        slot = 0;
+        frame++;
+    }
+}

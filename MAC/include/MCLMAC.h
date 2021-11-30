@@ -83,7 +83,7 @@ typedef struct MCLMAC
     size_t              _dataQSize;
     uint8_t             _nSlots;
     uint8_t             _nChannels;
-    uint8_t             _hopCount;
+    uint16_t            _hopCount;
     uint32_t            _frequencies[MAX_NUMBER_FREQS];
     uint8_t             _occupied_frequencies_slots[MAX_NUMBER_FREQS][MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8)];
     // IPC Queues
@@ -193,6 +193,7 @@ void stub_mclmac_send_cf_message(MCLMAC_t *mclmac);
 bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac);
 void mclmac_send_data_packet(MCLMAC_t *mclmac);
 void mclmac_receive_control_message(MCLMAC_t *mclmac);
+void stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt, uint8_t *current_slot, uint32_t *frequency);
 bool mclmac_receive_data_message(MCLMAC_t *mclmac);
 
 // Channel selection

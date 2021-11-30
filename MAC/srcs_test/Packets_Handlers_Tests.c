@@ -267,6 +267,45 @@ void test_mclmac_clear_data_from_packet(void)
     MCLMAC_destroy(&mclmac);
 }*/
 
+void test_stub_mclmac_receive_ctrlpkt_sync(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    /**
+     * This function will receive the packets from the network.
+     * The data of interest is:
+     *      -The network time.
+     *      -The number of hops (all within the same range.)
+     *      -The current slot and current frequency.
+     *      -The frequency and slot at which the packet was received.
+     *  All other information is discarded.
+     */
+    ControlPacket_t SINGLE_POINTER ctrlpkt;
+    uint8_t current_slot = 0;
+    uint32_t frequency = 0;
+
+    controlpacket_init(&ctrlpkt);
+    stub_mclmac_receive_ctrlpkt_sync(REFERENCE mclmac, REFERENCE ctrlpkt, &current_slot, &frequency);
+    assert(current_slot < MAX_NUMBER_SLOTS);
+    assert(frequency > 0);
+    assert(ARROW(ctrlpkt)networkTime > 0);
+    assert(ARROW(ctrlpkt)hopCount > 0);
+    assert(ARROW(ctrlpkt)currentSlot < MAX_NUMBER_SLOTS);
+
+    controlpacket_destroy(&ctrlpkt);
+    MCLMAC_destroy(&mclmac);
+}
+
 void executetests_packets_handlers(void)
 {
     /*pintf("Testing mclmac_create_cf_packet function.\n");
@@ -297,5 +336,8 @@ void executetests_packets_handlers(void)
     test_mclmac_clear_data_from_packet();
     printf("Test passed.\n");*/
 
+    printf("Tetsing test_stub_mclmac_receive_ctrlpkt_sync function.\n");
+    test_stub_mclmac_receive_ctrlpkt_sync();
+    printf("Test passed.\n");
     return;
 }
