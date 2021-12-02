@@ -126,21 +126,18 @@ void mclmac_clear_data_from_packet(MCLMAC_t *mclmac)
  * @param mclmac 
  * @param ctrlpkt 
  */
-void stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt, uint8_t *current_slot, uint32_t *frequency)
+void stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt, uint32_t *frequency)
 {
     assert(mclmac != NULL);
     assert(ctrlpkt != NULL);
     assert(frequency != NULL);
-    assert(current_slot != NULL);
 
     static uint32_t frame = 0;
     static uint8_t slot = 0;
     static uint8_t hopCount = 100;
     static uint32_t network_time = 220;
     
-    uint8_t freqN = rand() % MAX_NUMBER_FREQS;
-    *frequency = mclmac->_frequencies[freqN];
-    *current_slot = slot;
+    *frequency = rand() % MAX_NUMBER_FREQS;
     controlpacket_set_current_frame(ctrlpkt, frame);
     controlpacket_set_current_slot(ctrlpkt, slot);
     controlpacket_set_hop_count(ctrlpkt, hopCount);
