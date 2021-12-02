@@ -35,7 +35,7 @@ void test_MCLMAC_init(void)
     assert(ARROW(mclmac)_networkTime == 0);
     assert(ARROW(mclmac)_hopCount == 0);
     int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < n; i++)
     {
         assert(ARROW(mclmac)_frequencies[i] >= 902000000 && ARROW(mclmac)_frequencies[i] <= 928000000);

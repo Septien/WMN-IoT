@@ -36,7 +36,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     mclmac_init_powermode_state_machine((SINGLE_POINTER mclmac));
 
     int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
             (SINGLE_POINTER mclmac)->_occupied_frequencies_slots[i][j] = 0;
