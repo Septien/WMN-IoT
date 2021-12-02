@@ -15,10 +15,16 @@ void test_controlpacket_init(void)
     controlpacket_init(&pkt);
 #ifdef __LINUX__
     assert(pkt != NULL);
-    assert(ARROW(pkt)occupiedSlots != NULL);
 #endif
 #ifdef __RIOT__
-    assert(pkt.occupiedSlots.size > 0);
+    assert(pkt.nodeID == 0);
+    assert(pkt.currentFrame == 0);
+    assert(pkt.currentSlot == 0);
+    assert(pkt.collisionSlot == 0);
+    assert(pkt.hopCount == 0);
+    assert(pkt.networkTime == 0);
+    assert(pkt.initTime == 0);
+    assert(pkt.ack == 0);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -35,13 +41,13 @@ void test_controlpacket_destroy(void)
     assert(pkt == NULL);
 #endif
 #ifdef __RIOT__
-    assert(pkt.occupiedSlots.size == 0);
     assert(pkt.nodeID == 0);
     assert(pkt.currentFrame == 0);
     assert(pkt.currentSlot == 0);
     assert(pkt.collisionSlot == 0);
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
+    assert(pkt.initTime == 0);
     assert(pkt.ack == 0);
 #endif
 }
@@ -52,17 +58,6 @@ void test_controlpacket_create(void)
     controlpacket_init(&pkt);
 
     uint16_t nodeID = 1;
-    uint8_t bytes = MAX_NUMBER_FREQS * (MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8));
-    ARRAY occupiedSlots;
-#ifdef __LINUX__
-    occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&occupiedSlots, bytes);
-#endif
-    int i;
-    for (i = 0; i < bytes; i++)
-        WRITE_ARRAY(REFERENCE occupiedSlots, 0xf0, i);
     uint32_t frame = 20;
     uint8_t slot = 8;
     uint8_t collisionSlot = 10;
@@ -70,32 +65,23 @@ void test_controlpacket_create(void)
     uint8_t hopCount = 3;
     uint8_t ack = 0;
     uint32_t netTime = rand();
+    uint32_t initTime = rand();
 
-    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, ack);
 
 #ifdef __LINUX__
     assert(pkt != NULL);
-    assert(pkt->occupiedSlots != NULL);
 #endif
-#ifdef __RIOT__
-    assert(pkt.occupiedSlots.size == bytes);
-#endif
-    for (i = 0; i < bytes; i++)
-        assert(READ_ARRAY(REFERENCE ARROW(pkt)occupiedSlots, i) == 0xf0);
+    assert(ARROW(pkt)nodeID == nodeID);
     assert(ARROW(pkt)currentFrame == frame);
     assert(ARROW(pkt)currentSlot == slot);
     assert(ARROW(pkt)collisionSlot == collisionSlot);
     assert(ARROW(pkt)collisionFrequency == collisionFrequency);
     assert(ARROW(pkt)hopCount == hopCount);
     assert(ARROW(pkt)networkTime == netTime);
+    assert(ARROW(pkt)initTime == initTime);
     assert(ARROW(pkt)ack == ack);
 
-#ifdef __LINUX__
-    free(occupiedSlots);
-#endif
-#ifdef __RIOT__
-    free_array(&occupiedSlots);
-#endif
     controlpacket_destroy(&pkt);
 }
 
@@ -104,52 +90,27 @@ void test_controlpacket_clear(void)
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
-    uint16_t nodeID = 1;
-    int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
-    uint8_t bytes = n * m;
-    ARRAY occupiedSlots;
-#ifdef __LINUX__
-    occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-
-#ifdef __RIOT__
-    int ret = create_array(&occupiedSlots, bytes);
-    assert(ret == 1);
-#endif
-    for (unsigned int i = 0; i < bytes; i++)
-        WRITE_ARRAY(REFERENCE occupiedSlots, 0xf0, i);
-
+    uint16_t nodeID = 1;    
     uint32_t frame = 20;
     uint8_t slot = 8;
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
     uint32_t netTime = rand();
+    uint32_t initTime = rand();
     uint8_t ack = 1;
 
-    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, ack);
 
     controlpacket_clear(REFERENCE pkt);
 
     assert(ARROW(pkt)nodeID == 0);
-#ifdef __LINUX__
-    assert(ARROW(pkt)occupiedSlots == NULL);
-#endif
-#ifdef __RIOT__
-    assert(pkt.occupiedSlots.size == 0);
-#endif
     assert(ARROW(pkt)collisionFrequency == 0);
     assert(ARROW(pkt)collisionSlot == 0);
     assert(ARROW(pkt)hopCount == 0);
+    assert(ARROW(pkt)networkTime == 0);
+    assert(ARROW(pkt)initTime == 0);
     assert(ARROW(pkt)ack == 0);
-
-#ifdef __LINUX__
-    free(occupiedSlots);
-#endif
-#ifdef __RIOT__
-    free_array(&occupiedSlots);
-#endif
     
     controlpacket_destroy(&pkt);
 }
@@ -276,81 +237,6 @@ void test_controlpacket_get_collision_slot(void)
     controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_occupied_slots(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
-    uint8_t bytes = n * m;
-    ARRAY occSlots;
-    uint8_t i;
-#ifdef __LINUX__
-    occSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&occSlots, bytes);
-#endif
-    for (i = 0; i < bytes; i++)
-        WRITE_ARRAY(REFERENCE occSlots, 0xff, i);
-    controlpacket_set_occupied_slots(REFERENCE pkt, &occSlots);
-
-    for (i = 0; i < bytes; i++)
-        assert(READ_ARRAY(REFERENCE ARROW(pkt)occupiedSlots, i) == READ_ARRAY(REFERENCE occSlots, i));
-
-#ifdef __LINUX__
-    free(occSlots);
-#endif
-#ifdef __RIOT__
-    free_array(&occSlots);
-#endif
-    controlpacket_destroy(&pkt);
-}
-
-void test_controlpacket_get_occupied_slots(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
-    uint8_t bytes = n * m;
-    ARRAY occSlots;
-#ifdef __LINUX__
-    occSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&occSlots, bytes);
-#endif
-    uint8_t i;
-    for (i = 0; i < bytes; i++)
-        WRITE_ARRAY(REFERENCE occSlots, 0xff, i);
-
-    controlpacket_set_occupied_slots(REFERENCE pkt, &occSlots);
-
-    ARRAY occSlots2;
-#ifdef __LINUX__
-    occSlots2 = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&occSlots2, bytes);
-#endif
-    controlpacket_get_occupied_slots(REFERENCE pkt, &occSlots2);
-    for (uint8_t i = 0; i < bytes; i++)
-        assert(READ_ARRAY(REFERENCE occSlots2, i) == READ_ARRAY(REFERENCE ARROW(pkt)occupiedSlots, i));
-
-#ifdef __LINUX__
-    free(occSlots);
-    free(occSlots2);
-#endif
-#ifdef __RIOT__
-    free_array(&occSlots);
-    free_array(&occSlots2);
-#endif
-    controlpacket_destroy(&pkt);
-}
-
 void test_controlpacket_set_collision_frequency(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
@@ -438,6 +324,39 @@ void test_controlpacket_get_network_time(void)
     controlpacket_destroy(&pkt);
 }
 
+void test_controlpacket_set_init_time(void)
+{
+    ControlPacket_t SINGLE_POINTER pkt;
+    controlpacket_init(&pkt);
+
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        uint32_t initTime = (uint32_t)rand();
+        controlpacket_set_init_time(REFERENCE pkt, initTime);
+        assert(ARROW(pkt)initTime == initTime);
+    }
+
+    controlpacket_destroy(&pkt);
+}
+
+void test_controlpacket_get_init_time(void)
+{
+    ControlPacket_t SINGLE_POINTER pkt;
+    controlpacket_init(&pkt);
+
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        uint32_t initTime = (uint32_t)rand();
+        controlpacket_set_init_time(REFERENCE pkt, initTime);
+        uint32_t initTimeT = controlpacket_get_init_time(REFERENCE pkt);
+        assert(initTimeT == initTime);
+    }
+
+    controlpacket_destroy(&pkt);
+}
+
 void test_controlpacket_set_ACK(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
@@ -470,21 +389,7 @@ void test_controlpacket_get_packet_bytestring(void)
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
-    int i;
-    int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
     uint16_t nodeID = (uint16_t) rand();
-    ARRAY occupiedSlots;
-    uint8_t bytes = n * m;
-#ifdef __LINUX__
-     occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&occupiedSlots, bytes);
-#endif
-    for (i = 0; i < bytes; i++)
-        WRITE_ARRAY(REFERENCE occupiedSlots, 0xff, i);
-    
     uint32_t frame = 0x0f0f0f0f;
     uint8_t frames[4];
     uint8_t slot = 8;
@@ -494,11 +399,13 @@ void test_controlpacket_get_packet_bytestring(void)
     uint8_t hopCount = 3;
     uint32_t netTime = rand();
     uint8_t time[4];
+    uint32_t initTime = rand();
+    uint8_t inittime[4];
     uint8_t ack = 0;
-    size_t sizeA = sizeof(nodeID) + (size_t)bytes + sizeof(frame) + sizeof(slot) + sizeof(collisionSlots);
-    sizeA += sizeof(collisionFrequency) + sizeof(netTime) + sizeof(hopCount) + sizeof(ack);
+    size_t sizeA = sizeof(nodeID) + sizeof(frame) + sizeof(slot) + sizeof(collisionSlots);
+    sizeA += sizeof(collisionFrequency) + sizeof(hopCount) + sizeof(netTime) + sizeof(initTime) + sizeof(ack);
 
-    controlpacket_create(REFERENCE pkt, nodeID, &occupiedSlots, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, ack);
 
     frames[0] = (frame & 0xff000000) >> 24;
     frames[1] = (frame & 0x00ff0000) >> 16;
@@ -512,39 +419,43 @@ void test_controlpacket_get_packet_bytestring(void)
     time[1] = (netTime & 0x00ff0000) >> 16;
     time[2] = (netTime & 0x0000ff00) >> 8;
     time[3] = (netTime & 0x000000ff);
+    inittime[0] = (initTime & 0xff000000) >> 24;
+    inittime[1] = (initTime & 0x00ff0000) >> 16;
+    inittime[2] = (initTime & 0x0000ff00) >> 8;
+    inittime[3] = (initTime & 0x000000ff);
     ARRAY byteStr;
     size_t size;
     controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr, &size);
 
     assert(size == sizeA);
-    assert(READ_ARRAY(REFERENCE byteStr, 0) == (nodeID & 0xff00) >> 8);
-    assert(READ_ARRAY(REFERENCE byteStr, 1) == (nodeID & 0x00ff));
-    for (i = 0; i < bytes; i++)
-        assert(READ_ARRAY(REFERENCE byteStr, i + 2)     == READ_ARRAY(REFERENCE occupiedSlots, i));
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 3)     == frames[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 4)     == frames[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 5)     == frames[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 6)     == frames[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 7)     == slot);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 8)     == collisionSlots);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 9)     == freq[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 10)    == freq[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 11)    == freq[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 12)    == freq[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 13)    == hopCount);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 14)    == time[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 15)    == time[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 16)    == time[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 17)    == time[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, bytes + 18)    == ack);
+    assert(READ_ARRAY(REFERENCE byteStr, 0)     == (nodeID & 0xff00) >> 8);
+    assert(READ_ARRAY(REFERENCE byteStr, 1)     == (nodeID & 0x00ff));
+    assert(READ_ARRAY(REFERENCE byteStr, 2)     == frames[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 3)     == frames[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 4)     == frames[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 5)     == frames[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 6)     == slot);
+    assert(READ_ARRAY(REFERENCE byteStr, 7)     == collisionSlots);
+    assert(READ_ARRAY(REFERENCE byteStr, 8)     == freq[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 9)     == freq[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 10)    == freq[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 11)    == freq[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 12)    == hopCount);
+    assert(READ_ARRAY(REFERENCE byteStr, 13)    == time[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 14)    == time[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 15)    == time[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 16)    == time[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 17)    == inittime[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 18)    == inittime[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 19)    == inittime[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 20)    == inittime[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 21)    == ack);
 
 #ifdef __LINUX__
     free(byteStr);
-    free(occupiedSlots);
 #endif
 #ifdef __RIOT__
     free_array(&byteStr);
-    free_array(&occupiedSlots);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -555,36 +466,24 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
-    int i;
-    int n = MAX_NUMBER_FREQS;
-    int m = MAX_NUMBER_SLOTS + (MAX_NUMBER_SLOTS % 8);
-    uint8_t bytes = n * m;
     uint16_t nodeID = rand();
-    ARRAY occupiedSlots;
-#ifdef __LINUX__
-     occupiedSlots = (uint8_t *)malloc(bytes * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&occupiedSlots, bytes);
-#endif
-    for (i = 0; i < bytes; i++)
-        WRITE_ARRAY(REFERENCE occupiedSlots, 0xff, i);
     uint8_t currentSlot = 1;
-    uint8_t currentFrame = 1;
+    uint32_t currentFrame = 0x0f0f0f0f;
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 0xf0f0f0f0;
     uint8_t hopCount = 3;
     uint32_t netTime = (uint32_t)rand();
+    uint32_t initTime = rand();
     uint8_t ack = 0;
 
     size_t size = sizeof(nodeID);
-    size += (size_t)bytes;
     size += sizeof(currentFrame);
     size += sizeof(currentSlot);
     size += sizeof(collisionSlots);
     size += sizeof(collisionFrequency);
     size += sizeof(hopCount);
     size += sizeof(netTime);
+    size += sizeof(initTime);
     size += sizeof(ack);
     size += 1;
     ARRAY byteStr;
@@ -595,48 +494,48 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     create_array(&byteStr, size);
 #endif
 
-    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0xff00) >> 8, 0);
-    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0x00ff),      1);
-    for (i = 0; i < bytes; i++)
-    {
-        uint8_t element = READ_ARRAY(REFERENCE occupiedSlots, i);
-        WRITE_ARRAY(REFERENCE byteStr, element, i + 2);
-    }
-    WRITE_ARRAY(REFERENCE byteStr, currentFrame, bytes + 3);
-    WRITE_ARRAY(REFERENCE byteStr, currentSlot, bytes + 4);
-    WRITE_ARRAY(REFERENCE byteStr, collisionSlots, bytes + 5);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0xff000000) >> 24, bytes + 6);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x00ff0000) >> 16, bytes + 7);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x0000ff00) >> 8,  bytes + 8);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x000000ff),       bytes + 9);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0xff000000) >> 24,            bytes + 10);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00ff0000) >> 16,            bytes + 11);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000ff00) >> 8,             bytes + 12);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000ff),                  bytes + 13);
-    WRITE_ARRAY(REFERENCE byteStr, hopCount,                                bytes + 14);
-    WRITE_ARRAY(REFERENCE byteStr, ack,                                     bytes + 15);
+    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0xff00) >> 8,                  0);
+    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0x00ff),                       1);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0xff000000) >> 24,       2);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x00ff0000) >> 16,       3);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x0000ff00) >> 8,        4);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x000000ff),             5);
+    WRITE_ARRAY(REFERENCE byteStr, currentSlot,                             6);
+    WRITE_ARRAY(REFERENCE byteStr, collisionSlots,                          7);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0xff000000) >> 24, 8);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x00ff0000) >> 16, 9);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x0000ff00) >> 8,  10);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x000000ff),       11);
+    WRITE_ARRAY(REFERENCE byteStr, hopCount,                                12);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0xff000000) >> 24,            13);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00ff0000) >> 16,            14);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000ff00) >> 8,             15);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000ff),                  16);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0xff000000) >> 24,           17);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           18);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            19);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 20);
+    WRITE_ARRAY(REFERENCE byteStr, ack,                                     21);
     
-    controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr, size);
+    controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr);
 
-    assert(ARROW(pkt)nodeID == nodeID);
-    for (i = 0; i < bytes; i++)
-        assert(READ_ARRAY(REFERENCE ARROW(pkt)occupiedSlots, i) == READ_ARRAY(REFERENCE byteStr, i + 2));
-    assert(ARROW(pkt)currentFrame == currentFrame);
-    assert(ARROW(pkt)currentSlot == currentSlot);
-    assert(ARROW(pkt)collisionSlot == READ_ARRAY(REFERENCE byteStr, bytes + 5));
+    assert(ARROW(pkt)nodeID             == nodeID);
+    assert(ARROW(pkt)currentFrame       == currentFrame);
+    assert(ARROW(pkt)currentSlot        == currentSlot);
+    assert(ARROW(pkt)collisionSlot      == collisionSlots);
     assert(ARROW(pkt)collisionFrequency == collisionFrequency);
-    assert(ARROW(pkt)hopCount == hopCount);
-    assert(ARROW(pkt)networkTime == netTime);
-    assert(ARROW(pkt)ack == ack);
+    assert(ARROW(pkt)hopCount           == hopCount);
+    assert(ARROW(pkt)networkTime        == netTime);
+    assert(ARROW(pkt)initTime           == initTime);
+    assert(ARROW(pkt)ack                == ack);
 
 #ifdef __LINUX__
     free(byteStr);
-    free(occupiedSlots);
 #endif
 #ifdef __RIOT__
     free_array(&byteStr);
-    free_array(&occupiedSlots);
 #endif
+
     controlpacket_destroy(&pkt);
 }
 
@@ -692,14 +591,6 @@ void executeTestsCP(void)
     test_controlpacket_get_collision_slot();
     printf("Test passed.\n");
 
-    printf("Testing controlpacket_set_occupied_slots function.\n");
-    test_controlpacket_set_occupied_slots();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_occupied_slots function.\n");
-    test_controlpacket_get_occupied_slots();
-    printf("Test passed.\n");
-
     printf("Testing controlpacket_set_collision_frequency function.\n");
     test_controlpacket_set_collision_frequency();
     printf("Test passed.\n");
@@ -722,6 +613,14 @@ void executeTestsCP(void)
 
     printf("Testing controlpacket_get_network_time function.\n");
     test_controlpacket_get_network_time();
+    printf("Test passed.\n");
+
+    printf("Testing controlpacket_set_init_time function.\n");
+    test_controlpacket_set_init_time();
+    printf("Test passed.\n");
+
+    printf("Testing controlpacket_get_init_time function.\n");
+    test_controlpacket_get_init_time();
     printf("Test passed.\n");
 
     printf("Testing controlpacket_set_ACK function.\n");
