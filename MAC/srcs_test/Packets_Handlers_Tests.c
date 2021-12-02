@@ -291,11 +291,9 @@ void test_stub_mclmac_receive_ctrlpkt_sync(void)
      *  All other information is discarded.
      */
     ControlPacket_t SINGLE_POINTER ctrlpkt;
-    uint32_t frequency = 0;
 
     controlpacket_init(&ctrlpkt);
-    stub_mclmac_receive_ctrlpkt_sync(REFERENCE mclmac, REFERENCE ctrlpkt, &frequency);
-    assert(frequency > 0);
+    stub_mclmac_receive_ctrlpkt_sync(REFERENCE mclmac, REFERENCE ctrlpkt);
     assert(ARROW(ctrlpkt)networkTime > 0);
     assert(ARROW(ctrlpkt)hopCount > 0);
     assert(ARROW(ctrlpkt)currentSlot < MAX_NUMBER_SLOTS);
