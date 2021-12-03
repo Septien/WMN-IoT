@@ -79,7 +79,7 @@ typedef struct MCLMAC
 
     // Private members
     uint16_t            _nodeID;
-    uint32_t            _networkTime;
+    uint64_t            _networkTime;
     size_t              _dataQSize;
     uint8_t             _nSlots;
     uint8_t             _nChannels;
@@ -87,6 +87,7 @@ typedef struct MCLMAC
     uint32_t            _frequencies[MAX_NUMBER_FREQS];
     uint8_t             _occupied_frequencies_slots[MAX_NUMBER_FREQS][(MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0)];
     uint32_t            _wakeup_frame;
+    uint32_t            _initTime;
     // IPC Queues
 }MCLMAC_t;
 

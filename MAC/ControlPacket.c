@@ -41,7 +41,7 @@ void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
 
 // Fill the packet with the given parameters
 void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame, uint8_t slot,uint8_t collisionSlots, 
-                          uint32_t collisionFrequency, uint8_t hopCount, uint32_t netTime, uint32_t initTime, uint8_t ack)
+                          uint32_t collisionFrequency, uint8_t hopCount, uint64_t netTime, uint32_t initTime, uint8_t ack)
 {
     assert(pkt != NULL);
 
@@ -148,7 +148,7 @@ uint8_t controlpacket_get_hop_count(ControlPacket_t *pkt)
     return pkt->hopCount;;
 }
 
-void controlpacket_set_network_time(ControlPacket_t *pkt, uint32_t time)
+void controlpacket_set_network_time(ControlPacket_t *pkt, uint64_t time)
 {
     assert(pkt != NULL);
     assert(time > 0);
@@ -156,7 +156,7 @@ void controlpacket_set_network_time(ControlPacket_t *pkt, uint32_t time)
     pkt->networkTime = time;
 }
 
-uint32_t controlpacket_get_network_time(ControlPacket_t *pkt)
+uint64_t controlpacket_get_network_time(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
@@ -214,28 +214,32 @@ void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, s
 #endif
 
     // Copy the fields
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->nodeID & 0xff00) >> 8,                        0);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->nodeID & 0x00ff),                             1);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0xff000000) >> 24,             2);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0x00ff0000) >> 16,             3);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0x0000ff00) >> 8,              4);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0x000000ff),                   5);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->currentSlot,                                   6);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->collisionSlot,                                 7);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0xff000000) >> 24,       8);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x00ff0000) >> 16,       9);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x0000ff00) >> 8,        10);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x000000ff),             11);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->hopCount,                                      12);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0xff000000) >> 24,              13);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x00ff0000) >> 16,              14);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x0000ff00) >> 8,               15);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x000000ff),                    16);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0xff000000) >> 24,                 17);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x00ff0000) >> 16,                 18);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x0000ff00) >> 8,                  19);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x000000ff),                       20);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ack,                                           21);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->nodeID & 0xff00) >> 8,                    0);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->nodeID & 0x00ff),                         1);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0xff000000) >> 24,         2);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0x00ff0000) >> 16,         3);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0x0000ff00) >> 8,          4);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->currentFrame & 0x000000ff),               5);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->currentSlot,                               6);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->collisionSlot,                             7);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0xff000000) >> 24,   8);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x00ff0000) >> 16,   9);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x0000ff00) >> 8,    10);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->collisionFrequency & 0x000000ff),         11);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->hopCount,                                  12);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0xff00000000000000) >> 56,  13);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x00ff000000000000) >> 48,  14);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x0000ff0000000000) >> 40,  15);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x000000ff00000000) >> 32,  16);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x00000000ff000000) >> 24,  17);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x0000000000ff0000) >> 16,  18);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->networkTime & 0x000000000000ff00) >> 8,   19);
+    WRITE_ARRAY(SINGLE_POINTER byteStr,  pkt->networkTime & 0x00000000000000ff,         20);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0xff000000) >> 24,             21);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x00ff0000) >> 16,             22);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x0000ff00) >> 8,              23);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x000000ff),                   24);
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ack,                                       25);
 
     *size = size1;
 }
@@ -252,30 +256,34 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     
     // Fill the content of the packet
     pkt->nodeID = 0;
-    pkt->nodeID             |= READ_ARRAY(SINGLE_POINTER byteString,    0) << 8;
-    pkt->nodeID             |= READ_ARRAY(SINGLE_POINTER byteString,    1);
+    pkt->nodeID             |= READ_ARRAY(SINGLE_POINTER byteString,            0) << 8;
+    pkt->nodeID             |= READ_ARRAY(SINGLE_POINTER byteString,            1);
     pkt->currentFrame = 0;
-    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,    2) << 24;
-    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,    3) << 16;
-    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,    4) << 8;
-    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,    5);
-    pkt->currentSlot        = READ_ARRAY(SINGLE_POINTER byteString,     6);
-    pkt->collisionSlot      = READ_ARRAY(SINGLE_POINTER byteString,     7);
+    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,            2) << 24;
+    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,            3) << 16;
+    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,            4) << 8;
+    pkt->currentFrame       |= READ_ARRAY(SINGLE_POINTER byteString,            5);
+    pkt->currentSlot        = READ_ARRAY(SINGLE_POINTER byteString,             6);
+    pkt->collisionSlot      = READ_ARRAY(SINGLE_POINTER byteString,             7);
     pkt->collisionFrequency = 0;
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,    8) << 24; 
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,    9) << 16; 
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,    10) << 8; 
-    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,    11);
-    pkt->hopCount           = READ_ARRAY(SINGLE_POINTER byteString,     12);
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,            8) << 24; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,            9) << 16; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,            10) << 8; 
+    pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,            11);
+    pkt->hopCount           = READ_ARRAY(SINGLE_POINTER byteString,             12);
     pkt->networkTime = 0;
-    pkt->networkTime        |= READ_ARRAY(SINGLE_POINTER byteString,    13) << 24;
-    pkt->networkTime        |= READ_ARRAY(SINGLE_POINTER byteString,    14) << 16;
-    pkt->networkTime        |= READ_ARRAY(SINGLE_POINTER byteString,    15) << 8;
-    pkt->networkTime        |= READ_ARRAY(SINGLE_POINTER byteString,    16);
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 13) << 52;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 14) << 48;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 15) << 40;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 16) << 32;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 17) << 24;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 18) << 16;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 19) << 8;
+    pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 20);
     pkt->initTime = 0;
-    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,    17) << 24;
-    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,    18) << 16;
-    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,    19) << 8;
-    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,    20);
-    pkt->ack                = READ_ARRAY(SINGLE_POINTER byteString,     21);
+    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            21) << 24;
+    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            22) << 16;
+    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            23) << 8;
+    pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            24);
+    pkt->ack                = READ_ARRAY(SINGLE_POINTER byteString,             25);
 }

@@ -64,7 +64,7 @@ void test_controlpacket_create(void)
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
     uint8_t ack = 0;
-    uint32_t netTime = rand();
+    uint64_t netTime = rand();
     uint32_t initTime = rand();
 
     controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, ack);
@@ -96,7 +96,7 @@ void test_controlpacket_clear(void)
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
-    uint32_t netTime = rand();
+    uint64_t netTime = rand();
     uint32_t initTime = rand();
     uint8_t ack = 1;
 
@@ -299,7 +299,7 @@ void test_controlpacket_set_network_time(void)
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        uint32_t netTime = rand();
+        uint64_t netTime = rand();
         controlpacket_set_network_time(REFERENCE pkt, netTime);
         assert(ARROW(pkt)networkTime == netTime);
     }
@@ -315,9 +315,9 @@ void test_controlpacket_get_network_time(void)
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        uint32_t time = (uint32_t)rand();
+        uint64_t time = (uint32_t)rand();
         controlpacket_set_network_time(REFERENCE pkt, time);
-        uint32_t timeA = controlpacket_get_network_time(REFERENCE pkt);
+        uint64_t timeA = controlpacket_get_network_time(REFERENCE pkt);
         assert(timeA == time);
     }
 
@@ -397,8 +397,8 @@ void test_controlpacket_get_packet_bytestring(void)
     uint32_t collisionFrequency = 0xf0f0f0f0;
     uint8_t freq[4];
     uint8_t hopCount = 3;
-    uint32_t netTime = rand();
-    uint8_t time[4];
+    uint64_t netTime = rand();
+    uint8_t time[8];
     uint32_t initTime = rand();
     uint8_t inittime[4];
     uint8_t ack = 0;
@@ -415,10 +415,14 @@ void test_controlpacket_get_packet_bytestring(void)
     freq[1] = (collisionFrequency & 0x00ff0000) >> 16;
     freq[2] = (collisionFrequency & 0x0000ff00) >> 8;
     freq[3] = (collisionFrequency & 0x000000ff);
-    time[0] = (netTime & 0xff000000) >> 24;
-    time[1] = (netTime & 0x00ff0000) >> 16;
-    time[2] = (netTime & 0x0000ff00) >> 8;
-    time[3] = (netTime & 0x000000ff);
+    time[0] = (netTime & 0xff00000000000000) >> 56;
+    time[1] = (netTime & 0x00ff000000000000) >> 48;
+    time[2] = (netTime & 0x0000ff0000000000) >> 40;
+    time[3] = (netTime & 0x000000ff00000000) >> 32;
+    time[4] = (netTime & 0x00000000ff000000) >> 24;
+    time[5] = (netTime & 0x0000000000ff0000) >> 16;
+    time[6] = (netTime & 0x000000000000ff00) >> 8;
+    time[7] = (netTime & 0x00000000000000ff);
     inittime[0] = (initTime & 0xff000000) >> 24;
     inittime[1] = (initTime & 0x00ff0000) >> 16;
     inittime[2] = (initTime & 0x0000ff00) >> 8;
@@ -445,11 +449,15 @@ void test_controlpacket_get_packet_bytestring(void)
     assert(READ_ARRAY(REFERENCE byteStr, 14)    == time[1]);
     assert(READ_ARRAY(REFERENCE byteStr, 15)    == time[2]);
     assert(READ_ARRAY(REFERENCE byteStr, 16)    == time[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 17)    == inittime[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 18)    == inittime[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 19)    == inittime[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 20)    == inittime[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 21)    == ack);
+    assert(READ_ARRAY(REFERENCE byteStr, 17)    == time[4]);
+    assert(READ_ARRAY(REFERENCE byteStr, 18)    == time[5]);
+    assert(READ_ARRAY(REFERENCE byteStr, 19)    == time[6]);
+    assert(READ_ARRAY(REFERENCE byteStr, 20)    == time[7]);
+    assert(READ_ARRAY(REFERENCE byteStr, 21)    == inittime[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 22)    == inittime[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 23)    == inittime[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 24)    == inittime[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 25)    == ack);
 
 #ifdef __LINUX__
     free(byteStr);
@@ -472,7 +480,7 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     uint8_t collisionSlots = 0x01;
     uint32_t collisionFrequency = 0xf0f0f0f0;
     uint8_t hopCount = 3;
-    uint32_t netTime = (uint32_t)rand();
+    uint64_t netTime = (uint64_t)rand();
     uint32_t initTime = rand();
     uint8_t ack = 0;
 
@@ -507,15 +515,19 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x0000ff00) >> 8,  10);
     WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x000000ff),       11);
     WRITE_ARRAY(REFERENCE byteStr, hopCount,                                12);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0xff000000) >> 24,            13);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00ff0000) >> 16,            14);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000ff00) >> 8,             15);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000ff),                  16);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0xff000000) >> 24,           17);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           18);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            19);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 20);
-    WRITE_ARRAY(REFERENCE byteStr, ack,                                     21);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0xff00000000000000) >> 56,    13);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00ff000000000000) >> 48,    14);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000ff0000000000) >> 40,    15);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000ff00000000) >> 32,    16);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00000000ff000000) >> 24,    17);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000000000ff0000) >> 16,    18);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000000000ff00) >> 8,     19);
+    WRITE_ARRAY(REFERENCE byteStr,  netTime & 0x00000000000000ff,            20);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0xff000000) >> 24,           21);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           22);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            23);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 24);
+    WRITE_ARRAY(REFERENCE byteStr, ack,                                     25);
     
     controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr);
 
