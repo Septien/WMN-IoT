@@ -7,6 +7,18 @@
 
 #include "MCLMAC.h"
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte) \
+        ((byte) & 0x80 ? '1' : '0'), \
+        ((byte) & 0x40 ? '1' : '0'), \
+        ((byte) & 0x20 ? '1' : '0'), \
+        ((byte) & 0x10 ? '1' : '0'), \
+        ((byte) & 0x08 ? '1' : '0'), \
+        ((byte) & 0x04 ? '1' : '0'), \
+        ((byte) & 0x02 ? '1' : '0'), \
+        ((byte) & 0x01 ? '1' : '0')
+
+
 void test_mclmac_init_MAC_state_machine(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -539,6 +551,7 @@ void test_start_state_mac_stmachine(void)
      * We are now at the START state and should execute its functionality.
      * The tasks to execute by the state are the following:
      *  -Fill the array with the allowed frequencies.
+     *  -Select a random wakeup_frame, for the synchronization and discovery state.
      *  -Once the variables are correctly initialize, set the next state to INITIALIZE.
      *  -Return success.
      */
@@ -547,6 +560,7 @@ void test_start_state_mac_stmachine(void)
     for (int i = 0; i < 8; i++)
         assert(ARROW(mclmac)_frequencies[i] >= 902000000 && ARROW(mclmac)_frequencies[i] <= 928000000);
     assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(ARROW(mclmac)_wakeup_frame > 0);
 
     timeout_done();
 
@@ -554,7 +568,7 @@ void test_start_state_mac_stmachine(void)
     
 }
 
-void test_initializtion_state_mac_stmachine(void)
+void test_initialization_state_mac_stmachine(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
@@ -608,6 +622,66 @@ void test_initializtion_state_mac_stmachine(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_synchronization_state_mac_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+
+    /*Execute START state */
+    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute INITIALIZATION state, the first time will fail. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /**
+     * We are now at the SYNCHRONIZATION state.
+     * The purpose of this state is to synchronize the node with the network
+     * by hearing for incoming control packets. From the packets, the following
+     * information will be gathererd: minimum number of hops to the source,
+     * the network time, and the frequencies and slots occupied by each node.
+     * The number of slots are already known, due to the config file.
+     * The node should hear for a random number of frames of at least the 
+     * number of available slots, to ensure proper gatherig of data.
+     * The random number of frames will be stored in a variable called
+     * wakeup_frame. When the current_frame equals wakeup_frame - 1,
+     * pass to the next state, DISCOVERY.
+     */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)_networkTime > 0);
+    assert(ARROW(mclmac)_initTime > 0);
+    assert(ARROW(mclmac)_hopCount > 0);
+    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    for (int i = 0; i < MAX_NUMBER_FREQS; i++)
+    {
+        printf("For the frequency %d, we have:\n", ARROW(mclmac)_frequencies[i]);
+        for (int j = 0; j < m; j++)
+        {
+            printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(ARROW(mclmac)_occupied_frequencies_slots[i][j]));
+        }
+        printf("\n");
+    }
+    
+    timeout_done();
+
+    MCLMAC_destroy(&mclmac);
+}
+
 void executetests_mac_statemachine(void)
 {
     printf("Testing mclmac_init_MAC_state_machine function.\n");
@@ -636,7 +710,11 @@ void executetests_mac_statemachine(void)
     printf("Test passed.\n");
 
     printf("Testing the INITIALIZATION state.\n");
-    test_initializtion_state_mac_stmachine();
+    test_initialization_state_mac_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the SYNCHRONIZATION state.\n");
+    test_synchronization_state_mac_stmachine();
     printf("Test passed.\n");
 
     return;

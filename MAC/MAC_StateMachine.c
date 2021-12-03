@@ -138,6 +138,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
     case START: ;
         // Initialize the timeouts API
         timeout_init();
+        mclmac->_wakeup_frame = MAX_NUMBER_FREQS + (rand() % MAX_NUMBER_SLOTS);
         mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
         break;
     
@@ -175,6 +176,110 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             return E_MAC_EXECUTION_FAILED;
         mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
         break;
+
+    case SYNCHRONIZATION:   ;
+        /* Set hopCount to inf, and network time to zero. */
+        mclmac->_hopCount = 0xffff;         // The greatest possible number for uint16_t
+        mclmac->_networkTime = 0;
+        /* Create control packet for filling information of the network. */
+        ControlPacket_t SINGLE_POINTER ctrlpkt;
+        controlpacket_init(&ctrlpkt);
+        // The timers for the slots and frames
+#ifdef __LINUX__
+        int slot_timer;
+        int frame_timer;
+#endif
+#ifdef __RIOT__
+        uint32_t slot_timer;
+        uint32_t frame_timer;
+#endif
+        uint32_t current_frame = 0;
+        uint32_t frequency = 0;
+        uint8_t current_slot = 0;
+
+        // Set the current frequency
+        /* Synchornize */
+        stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+        /* Get the frame. */
+        current_frame = controlpacket_get_current_frame(REFERENCE ctrlpkt);
+        /*Get the current slot. */
+        current_slot = controlpacket_get_current_slot(REFERENCE ctrlpkt);
+        // Get the latest network time
+        mclmac->_networkTime = controlpacket_get_network_time(REFERENCE ctrlpkt);
+        // Get the starting time of the network
+        mclmac->_initTime = controlpacket_get_init_time(REFERENCE ctrlpkt);
+        // Update wakeup_frame
+        mclmac->_wakeup_frame += current_frame;
+
+        /* Compute the time difference */
+        uint32_t time_passed_frames = current_frame * FRAME_DURATION;
+        uint32_t time_passed_slots = (current_slot == 0 ? 0 : (current_slot - 1) * SLOT_DURATION);
+        uint32_t total_time_passed = time_passed_frames + time_passed_slots;
+        uint32_t current_slot_time_passed = mclmac->_networkTime - total_time_passed;
+        uint32_t time_remaining = SLOT_DURATION - current_slot_time_passed;
+        /* Arm the timers. */
+        slot_timer = timeout_set(TIME(time_remaining));
+        frame_timer = timeout_set(TIME(time_remaining));
+        if (slot_timer == 2 || frame_timer == 2)
+        {
+            perror("Unable to create timers. Returning\n");
+            return E_MAC_EXECUTION_FAILED;
+        }
+        /* Begin to receive the packets. */
+        while (current_frame != mclmac->_wakeup_frame - 1U)
+        {
+            /* Listen for the first incoming control packet and get the data. */
+            bool r = stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+
+            // If a packet is received, update values
+            if (r)
+            {
+                /* Get the corresponding variables. */
+                // Get the minimum number of hops
+                uint8_t hops = controlpacket_get_hop_count(REFERENCE ctrlpkt);
+                if (hops < mclmac->_hopCount)
+                    mclmac->_hopCount = hops;
+
+                // Get the information about the occupied slots per frequency
+                uint8_t bit = 0;
+                /* For knowing the bit to set, get the remainder of current_slot module 8 (number 
+                of bits per byte, uint8_t) */
+                bit = 1U << (current_slot % 8);
+                /* For knowing on which byte to store the bit, divide current_slot by 8. */
+                mclmac->_occupied_frequencies_slots[frequency][(uint)(current_slot / 8)] |= bit;
+            }
+
+            // Sleep for a while
+#ifdef __LINUX__
+            usleep(SLOT_DURATION / 2);
+#endif
+#ifdef __RIOT__
+            ztimer_sleep(CLOCK, SLOT_DURATION / 2);
+#endif
+            /* Check if slot timer expired, if so, increase slot number */
+            if (timeout_passed(slot_timer) == 1)
+            {
+                current_slot++;
+                timeout_unset(slot_timer);
+                slot_timer = timeout_set(TIME(SLOT_DURATION));
+            }
+
+            if (timeout_passed(frame_timer) == 1)
+            {
+                current_frame++;
+                current_slot = 0;
+                timeout_unset(frame_timer);
+                frame_timer = timeout_set(TIME(FRAME_DURATION));
+                frequency = (frequency + 1) % MAX_NUMBER_FREQS;
+            }
+        }
+        timeout_unset(frame_timer);
+        timeout_unset(slot_timer);
+        controlpacket_destroy(&ctrlpkt);
+        mclmac_set_next_MAC_state(mclmac, DISCOVERY);
+        return E_MAC_EXECUTION_SUCCESS;
+        break;
+
     default:
         break;
     }
