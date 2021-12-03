@@ -68,7 +68,7 @@
 #define MAX_NUMBER_SLOTS        8
 #endif
 
-/* The following three variables are in milliseconds, the value can later 
+/* The following three variables are in microseconds, the value can later 
     be chaned of units. */
 #ifndef FRAME_DURATION
 #define FRAME_DURATION          1280000
