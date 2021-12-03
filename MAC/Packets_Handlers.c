@@ -135,11 +135,13 @@ bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
     static uint8_t slot = 0;
     static uint8_t hopCount = 100;
     static uint32_t network_time = 220;
+    static uint32_t init_time = 10;
     
     controlpacket_set_current_frame(ctrlpkt, frame);
     controlpacket_set_current_slot(ctrlpkt, slot);
     controlpacket_set_hop_count(ctrlpkt, hopCount);
     controlpacket_set_network_time(ctrlpkt, network_time);
+    controlpacket_set_init_time(ctrlpkt, init_time);
 
     slot++;
     network_time++;

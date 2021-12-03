@@ -297,6 +297,7 @@ void test_stub_mclmac_receive_ctrlpkt_sync(void)
     assert(ARROW(ctrlpkt)networkTime > 0);
     assert(ARROW(ctrlpkt)hopCount > 0);
     assert(ARROW(ctrlpkt)currentSlot < MAX_NUMBER_SLOTS);
+    assert(ARROW(ctrlpkt)initTime > 0);
 
     controlpacket_destroy(&ctrlpkt);
     MCLMAC_destroy(&mclmac);
