@@ -146,11 +146,11 @@ int timeout_passed(
 
         /* Refers to an unused timeout? */
         if (!(state & TIMEOUT_USED))
-            return -1;
+            return 2;
 
         /* Not armed? */
         if (!(state & TIMEOUT_ARMED))
-            return -1;
+            return 2;
 
         /* Return 1 if timeout passed, 0 otherwise */
         return (state & TIMEOUT_PASSED) ? 1 : 0;
@@ -158,7 +158,7 @@ int timeout_passed(
     else
     {
         /* Invalid timeout number */
-        return -1;
+        return 2;
     }
 
     return 0;
@@ -194,11 +194,11 @@ int timeout_unset(
 
         /* Invalid timeout? */
         if (!(state & TIMEOUT_USED))
-            return -1;
+            return 2;
         
         /* Not armed? */
         if (!(state & TIMEOUT_ARMED))
-            return -1;
+            return 2;
 
         /* Return 1 if passed, 0 otherwise */
         return (state & TIMEOUT_PASSED) ? 1 : 0;
@@ -206,7 +206,7 @@ int timeout_unset(
     else
     {
         /* Invalid timeout */
-        return -1;
+        return 2;
     }
 
     return 0;
@@ -234,12 +234,12 @@ uint32_t timeout_set(const uint32_t seconds)
 
     /* Timeout must be in the future. */
     if (seconds <= 0.0)
-        return -1;
+        return 2;
 
     /* Get the current time, */
 #ifdef __LINUX__
     if (clock_gettime(CLOCK_REALTIME, &now))
-        return -1;
+        return 2;
 #endif
 #ifdef __RIOT__
     now = ztimer_now(CLOCK);
@@ -256,7 +256,7 @@ uint32_t timeout_set(const uint32_t seconds)
     
     /* No unused timeouts? */
     if (timeout >= TIMEOUTS)
-        return -1;
+        return 2;
 
     /* Clear all but the TIMEOUT_USED from the state, */
     __sync_and_and_fetch(&timeouts.timeout_state[timeout], TIMEOUT_USED);
@@ -298,7 +298,7 @@ uint32_t timeout_set(const uint32_t seconds)
     {
         /* Failed. */
         __sync_and_and_fetch(&timeouts.timeout_state[timeout], 0);
-        return -1;
+        return 2;
     }
 #endif
 #ifdef __RIOT__
