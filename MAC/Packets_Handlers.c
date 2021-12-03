@@ -126,7 +126,7 @@ void mclmac_clear_data_from_packet(MCLMAC_t *mclmac)
  * @param mclmac 
  * @param ctrlpkt 
  */
-void stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
+bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
     assert(mclmac != NULL);
     assert(ctrlpkt != NULL);
@@ -148,4 +148,6 @@ void stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
         slot = 0;
         frame++;
     }
+    
+    return true;
 }
