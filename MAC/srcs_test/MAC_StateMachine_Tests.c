@@ -57,18 +57,19 @@ void test_mclmac_set_MAC_state(void)
     state_t state = START;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
+
     state = INITIALIZATION;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
+
     state = SYNCHRONIZATION;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
-    state = DISCOVERY;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.currentState == state);
+
     state = TIMESLOT_AND_CHANNEL_SELECTION;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
+
     state = MEDIUM_ACCESS;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.currentState == state);
@@ -93,15 +94,15 @@ void test_mclmac_set_next_MAC_state(void)
     state_t state = INITIALIZATION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.nextState == state);
+
     state = SYNCHRONIZATION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.nextState == state);
-    state = DISCOVERY;
-    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.nextState == state);
+
     state = TIMESLOT_AND_CHANNEL_SELECTION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.nextState == state);
+
     state = MEDIUM_ACCESS;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
     assert(ARROW(mclmac)macState.nextState == state);
@@ -134,11 +135,6 @@ void test_mclmac_get_MAC_state(void)
     assert(stateA == state);
 
     state = SYNCHRONIZATION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
-    assert(stateA == state);
-
-    state = DISCOVERY;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
     stateA = mclmac_get_MAC_state(REFERENCE mclmac);
     assert(stateA == state);
@@ -192,12 +188,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.currentState == START);
     assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
 
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == START);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
-
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
@@ -244,13 +234,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
     assert(ARROW(mclmac)macState.nextState == START);
 
-    // Try to reach DISCOVERY, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
-
     // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return error
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
@@ -282,7 +265,7 @@ void test_mclmac_update_mac_state_machine(void)
 
     /**
      * We are now in the SYNCRHONIZATION state.
-     * From this state, only the DISCOVERY state can be reached.
+     * From this state, only the TIMESLOT_AND_CHANNEL_SELECTION state can be reached.
      * No other state can be reached.
      * This state can be reached only from the INITIALIZATION one.
      * 1f next state is the same as the current one or NONE, return no transition.
@@ -308,13 +291,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
     assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
 
-    // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
-
     // Try to reach MEDIUM_ACCESS, return error
     mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
@@ -329,61 +305,7 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
     assert(ARROW(mclmac)macState.nextState == FINISH);
 
-    // Try to reach DISCOVERY, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
-
-    /** We are now in the DISCOVERY state.
-     * We can reach only the TIMESLOT_AND_CHANNEL_SELECTION state from this one.
-     * No other state can be reached from this.
-     * This state can be reached only from the SYNCHRONIZATION one.
-    */
-     // Try to reach the same state
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_NO_TRANSITION);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
-
-    // Try to reach the start state, return error.
-    ARROW(mclmac)macState.nextState = START;
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_INVALID_STATE);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == START);
-
-    // Try to reach initialization, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, INITIALIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
-
-    // Try to reach the SYNCHRONIZATION state
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
-
-    // Try to reach the MEDIUM_ACCESS state, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
-
-    // Try to reach the FINISH state, return error.
-    mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == DISCOVERY);
-    assert(ARROW(mclmac)macState.nextState == FINISH);
-
-    // Try to reach the TIMESLOT_AND_CHANNEL_SELECTION state, return success
+    // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return success
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
@@ -392,8 +314,8 @@ void test_mclmac_update_mac_state_machine(void)
 
     /**
      * We are now at the TIMESLOT_AND_CHANNEL_SELECTION state.
-     * This state can be reached only by the DISCOVERY channel.
-     * This state can reach th SYNCRHONIZATION state, and the 
+     * This state can be reached only by the SYNCHRONIZATION channel.
+     * This state can reach the SYNCRHONIZATION state, and the 
      * MEIDUM_ACCESS state.
      * No other states can be reached from this one.
      */
@@ -418,13 +340,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
     assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
 
-    // Try to reach the DISCOVERY state, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
-
     // Try to reach the FINISH state, return error
     mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
@@ -440,8 +355,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
 
     // Return to TIMESLOT_AND_CHANNEL_SELECTION
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
@@ -473,13 +386,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
     assert(ARROW(mclmac)macState.nextState == START);
 
-    // Try to reach the DISCOVERY state, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
-
     // Try to reach the TIMESLOT_AND_CHANNEL_SELECTION state, return error
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
@@ -497,8 +403,6 @@ void test_mclmac_update_mac_state_machine(void)
     // Return to MEDIUM_ACCESS
     mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
@@ -512,8 +416,6 @@ void test_mclmac_update_mac_state_machine(void)
     assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
 
     // Return to MEDIUM_ACCESS
-    mclmac_set_next_MAC_state(REFERENCE mclmac, DISCOVERY);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
@@ -658,14 +560,14 @@ void test_synchronization_state_mac_stmachine(void)
      * number of available slots, to ensure proper gatherig of data.
      * The random number of frames will be stored in a variable called
      * wakeup_frame. When the current_frame equals wakeup_frame - 1,
-     * pass to the next state, DISCOVERY.
+     * pass to the next state, TIMESLOT_AND_CHANNEL_SELECTION.
      */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)_networkTime > 0);
     assert(ARROW(mclmac)_initTime > 0);
     assert(ARROW(mclmac)_hopCount > 0);
-    assert(ARROW(mclmac)macState.nextState == DISCOVERY);
+    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
     {

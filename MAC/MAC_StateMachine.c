@@ -50,8 +50,6 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
     case INITIALIZATION:
         if (mclmac->macState.currentState == SYNCHRONIZATION)
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == DISCOVERY)
-            return E_MAC_TRANSITION_ERROR;
         if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
             return E_MAC_TRANSITION_ERROR;
         mclmac_set_MAC_state(mclmac, INITIALIZATION);
@@ -61,22 +59,7 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
     case SYNCHRONIZATION:
         if (mclmac->macState.currentState == START)
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == DISCOVERY)
-            return E_MAC_TRANSITION_ERROR;
         mclmac_set_MAC_state(mclmac, SYNCHRONIZATION);
-        return E_MAC_TRANSITION_SUCCESS;
-        break;
-
-    case DISCOVERY:
-        if (mclmac->macState.currentState == START)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == INITIALIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == MEDIUM_ACCESS)
-            return E_MAC_TRANSITION_ERROR;
-        mclmac_set_MAC_state(mclmac, DISCOVERY);
         return E_MAC_TRANSITION_SUCCESS;
         break;
 
@@ -84,8 +67,6 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
         if (mclmac->macState.currentState == START)
             return E_MAC_TRANSITION_ERROR;
         if (mclmac->macState.currentState == INITIALIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == SYNCHRONIZATION)
             return E_MAC_TRANSITION_ERROR;
         if (mclmac->macState.currentState == MEDIUM_ACCESS)
             return E_MAC_TRANSITION_ERROR;
@@ -100,8 +81,6 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
             return E_MAC_TRANSITION_ERROR;
         if (mclmac->macState.currentState == SYNCHRONIZATION)
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == DISCOVERY)
-            return E_MAC_TRANSITION_ERROR;
         mclmac_set_MAC_state(mclmac, MEDIUM_ACCESS);
         return E_MAC_TRANSITION_SUCCESS;
         break;
@@ -112,8 +91,6 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
         if (mclmac->macState.currentState == INITIALIZATION)
             return E_MAC_TRANSITION_ERROR;
         if (mclmac->macState.currentState == SYNCHRONIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == DISCOVERY)
             return E_MAC_TRANSITION_ERROR;
         if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
             return E_MAC_TRANSITION_ERROR;
