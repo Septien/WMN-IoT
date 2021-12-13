@@ -274,7 +274,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         timeout_unset(frame_timer);
         timeout_unset(slot_timer);
         controlpacket_destroy(&ctrlpkt);
-        mclmac_set_next_MAC_state(mclmac, DISCOVERY);
+        mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
         return E_MAC_EXECUTION_SUCCESS;
         break;
 
