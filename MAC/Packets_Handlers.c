@@ -150,6 +150,9 @@ bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
         slot = 0;
         frame++;
     }
+
+    if ((rand() % 1024) > 128)
+        return false;
     
     return true;
 }

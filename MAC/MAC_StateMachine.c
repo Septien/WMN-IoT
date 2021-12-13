@@ -229,10 +229,8 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         while (current_frame != mclmac->_wakeup_frame - 1U)
         {
             /* Listen for the first incoming control packet and get the data. */
-            bool r = stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
-
             // If a packet is received, update values
-            if (r)
+            if (stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt) == true)
             {
                 /* Get the corresponding variables. */
                 // Get the minimum number of hops
