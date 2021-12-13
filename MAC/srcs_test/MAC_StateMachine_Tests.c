@@ -584,6 +584,91 @@ void test_synchronization_state_mac_stmachine(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_timeslot_frequency_state_mac_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+
+    #ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+
+    /*Execute START state */
+    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute INITIALIZATION state, the first time will fail. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the DISCOVERY state. The slots and frequency returned data will be random, 
+    so we will modify it for testing. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /**
+     * We are now at the TIMESLOT_AND_CHANNEL_SELECTION state.
+     * From the previous state, we have the information regarding the occupied slots per
+     * frequency for all the neighbors of the node. We now have to select a pair slot/frequency
+     * for subsequent transmission. The are two main cases:
+     *  -When there are no available slots/channels.
+     *  -when there is at least one available slot/channel.
+     * For the first case, the next state should be SYCHRONIZATION.
+     * For the second case, the next state should be MEDIUM_ACCESS.
+     * Both cases will return E_MAC_EXECUTION_SUCCESS.
+     * The execution sequence will be:
+     *  -Set a timeout of length FRAME_DURATION.
+     *  -Travers the array of frequencies/slots until you find an empty slot on all frequencies.
+     *  -If no available slot, set next state to SYNCHRONIZATION, remove the timer and return.
+     *  -If a slot is available, randomly select a frequency.
+     *  -Store the selected pair slot/frequency.
+     *  -Enter a loop, which will end when the timeout ends.
+     *  -Set the next state to MEDIUM_ACCESS.
+     */
+    /* For the case when there is no available slot. */
+    int n = MAX_NUMBER_FREQS;
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            ARROW(mclmac)_occupied_frequencies_slots[i][j] = 0xff;
+        }
+    }
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+
+    /* For the case when there is one available slot. */
+    uint8_t pos = rand() % 8;
+    uint8_t bit = 1U << (7U - pos);
+    uint8_t slot = 0xff;
+    slot = slot & (~bit);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            ARROW(mclmac)_occupied_frequencies_slots[i][j] = slot;
+        }
+    }
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
+    assert(ARROW(ARROW(mclmac)mac)selectedSlot == pos);
+
+    timeout_done();
+    MCLMAC_destroy(&mclmac);
+}
+
 void executetests_mac_statemachine(void)
 {
     printf("Testing mclmac_init_MAC_state_machine function.\n");
@@ -617,6 +702,10 @@ void executetests_mac_statemachine(void)
 
     printf("Testing the SYNCHRONIZATION state.\n");
     test_synchronization_state_mac_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the TIMESLOT_AND_CHANNEL_SELECTION state.\n");
+    test_timeslot_frequency_state_mac_stmachine();
     printf("Test passed.\n");
 
     return;

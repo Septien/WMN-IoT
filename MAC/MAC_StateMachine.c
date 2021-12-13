@@ -109,6 +109,15 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
 int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+    // The timers for the slots and frames
+#ifdef __LINUX__
+    int slot_timer;
+    int frame_timer;
+#endif
+#ifdef __RIOT__
+    uint32_t slot_timer;
+    uint32_t frame_timer;
+#endif
     
     switch (mclmac->macState.currentState)
     {
@@ -161,15 +170,6 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         /* Create control packet for filling information of the network. */
         ControlPacket_t SINGLE_POINTER ctrlpkt;
         controlpacket_init(&ctrlpkt);
-        // The timers for the slots and frames
-#ifdef __LINUX__
-        int slot_timer;
-        int frame_timer;
-#endif
-#ifdef __RIOT__
-        uint32_t slot_timer;
-        uint32_t frame_timer;
-#endif
         uint32_t current_frame = 0;
         uint32_t frequency = 0;
         uint8_t current_slot = 0;
@@ -254,6 +254,64 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
         return E_MAC_EXECUTION_SUCCESS;
         break;
+    
+    case TIMESLOT_AND_CHANNEL_SELECTION: ;
+        /* Set the frame timer. */
+        frame_timer = timeout_set(TIME(FRAME_DURATION));
+        if (frame_timer == 2)
+        {
+            perror("Unable to create frame timer.\n");
+            return E_MAC_EXECUTION_FAILED;
+        }
+
+        int n = MAX_NUMBER_FREQS;
+        int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+        bool available = true;
+        /* Check the slots for each frequency, trying to find an empty one on all frequencies. */
+        // Travers all the slots.
+        for (int i = 0; i < m; i++)
+        {
+            // For each bit of the slot.
+            for (int j = 1; j <= 8; j++)
+            {
+                uint8_t bit = 1U << (8 - j);
+                available = true;
+                // For each frequency, check if the corresponding bit is set or not.
+                int k;
+                for (k = 0; k < n; k++)
+                {
+                    if (mclmac->_occupied_frequencies_slots[k][i] & bit)
+                        available = available && false;
+                }
+                // Check if available.
+                if (available)
+                {
+                    // Select a random frequency
+                    int freq = rand() % MAX_NUMBER_FREQS;
+                    mclmac_set_transmit_channel(mclmac, mclmac->_frequencies[freq]);
+                    mclmac_set_selected_slot(mclmac, (m * i) + (j - 1));
+                    break;
+                }
+            }
+        }
+        if (!available)
+            mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+        else
+            mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+
+        /* Wait until the current frame ends. */
+        while (timeout_passed(frame_timer) != 1)
+#ifdef __LINUX__
+            usleep(SLOT_DURATION / 2);
+#endif
+#ifdef __RIOT__
+            ztimer_sleep(CLOCK, SLOT_DURATION / 2);
+#endif
+
+        timeout_unset(frame_timer);
+
+        return E_MAC_EXECUTION_SUCCESS;
+    break;
 
     default:
         break;
