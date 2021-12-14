@@ -54,39 +54,27 @@ int mclmac_update_powermode_state_machine(MCLMAC_t *mclmac)
         break;
     
     case ACTIVE:
-        if (mclmac->powerMode.currentState == STARTP)
+        if (mclmac->powerMode.currentState == PASSIVE)
+            mclmac_set_powermode_state(mclmac, ACTIVE);
+        else
             return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == TRANSMIT)
-            return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == RECEIVE)
-            return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == FINISHP)
-            return E_PM_TRANSITION_ERROR;
-        mclmac_set_powermode_state(mclmac, ACTIVE);
+        
         break;
 
     case TRANSMIT:
-        if (mclmac->powerMode.currentState == STARTP)
+        if (mclmac->powerMode.currentState == ACTIVE)
+            mclmac_set_powermode_state(mclmac, TRANSMIT);
+        else
             return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == PASSIVE)
-            return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == RECEIVE)
-            return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == FINISHP)
-            return E_PM_TRANSITION_ERROR;
-        mclmac_set_powermode_state(mclmac, TRANSMIT);
+        
         break;
 
     case RECEIVE:
-        if (mclmac->powerMode.currentState == STARTP)
+        if (mclmac->powerMode.currentState == ACTIVE)
+            mclmac_set_powermode_state(mclmac, RECEIVE);
+        else
             return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == PASSIVE)
-            return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == TRANSMIT)
-            return E_PM_TRANSITION_ERROR;
-        if (mclmac->powerMode.currentState == FINISHP)
-            return E_PM_TRANSITION_ERROR;
-        mclmac_set_powermode_state(mclmac, RECEIVE);
+        
         break;
 
     case FINISHP:
@@ -101,6 +89,7 @@ int mclmac_update_powermode_state_machine(MCLMAC_t *mclmac)
         return E_PM_INVALID_STATE;
         break;
     }
+
     return E_PM_TRANSITION_SUCCESS;
 }
 
@@ -135,7 +124,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_current_slot(mclmac, 0);
         mclmac_set_current_cf_slot(mclmac, 0);
         ARROW(mclmac->mac)_packets_read = 0;
-        timeout_init();
 
         // Create an array of size of at most 5 packet of 256 bytes each
 #ifdef __LINUX__
