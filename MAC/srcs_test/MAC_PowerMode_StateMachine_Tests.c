@@ -359,7 +359,7 @@ void test_mclmac_update_powermode_state_machine(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_mclmac_execute_powermode_state(void)
+void test_startp_state_powermode_stmachine(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
@@ -375,132 +375,39 @@ void test_mclmac_execute_powermode_state(void)
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
-    mclmac_set_powermode_state(REFERENCE mclmac, NONEP);
-    int r = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(r == E_PM_EXECUTION_FAILED);
-
-    /* State STARTP. Execute the following tasks:
-    *   -Set the number of slots and cfslots.
-    *   -Set the timers value.
-    *   -Initialize the values of frame, slot, and cfslot to zero.
-    *   -Immediately pass to PASSIVE state.
-    *  Return E_PM_EXECUTION_SUCESS when successfully executed.
-    */
-    mclmac_set_powermode_state(REFERENCE mclmac, STARTP);
-    r = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(r == E_PM_EXECUTION_SUCCESS);
-#ifdef __LINUX__
-   assert(mclmac->mac->cfpkt == NULL);
-   assert(mclmac->mac->datapkt == NULL);
-   assert(mclmac->mac->ctrlpkt == NULL);
-   assert(mclmac->mac->_packets != NULL);
-   assert(mclmac->mac->_packets_received != NULL);
-#endif
-#ifdef __RIOT__
-    assert(mclmac.mac._packets.size > 0);
-    assert(mclmac.mac._packets_received.size > 0);
-#endif
-    /*assert(ARROW(ARROW(mclmac)frame)slots_number == ARROW(mclmac)_nSlots);
-    assert(ARROW(ARROW(mclmac)frame)cf_slots_number == ARROW(mclmac)_nChannels);
-    assert(ARROW(ARROW(mclmac)frame)frame_duration == ARROW(mclmac)_frameDuration);
-    assert(ARROW(ARROW(mclmac)frame)slot_duration == ARROW(mclmac)_slotDuration);
-    assert(ARROW(ARROW(mclmac)frame)cf_duration == ARROW(mclmac)_cfDuration);*/
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame == 0);
+    /**
+     * We will begin the execution of the PowerMode state machine for medium access.
+     * We just initialized the state machine, and now should execute the STARTP state of the 
+     * machine. We will start execution of this machine only at beginning of a frame. 
+     * The This state will do the following:
+     *  -Set the number of slots.
+     *  -Set the number of cf slots.
+     *  -Set the duration of the frame.
+     *  -Set the duration of the slots.
+     *  -Set the duration of the cf slots.
+     *  -Set the current slot to 0.
+     *  -Set the current frame, obtained from _wakeup_frame + 1.
+     *  -Set the current cf slot to 0.
+     *  -Set the cf channel.
+     *  -Immedialy pass to the PASSIVE state.
+     *  -Arm for the first time the slot_timer timeout.
+     */
+    int ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)slots_number == ARROW(mclmac)_nSlots);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)cf_slots_number == ARROW(mclmac)_nChannels);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)frame_duration == TIME(FRAME_DURATION));
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_duration == TIME(SLOT_DURATION));
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)cf_duration == TIME(CF_SLOT_DURATION));
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame == ARROW(mclmac)_wakeup_frame + 1);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot == 0);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == 0);
     assert(ARROW(ARROW(mclmac)mac)_packets_read == 0);
+    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)cfChannel == CF_FREQUENCY);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
-    /* State PASSIVE. Execute the following tasks:
-    *   -Set the radio to SLEEP mode.
-    *   -Start the slot timer.
-    *   -On a loop, do the following:
-    *       -Check whether the timeout expired.
-    *       -Once the timeout expires, unarm the timeout and end the cycle.
-    *       -Possible do other activities, like reading/writing packets from/to other layers.
-    *       -With the received packets from the upper layers, create an array containing
-    *        the ids of the nodes to send the packet.
-    */
-    int i;
-    for (i = 0; i < ARROW(ARROW(mclmac)mac)_max_number_packets_buffer; i++)
-        WRITE_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets_received, rand(), i);
-    ARROW(ARROW(mclmac)mac)_num_packets_received = 5;
 
-    mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
-    r = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(r == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)powerMode.nextState == ACTIVE);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == 0);
-    int count = 0;
-    // Check that there is less than 5 packets.
-    for (i = 0; i < ARROW(ARROW(mclmac)mac)_max_number_packets_buffer; i++)
-    {
-        uint8_t element = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, i);
-        if (element == '\0')
-            count++;
-        uint8_t element2 = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, i + 1);
-        if (element == '\0' && element2 == '\0')
-            break;
-    }
-    assert(count >= 1 && count <= 5);
-    assert(ARROW(ARROW(mclmac)mac)_packets_read >= 0);
-    // For the packets 'written' into the queue
-    assert(ARROW(ARROW(mclmac)mac)_num_packets_received < 5);
-#ifdef __LINUX__
-    // Assert mode is sleep
-#endif
-#ifdef __RIOT__
-    /*uint8_t mode = sx127x_get_op_mode(mclmac->mac->radio);
-    assert(mode == sx127x_RF_OPMODE_SLEEP);
-    uint8_t state = sx127x_get_state(mclmac->mac->radio);
-    assert(state == SX127X_RF_IDLE);*/
-#endif
-
-    /** State ACTIVE. Executes the following tasks:
-     *      - Initialize the cf packet.
-     *      - Initiates the cf phase, in which:
-     *          - Changes the radio to the common channel.
-     *          - Sets the cf counter to zero.
-     *          - Initiates the cf timer.
-     *          - Checks whether there is a packet on the queue, if so, create cf packet, and set 
-     *            send flag to true.
-     *          - It checks wether the current cf slot is equal to the 
-     *            selected slot, in which case it transmits a cf packet with destination ID.
-     *            Set the next state to TRANSMIT.
-     *          - Otherwise, it puts the radio in listen mode, and if packet arrives in which the 
-     *            destinationID == nodeID or destinationID == 0, save the frequency and set 
-     *            the next state to RECEIVE.
-     *          - When the CF timer expires, increment the cf counter.
-     *          - When the CF counter equals the number of slots, check whether we should transmit,
-     *            receive, or none. If none required, set next state to PASSIVE, otherwise, change 
-     *            to the required frequency.
-     *          - In case a collision is detected: save frequency and slot of collision, and wait
-     *            for the next time we send a control packet to tell the network. Save the number
-     *            cf packets received.
-     */
-    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
-    mclmac_set_powermode_state(REFERENCE mclmac, ACTIVE);
-    r = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(r == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == ARROW(ARROW(ARROW(mclmac)mac)frame)cf_slots_number);
-    //assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, 0) == ARROW(ARROW(mclmac)mac)destinationID);
-    //assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == 0);
-    assert(ARROW(mclmac)powerMode.nextState == PASSIVE || ARROW(mclmac)powerMode.nextState == TRANSMIT || ARROW(mclmac)powerMode.nextState == RECEIVE);
-#ifdef __LINUX__
-    //assert(mclmac->mac->cfpkt != NULL);
-    // Check channel is changed
-#endif
-#ifdef __RIOT__
-    // Wait 30 us for radio to change frequency.
-    /*uint32_t channel = sx127x_get_channel(mclmac->mac->radio);
-    assert(channel == mclmac->mac->cfChannel);*/
-#endif
-    /*mclmac_set_current_cf_slot(REFERENCE mclmac, ARROW(ARROW(mclmac)mac)selectedSlot);
-    r = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)cfpkt)destinationID == ARROW(ARROW(mclmac)mac)destinationID);
-    assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);*/
-
-    timeout_done();
     MCLMAC_destroy(&mclmac);
 }
 
@@ -526,8 +433,9 @@ void executetests_mac_powermode_statemachine(void)
     test_mclmac_update_powermode_state_machine();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_execute_powermode_state function.\n");
-    test_mclmac_execute_powermode_state();
+    printf("Testing the PowerMode STARTP state.\n");
+    test_startp_state_powermode_stmachine();
     printf("Test passed.\n");
+
     return;
 }

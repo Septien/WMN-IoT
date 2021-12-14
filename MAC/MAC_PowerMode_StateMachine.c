@@ -102,7 +102,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     assert(mclmac->mac->frame != NULL);
 #endif
     assert(mclmac->_nSlots > 0);
-    assert(ARROW(mclmac->mac)_max_number_packets_buffer > 0);
 
     if (mclmac->powerMode.currentState == NONEP)
         return E_PM_EXECUTION_FAILED;
@@ -120,54 +119,20 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_cf_duration(mclmac, TIME(CF_SLOT_DURATION));
 
         // Initialize frame, slots, and cfslots counter to zero
-        mclmac_set_current_frame(mclmac, 0);
+        mclmac_set_current_frame(mclmac, mclmac->_wakeup_frame + 1);
         mclmac_set_current_slot(mclmac, 0);
         mclmac_set_current_cf_slot(mclmac, 0);
         ARROW(mclmac->mac)_packets_read = 0;
+        ARROW(mclmac->mac)_number_packets_received = 0;
+        
+        ARROW(mclmac->mac)cfChannel = CF_FREQUENCY;
 
-        // Create an array of size of at most 5 packet of 256 bytes each
-#ifdef __LINUX__
-        mclmac->mac->_packets = (uint8_t *)malloc(mclmac->mac->_max_number_packets_buffer * sizeof(uint8_t));
-        if (mclmac->mac->_packets == NULL)
-        {
-            exit(0);
-        }
-        memset(mclmac->mac->_packets, 0, mclmac->mac->_max_number_packets_buffer);
-        mclmac->mac->_packets_received = (uint8_t *)malloc(mclmac->mac->_max_number_packets_buffer * sizeof(uint8_t));
-        if (mclmac->mac->_packets_received == NULL)
-        {
-            exit(0);
-        }
-        mclmac->mac->_cf_messages = (uint8_t *)malloc(mclmac->mac->_max_cf_messages * sizeof(uint8_t));
-        if (mclmac->mac->_cf_messages == NULL)
-        {
-            exit(0);
-        }
-        memset(mclmac->mac->_cf_messages, 0, mclmac->mac->_max_cf_messages);
-#endif
-#ifdef __RIOT__
-        int ret = create_array(&mclmac->mac._packets, mclmac->mac._max_number_packets_buffer);
-        if (ret == 0)
-        {
-            exit(0);
-        }
-        ret = create_array(&mclmac->mac._packets_received, mclmac->mac._max_number_packets_buffer);
-        if (ret == 0)
-        {
-            exit(0);
-        }
-        ret = create_array(&mclmac->mac._cf_messages, mclmac->mac._max_cf_messages);
-        if (ret == 0)
-        {
-            exit(0);
-        }
-#endif
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
         // Arm the slot timer for the first time.
         ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)slot_duration);
         break;
-    
+#if 0    
     case PASSIVE: ;
         mclmac_set_current_cf_slot(mclmac, 0);
         /* Set radio to sleep */
@@ -274,7 +239,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 #endif        
         //mclmac_clear_cf_packet(mclmac);
         break;
-
+#endif
     default: ;
         break;
     }
