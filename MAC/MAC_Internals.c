@@ -27,8 +27,8 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     memset(REFERENCE (SINGLE_POINTER mac)->frame, 0, sizeof(Frame_t));
 
     (SINGLE_POINTER mac)->radio = radio;
-    (SINGLE_POINTER mac)->_max_number_packets_buffer = 5 * 256;      // Maximum 5 packets of siza 256 each
-    (SINGLE_POINTER mac)->_max_cf_messages = 5 * 2 * sizeof(uint16_t);
+    (SINGLE_POINTER mac)->_max_data_packets = MAX_NUMBER_DATA_PACKETS;
+    (SINGLE_POINTER mac)->_max_cf_messages = MAX_NUMBER_CF_PACKETS;
 }
 
 void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)

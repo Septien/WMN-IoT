@@ -132,6 +132,15 @@
 #define FREQ8                   928000000
 #endif
 
+/* Configuration for the PowerMode state machine. */
+#ifndef MAX_NUMBER_CF_PACKETS
+#define MAX_NUMBER_CF_PACKETS   10
+#endif
+
+#ifndef MAX_NUMBER_DATA_PACKETS
+#define MAX_NUMBER_DATA_PACKETS 10
+#endif
+
 /* Clock type for RIOT. */
 #ifdef __RIOT__
 #define CLOCK                   ZTIMER_USEC
