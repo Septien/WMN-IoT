@@ -49,10 +49,7 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
 
     case INITIALIZATION:
         if (mclmac->macState.currentState == START || mclmac->macState.currentState == MEDIUM_ACCESS)
-        {
             mclmac_set_MAC_state(mclmac, INITIALIZATION);
-            return E_MAC_TRANSITION_SUCCESS;
-        }
         else
             return E_MAC_TRANSITION_ERROR;
         break;
@@ -61,15 +58,11 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
         if (mclmac->macState.currentState == START)
             return E_MAC_TRANSITION_ERROR;
         mclmac_set_MAC_state(mclmac, SYNCHRONIZATION);
-        return E_MAC_TRANSITION_SUCCESS;
         break;
 
     case TIMESLOT_AND_CHANNEL_SELECTION:
         if (mclmac->macState.currentState == SYNCHRONIZATION)
-        {
             mclmac_set_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-            return E_MAC_TRANSITION_SUCCESS;
-        }
         else
             return E_MAC_TRANSITION_ERROR;
         
@@ -77,10 +70,7 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
 
     case MEDIUM_ACCESS:
         if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
-        {
             mclmac_set_MAC_state(mclmac, MEDIUM_ACCESS);
-            return E_MAC_TRANSITION_SUCCESS;
-        }
         else
             return E_MAC_TRANSITION_ERROR;
 
@@ -88,10 +78,7 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
 
     case FINISH:
         if (mclmac->macState.currentState == MEDIUM_ACCESS)
-        {
             mclmac_set_MAC_state(mclmac, FINISH);
-            return E_MAC_TRANSITION_SUCCESS;
-        }
         else
             return E_MAC_TRANSITION_ERROR;
 
@@ -102,7 +89,7 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
         break;
     }
 
-    return E_MAC_NO_UPDATE;
+    return E_MAC_TRANSITION_SUCCESS;
 }
 
 int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
