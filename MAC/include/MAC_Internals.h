@@ -69,14 +69,14 @@ typedef struct MAC_Internals
     uint32_t        _collisionFrequency;
     /* CF messages */
     bool            _cf_message_received;
-    ARRAY           _cf_messages;
+    CFPacket_t      _cf_messages[MAX_NUMBER_CF_PACKETS];
     uint8_t         _max_cf_messages;
     /* Messages received from other nodes */
-    ARRAY           _packets;
     uint8_t         _packets_read;
-    uint16_t        _max_number_packets_buffer;
-    ARRAY           _packets_received;
-    uint16_t        _num_packets_received;
+    DataPacket_t    _packet_to_send[MAX_NUMBER_DATA_PACKETS];
+    uint16_t        _max_data_packets;
+    DataPacket_t    _packets_received[MAX_NUMBER_DATA_PACKETS];
+    uint16_t        _number_packets_received;
 }MAC_Internals_t;
 
 void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac, 
