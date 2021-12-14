@@ -931,6 +931,7 @@ void test_mclmac_get_network_time(void)
     MCLMAC_destroy(&mclmac);
 }
 
+#if 0
 void test_stub_mclmac_read_queue_element(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1102,7 +1103,7 @@ void test_stub_mclmac_write_queue_element(void)
 
     MCLMAC_destroy(&mclmac);
 }
-
+#endif
 void test_mclmac_change_cf_channel(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1128,6 +1129,7 @@ void test_mclmac_change_cf_channel(void)
 
     MCLMAC_destroy(&mclmac);
 }
+
 void test_mclmac_start_cf_phase(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1185,7 +1187,7 @@ void test_mclmac_send_cf_message(void)
 
     MCLMAC_destroy(&mclmac);
 }
-
+#if 0
 void test_stub_mclmac_receive_cf_message(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1279,7 +1281,7 @@ void test_mclmac_receive_cf_message(void)
 
     MCLMAC_destroy(&mclmac);
 }
-
+#endif
 void executeTestsMCLMAC(void)
 {
     srand(time(NULL));
@@ -1416,13 +1418,13 @@ void executeTestsMCLMAC(void)
     test_mclmac_get_network_time();
     printf("Test passed.\n");
 
-    printf("Testing stub_mclmac_read_queue_element function.\n");
+    /*printf("Testing stub_mclmac_read_queue_element function.\n");
     test_stub_mclmac_read_queue_element();
     printf("Test passed.\n");
 
     printf("Testing stub_mclmac_write_queue_element function.\n");
     test_stub_mclmac_write_queue_element();
-    printf("Test passed.\n");
+    printf("Test passed.\n");*/
 
     printf("Testing mclmac_change_cf_channel function.\n");
     test_mclmac_change_cf_channel();
@@ -1436,8 +1438,8 @@ void executeTestsMCLMAC(void)
     test_mclmac_send_cf_message();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_receive_cf_message function.\n");
+    /*printf("Testing mclmac_receive_cf_message function.\n");
     test_mclmac_receive_cf_message();
-    printf("Test passed.\n");
+    printf("Test passed.\n");*/
     return;
 }

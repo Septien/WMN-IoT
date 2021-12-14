@@ -444,6 +444,7 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
     return;
 }
 
+#if 0
 int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t size, uint32_t *read_from)
 {
     assert(mclmac != NULL);
@@ -516,7 +517,7 @@ int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size)
     }
     return 1;
 }
-
+#endif
 void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
@@ -584,7 +585,7 @@ void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
     
 //    mclmac_clear_cf_packet(mclmac);
 }
-
+/*
 bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
@@ -615,3 +616,4 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
 
     return ARROW(mclmac->mac)_cf_message_received;
 }
+*/
