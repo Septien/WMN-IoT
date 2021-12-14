@@ -48,12 +48,13 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
         return E_MAC_NO_TRANSITION;
 
     case INITIALIZATION:
-        if (mclmac->macState.currentState == SYNCHRONIZATION)
+        if (mclmac->macState.currentState == START || mclmac->macState.currentState == MEDIUM_ACCESS)
+        {
+            mclmac_set_MAC_state(mclmac, INITIALIZATION);
+            return E_MAC_TRANSITION_SUCCESS;
+        }
+        else
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
-            return E_MAC_TRANSITION_ERROR;
-        mclmac_set_MAC_state(mclmac, INITIALIZATION);
-        return E_MAC_TRANSITION_SUCCESS;
         break;
 
     case SYNCHRONIZATION:
@@ -64,38 +65,36 @@ int mclmac_update_mac_state_machine(MCLMAC_t *mclmac)
         break;
 
     case TIMESLOT_AND_CHANNEL_SELECTION:
-        if (mclmac->macState.currentState == START)
+        if (mclmac->macState.currentState == SYNCHRONIZATION)
+        {
+            mclmac_set_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+            return E_MAC_TRANSITION_SUCCESS;
+        }
+        else
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == INITIALIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == MEDIUM_ACCESS)
-            return E_MAC_TRANSITION_ERROR;
-        mclmac_set_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-        return E_MAC_TRANSITION_SUCCESS;
+        
         break;
 
     case MEDIUM_ACCESS:
-        if (mclmac->macState.currentState == START)
+        if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
+        {
+            mclmac_set_MAC_state(mclmac, MEDIUM_ACCESS);
+            return E_MAC_TRANSITION_SUCCESS;
+        }
+        else
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == INITIALIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == SYNCHRONIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        mclmac_set_MAC_state(mclmac, MEDIUM_ACCESS);
-        return E_MAC_TRANSITION_SUCCESS;
+
         break;
 
     case FINISH:
-        if (mclmac->macState.currentState == START)
+        if (mclmac->macState.currentState == MEDIUM_ACCESS)
+        {
+            mclmac_set_MAC_state(mclmac, FINISH);
+            return E_MAC_TRANSITION_SUCCESS;
+        }
+        else
             return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == INITIALIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == SYNCHRONIZATION)
-            return E_MAC_TRANSITION_ERROR;
-        if (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION)
-            return E_MAC_TRANSITION_ERROR;
-        mclmac_set_MAC_state(mclmac, FINISH);
-        return E_MAC_TRANSITION_SUCCESS;
+
         break;
 
     default:
@@ -179,7 +178,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
         /* Get the frame. */
         current_frame = controlpacket_get_current_frame(REFERENCE ctrlpkt);
-        /*Get the current slot. */
+        /* Get the current slot. */
         current_slot = controlpacket_get_current_slot(REFERENCE ctrlpkt);
         // Get the latest network time
         mclmac->_networkTime = controlpacket_get_network_time(REFERENCE ctrlpkt);
@@ -248,10 +247,12 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 frequency = (frequency + 1) % MAX_NUMBER_FREQS;
             }
         }
+
         timeout_unset(frame_timer);
         timeout_unset(slot_timer);
         controlpacket_destroy(&ctrlpkt);
         mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+
         return E_MAC_EXECUTION_SUCCESS;
         break;
     
