@@ -931,7 +931,6 @@ void test_mclmac_get_network_time(void)
     MCLMAC_destroy(&mclmac);
 }
 
-#if 0
 void test_stub_mclmac_read_queue_element(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -946,100 +945,60 @@ void test_stub_mclmac_read_queue_element(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
-    size_t size = ARROW(ARROW(mclmac)mac)_max_number_packets_buffer;
+    /**
+     * read_queue_element.
+     * This function should read data send from other layers via a shared queue.
+     * We should get the following data from the upper layer:
+     *  -Node id: destination of the packet.
+     *  -Is Fragment: Whether the packet is a fragment or not.
+     *  -Total Fragment: The total number of fragments.
+     *  -Fragment number: The number of fragment this packet corresponds to.
+     *  -Data size: the size of the data.
+     * Store this in the array of data packets on the mac data structure.
+     * Increase by one the number of elements read, when appropiate.
+     */
 
-#ifdef __LINUX__
-    mclmac->mac->_packets = (uint8_t *)malloc(size * sizeof(uint8_t));
-    memset(mclmac->mac->_packets, 0, size);
-#endif
-#ifdef __RIOT__
-    int ret = create_array(&mclmac.mac._packets, size);
-    if (ret == 0)
-    {
-        printf("Unable to create array.\n");
-        return;
-    }
-    for (uint j = 0; j < size; j++)
-        write_element(&mclmac.mac._packets, 0, j);
-#endif
-
-    uint16_t bytes;      // store how many bytes read from queue
-    uint32_t read_from, old_read_from;
     /* Test case 1: 
-    *   When last_pos is size - 1
+    *   When the array is full, that is, when _packets_read == MAX_NUMER_DATA_PACKETS.
     *       -nelements should be 0.
-    *       -bytes should be 0.
-    *       -last_pos should not change.
+    *       -_packets_read should be MAX_NUMBER_DATA_PACKETS
     * */
-    read_from = size - 1;
-    int nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    ARROW(ARROW(mclmac)mac)_packets_read = MAX_NUMBER_DATA_PACKETS;
+    int nelements = stub_mclmac_read_queue_element(REFERENCE mclmac);
     assert(nelements == 0);
-    assert(bytes == 0);
-    assert(read_from == size - 1);
+    assert(ARROW(ARROW(mclmac)mac)_packets_read == MAX_NUMBER_DATA_PACKETS);
 
     /* Test case 2: 
     *   -The array is emtpy. The function should generate the elements randomly.
     *   It should return:
     *       -nelements = 1.
-    *       -last_pos should be equal to bytes.
-    *       -bytes should be greater than 0.
-    *       -The last element, at bytes - 1, should contain '\0'.
-    *  */
-    read_from = 0;
-    old_read_from = read_from;
-    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    *       -first_send should be 0.
+    *       -last_send should be 1.
+    **/
+    ARROW(ARROW(mclmac)mac)_packets_read = 0;
+    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac);
     assert(nelements == 1);
-    assert(bytes > 0);
-    assert(read_from == bytes);
-    uint8_t end = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, bytes - 1);
-    assert(end == '\0');
-    int i;
-    for (i = old_read_from; i < bytes - 1; i++)
-    {
-        assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, i) != 0);
-    }
+    assert(ARROW(ARROW(mclmac)mac)_first_send == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_send == 1);
 
     /**
      * Test case 3:
      * -The array alreaady contains elements, it should add the data at the first empty place.
      *  It should return:
      *      -nelements = 1.
-     *      -read_from should increase by bytes sise.
-     *      -bytes should be greater than zero.
-     *      -The last element, at red_from - 1, should be '\0'.
+     *      -_first_send should remain the same.
+     *      -_last_send should increase by one.
      * */
-    old_read_from = read_from;
-    bytes = 0;
-    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
+    uint8_t last_send = ARROW(ARROW(mclmac)mac)_last_send;
+    uint8_t first_send = ARROW(ARROW(mclmac)mac)_first_send;
+    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac);
     assert(nelements == 1);
-    assert(bytes > 0);
-    assert(read_from == old_read_from + bytes);
-    end = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, read_from - 1);
-    assert(end == '\0');
-    end = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets, read_from - 2);
-    assert(end != 0);
-
-    /**
-     * Test case 4:
-     *  -If the number of elements to add to the array is greater than the available 
-     *  memory on the array, return 0.
-    */
-    read_from = size - 2;
-    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac, &bytes, size, &read_from);
-    assert(nelements == 0);
-    assert(bytes == 0);
-    assert(read_from == size - 2);
-
-#ifdef __LINUX__
-    free(mclmac->mac->_packets);
-#endif
-#ifdef __RIOT__
-    free_array(&mclmac.mac._packets);
-#endif
+    assert(ARROW(ARROW(mclmac)mac)_first_send == first_send);
+    assert(ARROW(ARROW(mclmac)mac)_last_send == last_send + 1);
 
     MCLMAC_destroy(&mclmac);
 }
-
+#if 0
 void test_stub_mclmac_write_queue_element(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1418,11 +1377,11 @@ void executeTestsMCLMAC(void)
     test_mclmac_get_network_time();
     printf("Test passed.\n");
 
-    /*printf("Testing stub_mclmac_read_queue_element function.\n");
+    printf("Testing stub_mclmac_read_queue_element function.\n");
     test_stub_mclmac_read_queue_element();
     printf("Test passed.\n");
 
-    printf("Testing stub_mclmac_write_queue_element function.\n");
+    /*printf("Testing stub_mclmac_write_queue_element function.\n");
     test_stub_mclmac_write_queue_element();
     printf("Test passed.\n");*/
 

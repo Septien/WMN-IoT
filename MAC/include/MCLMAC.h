@@ -208,7 +208,7 @@ void mclmac_start_split_phase(MCLMAC_t *mclmac);
 void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
-int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac, uint16_t *bytes, size_t size, uint32_t *read_from);
+int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac);
 int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size);
 
 /* Private functions */
