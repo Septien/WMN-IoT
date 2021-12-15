@@ -22,8 +22,7 @@ void test_MAC_internals_init(void)
     // Create these packets until necessary
 #ifdef __LINUX__
     assert(mac != NULL);
-    assert(mac->cfpkt == NULL);
-    assert(mac->datapkt == NULL);
+    assert(mac->ctrlpkt == NULL);
     assert(mac->cfpkt == NULL);
 #endif
     assert(ARROW(mac)selectedSlot == 0);
@@ -53,7 +52,6 @@ void test_MAC_internals_destroy(void)
 #endif
 
     MAC_internals_init(&mac, &radio);
-
     MAC_internals_destroy(&mac);
 #ifdef __LINUX__
     assert(mac == NULL);

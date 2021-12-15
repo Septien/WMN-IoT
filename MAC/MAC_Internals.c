@@ -19,7 +19,6 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     (*mac)->radio = NULL;
     (*mac)->cfpkt = NULL;
     (*mac)->ctrlpkt = NULL;
-    (*mac)->datapkt = NULL;
     (*mac)->frame = (Frame_t *)malloc(sizeof(Frame_t));
     if ((*mac)->frame == NULL)
         return;
@@ -29,6 +28,23 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     (SINGLE_POINTER mac)->radio = radio;
     (SINGLE_POINTER mac)->_max_data_packets = MAX_NUMBER_DATA_PACKETS;
     (SINGLE_POINTER mac)->_max_cf_messages = MAX_NUMBER_CF_PACKETS;
+
+    // Initialize the data packets queues.
+    for (int i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        DataPacket_t *pkt;
+        pkt = &(SINGLE_POINTER mac)->_packet_to_send[i];
+        datapacket_init(REFERENCE2 pkt);
+        pkt = &(SINGLE_POINTER mac)->_packets_received[i];
+        datapacket_init(REFERENCE2 pkt);
+    }
+
+    // Initialize the cf packets
+    for (int i = 0; i < MAX_NUMBER_CF_PACKETS; i++)
+    {
+        CFPacket_t *cfpkt = &(SINGLE_POINTER mac)->_cf_messages[i];
+        cfpacket_init(REFERENCE2 cfpkt);
+    }
 }
 
 void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
@@ -42,8 +58,6 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
         controlpacket_destroy(&(*mac)->ctrlpkt);
     if ((*mac)->cfpkt != NULL)
         cfpacket_destroy(&(*mac)->cfpkt);
-    if ((*mac)->datapkt != NULL)
-        datapacket_destroy(&(*mac)->datapkt);
     // Destroy Frame
     if ((*mac)->frame != NULL)
         free((*mac)->frame);
@@ -53,7 +67,6 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
 #ifdef __RIOT__
     controlpacket_destroy(&mac->ctrlpkt);
     cfpacket_destroy(&mac->cfpkt);
-    datapacket_destroy(&mac->datapkt);
 #endif
 }
 

@@ -55,7 +55,6 @@ typedef struct MAC_Internals
     // Packets used by the protocol
     ControlPacket_t SINGLE_POINTER ctrlpkt;
     CFPacket_t      SINGLE_POINTER cfpkt;
-    DataPacket_t    SINGLE_POINTER datapkt;
     Frame_t         SINGLE_POINTER frame;
     // Status variables
     uint8_t         selectedSlot;
@@ -72,8 +71,13 @@ typedef struct MAC_Internals
     CFPacket_t      _cf_messages[MAX_NUMBER_CF_PACKETS];
     uint8_t         _max_cf_messages;
     /* Messages received from other nodes */
+    uint8_t         _first_send;
+    uint8_t         _last_send;
     uint8_t         _packets_read;
+    uint16_t        _destination_ids[MAX_NUMBER_DATA_PACKETS];
     DataPacket_t    _packet_to_send[MAX_NUMBER_DATA_PACKETS];
+    uint8_t         _first_received;
+    uint8_t         _last_received;
     uint16_t        _max_data_packets;
     DataPacket_t    _packets_received[MAX_NUMBER_DATA_PACKETS];
     uint16_t        _number_packets_received;

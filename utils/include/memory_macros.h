@@ -17,6 +17,7 @@
 #define SINGLE_POINTER                  *
 #define ARROW(st)                       (st)->
 #define REFERENCE
+#define REFERENCE2                      &
 #define ARRAY                           uint8_t *
 #define WRITE_ARRAY(ptr, element, i)    (ptr)[(i)] = (element)
 #define READ_ARRAY(ptr, i)              (ptr)[(i)]
@@ -39,6 +40,7 @@ inline uint8_t readE(array_t *ptr, const unsigned int i)
 #define SINGLE_POINTER
 #define ARROW(st)                       (st).
 #define REFERENCE                       &
+#define REFERENCE2
 #define ARRAY                           array_t
 #define WRITE_ARRAY(ptr, element, i)    write_element((ptr), (element), (i))
 #define READ_ARRAY(ptr, i)              readE((ptr), (i))
