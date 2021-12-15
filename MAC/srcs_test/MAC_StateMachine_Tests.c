@@ -175,7 +175,7 @@ void test_mclmac_update_mac_state_machine(void)
      * reach this state from any other, return error.
      * If trying to reach the same state, return no transition;
      */
-    // If next state is NONE, do nathing, return no transition
+    // If next state is NONE, do nothing, return no transition
     int ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
     assert(ret == E_MAC_NO_TRANSITION);
     assert(ARROW(mclmac)macState.nextState == NONE);
@@ -610,7 +610,7 @@ void test_timeslot_frequency_state_mac_stmachine(void)
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
-    /* Execute the DISCOVERY state. The slots and frequency returned data will be random, 
+    /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
@@ -667,6 +667,78 @@ void test_timeslot_frequency_state_mac_stmachine(void)
 
     timeout_done();
     MCLMAC_destroy(&mclmac);
+}
+
+void test_medium_access_state_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+
+    #ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+
+    /*Execute START state */
+    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute INITIALIZATION state, the first time will fail. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
+    so we will modify it for testing. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the TIMESLOT_AND_CHANNEL_SELECTION state, assuring a free slot */
+    uint8_t pos = rand() % 8;
+    uint8_t bit = 1U << (7U - pos);
+    uint8_t slot = 0xff;
+    slot = slot & (~bit);
+    int n = MAX_NUMBER_FREQS;
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            ARROW(mclmac)_occupied_frequencies_slots[i][j] = slot;
+        }
+    }
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    (void) ret;
+
+    /**
+     * We are now at the MEDIUM_ACCESS state, which will control the transmission and reception
+     * of the packets.If nothing happens, the machine should stay on this state. In case of
+     * errors, the following should be done:
+     *  -In case of collision, return to the SYNCHRONIZATION state, to get a new slot/channel pair.
+     *  -In case of synchronization error (time drifts), it should return to INITIALIZATION state,
+     *   to resynchronize the clock.
+     * The state will execute the POWERMODE state machine for data transmission and reception,
+     * one state at the time. It should handle the transsitions and the errors.
+     * The state will do the following:
+     *  -Initialize the PowerMode state machine.
+     *  -Execute the STARTP state at the beginning, just once.
+     *  -Enter a while loop, which will be executed unless an error occurs.
+     *  -Whithin the loop, do the following:
+     *      1. Update the state of the machine.
+     *      3. Execute the state.
+     *      2. Check for errors in the execution. Possible errors:
+     *          **At the ACTIVE state: Collision at slot. It should return collision error,
+     *            set the next state to SYNCHRONIZATION and end the cycle.
+     *          **At the RECEIVE state: Synchronization error. It should return synchronization
+     *            error; set the next state to INITIALIZATION and end the cycle.
+     */
 }
 
 void executetests_mac_statemachine(void)

@@ -301,6 +301,11 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         return E_MAC_EXECUTION_SUCCESS;
     break;
 
+    case MEDIUM_ACCESS: ;
+        mclmac_init_powermode_state_machine(mclmac);
+        int ret = mclmac_execute_powermode_state(mclmac);
+        (void) ret;
+
     default:
         break;
     }
