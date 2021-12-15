@@ -998,7 +998,7 @@ void test_stub_mclmac_read_queue_element(void)
 
     MCLMAC_destroy(&mclmac);
 }
-#if 0
+
 void test_stub_mclmac_write_queue_element(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1010,59 +1010,119 @@ void test_stub_mclmac_write_queue_element(void)
 #endif
     uint16_t nodeid = 0;
     size_t dataQsize = 256;
-    
-    
-    size_t size = 5 * 256;
 
     MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     int ret;
+    /**
+     * Test case 1:
+     *  -_elements_read = 0.
+     * It should return 0.
+    */
+    ret = stub_mclmac_write_queue_element(REFERENCE mclmac);
+    assert(ret == 0);
+
+    /**
+    * Test case 2:
+    *   -One element is on the array, so first = 0, last = 1, and packet_read = 1.
+    *   -It should return 1.
+    *   -first should be 1.
+    *   -last should be 1.
+    *   -packets_read should be 0.
+    */
+    // Fill the packet
+    DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[0];
+    /* Is fragment */
+    uint8_t element = ((rand() % 256) > 128 ? 1 : 0);
+    datapacket_set_isFragment(pkt, element);
+    /* total fragment */
+    element = rand();
+    element = (element == 0 ? 1 : element);
+    datapacket_set_total_fragments(pkt, element);
+    /* Fragment number */
+    element--;
+    datapacket_set_fragment_number(pkt, element);
+    /* data size */
+    uint16_t datasize = rand() % 250;
+    ARRAY data;
 #ifdef __LINUX__
-    mclmac->mac->_packets_received = (uint8_t *)malloc(size * sizeof(uint8_t));
-    if (mclmac->mac->_packets_received == NULL)
-    {
-        printf("LINUX: Unable to create array _packets_received. LINUX.\n");
-        return;
-    }
+    data = (uint8_t *)malloc(datasize * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    ret = create_array(&mclmac.mac._packets_received, size);
-    if (ret == 0)
+    create_array(&data, datasize);
+#endif
+    uint8_t i;
+    for (i = 0; i < datasize; i++)
     {
-        printf("Unable to create array _packets_received, RIOT.\n");
-        return;
+        element = rand();
+        WRITE_ARRAY(REFERENCE data, element, i);
     }
-#endif
-    ARROW(ARROW(mclmac)mac)_num_packets_received = 5;
-    // Fill the array with random data
-    for (size_t i = 0; i < size; i++)
-        WRITE_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_packets_received, rand(), i);
+    datapacket_set_data(pkt, &data, datasize);
+    // Increase the number of packets store.
+    ARROW(ARROW(mclmac)mac)_number_packets_received = 1;
+    ARROW(ARROW(mclmac)mac)_last_received = 1;
+    ret = stub_mclmac_write_queue_element(REFERENCE mclmac);
+    assert(ret == 1);
+    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_received == 1);
+    assert(ARROW(ARROW(mclmac)mac)_last_received == 1);
 
-        /**
-         * Test case 1:
-         *  -If size = 0, return 0
-        */
-       ret = stub_mclmac_write_queue_element(REFERENCE mclmac, 0);
-       assert(ret == 0);
-
-       /**
-        * Test case 2:
-        *   -Read one element of the array. It should changer:
-        *       -Return 1;
-       */
-      ret = stub_mclmac_write_queue_element(REFERENCE mclmac, size);
-      assert(ret == 1);
-
+    /**
+     * Test case 3: store MAX_NUMBER_DATA_PACKETS, then push all on queue.
+     * The following should comply:
+     *  -last_received should be 0.
+     *  -first_received should be 0.
+     *  -_number_packets_received should be 0.
+     */
+    ARROW(ARROW(mclmac)mac)_number_packets_received = 0;
+    ARROW(ARROW(mclmac)mac)_last_received = 0;
+    ARROW(ARROW(mclmac)mac)_first_received = 0;
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
+        /* Is fragment */
+        uint8_t element = ((rand() % 256) > 128 ? 1 : 0);
+        datapacket_set_isFragment(pkt, element);
+        /* total fragment */
+        element = rand();
+        element = (element == 0 ? 1 : element);
+        datapacket_set_total_fragments(pkt, element);
+        /* Fragment number */
+        element--;
+        datapacket_set_fragment_number(pkt, element);
+        /* data size */
+        uint16_t datasize = rand() % 250;
+        datasize = (datasize == 0 ? 1 : datasize);
+        ARRAY data;
 #ifdef __LINUX__
-    free(mclmac->mac->_packets_received);
+        data = (uint8_t *)malloc(datasize * sizeof(uint8_t));
 #endif
-#ifdef __RIOT__ 
-    free_array(&mclmac.mac._packets_received);
+#ifdef __RIOT__
+        create_array(&data, datasize);
 #endif
+        for (uint8_t j = 0; j < datasize; j++)
+        {
+            element = rand();
+            WRITE_ARRAY(REFERENCE data, element, j);
+        }
+        datapacket_set_data(pkt, &data, datasize);
+    }
+    // Total of packets store.
+    ARROW(ARROW(mclmac)mac)_number_packets_received = MAX_NUMBER_DATA_PACKETS;
+    ARROW(ARROW(mclmac)mac)_last_received = 0;
+
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        ret = stub_mclmac_write_queue_element(REFERENCE mclmac);
+    }
+    assert(ret == 1);
+    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_received == 0);
 
     MCLMAC_destroy(&mclmac);
 }
-#endif
+
 void test_mclmac_change_cf_channel(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1381,9 +1441,9 @@ void executeTestsMCLMAC(void)
     test_stub_mclmac_read_queue_element();
     printf("Test passed.\n");
 
-    /*printf("Testing stub_mclmac_write_queue_element function.\n");
+    printf("Testing stub_mclmac_write_queue_element function.\n");
     test_stub_mclmac_write_queue_element();
-    printf("Test passed.\n");*/
+    printf("Test passed.\n");
 
     printf("Testing mclmac_change_cf_channel function.\n");
     test_mclmac_change_cf_channel();

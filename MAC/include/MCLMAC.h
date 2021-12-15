@@ -209,7 +209,16 @@ void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
 int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac);
-int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size);
+
+/**
+ * @brief From the array _packets_received at the mac data structure, which
+ *        is filled with the packets received from the network, move the packets
+ *        to the queue, for further processing on the upper layers.
+ * 
+ * @param mclmac 
+ * @return int32_t 
+ */
+int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac);
 
 /* Private functions */
 void _select_slot_and_channel(MCLMAC_t *mclmac);

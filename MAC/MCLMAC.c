@@ -447,6 +447,7 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
 int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+    assert(ARROW(mclmac->mac)_packets_read <= MAX_NUMBER_DATA_PACKETS);
 
     if (ARROW(mclmac->mac)_packets_read == MAX_NUMBER_DATA_PACKETS)
         return 0;
@@ -492,27 +493,26 @@ int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac)
 
     return 1;
 }
-#if 0
-int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac, size_t size)
+
+int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    if (size <= 0)
+    if (ARROW(mclmac->mac)_number_packets_received == 0)
         return 0;
-    
-    size_t i;
-    /* "Write the packet into de queue* (just pretend to do something.) */
-    for (i = 0; i < 255; i++)
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_packets_received, 0, i);
-    /* Displace the rest of the elements to the front. */
-    for (i = 256; i < size; i++)
-    {
-        uint8_t element = READ_ARRAY(REFERENCE ARROW(mclmac->mac)_packets_received, i);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_packets_received, element, i - 255);
-    }
+
+    uint8_t first = ARROW(mclmac->mac)_first_received;
+    // Get the first packet of the queue
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received [first];
+    // Push the packet on the inter-layer queue (just clear it for now)
+    datapacket_clear(pkt);
+    first = (first + 1) % MAX_NUMBER_DATA_PACKETS;
+    ARROW(mclmac->mac)_first_received = first;
+    ARROW(mclmac->mac)_number_packets_received--;
+
     return 1;
 }
-#endif
+
 void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
