@@ -71,7 +71,7 @@ void mclmac_clear_cf_packet(MCLMAC_t *mclmac)
     cfpacket_clear(REFERENCE ARROW(mclmac->mac)cfpkt);
 }*/
 
-void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
+/*void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -107,7 +107,7 @@ void mclmac_clear_data_from_packet(MCLMAC_t *mclmac)
 #endif
 
     datapacket_clear_data(REFERENCE ARROW(mclmac->mac)datapkt);
-}
+}*/
 
 /**
  * @brief For the SYNCHRONIZATION state. It will receive all the incoming 
