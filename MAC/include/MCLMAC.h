@@ -208,6 +208,14 @@ void mclmac_start_split_phase(MCLMAC_t *mclmac);
 void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
+/**
+ * @brief Given the queue from which this layer received the packets from upper layers,
+ *        read such queue and store on the internarl array for sending on the network.
+ *        Store as well the destination id of the node to send the data.
+ * 
+ * @param mclmac 
+ * @return int32_t 
+ */
 int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac);
 
 /**
