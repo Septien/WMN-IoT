@@ -470,6 +470,7 @@ int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac)
     datapacket_set_fragment_number(pkt, element);
     /* data size */
     uint16_t datasize = rand() % 250;
+    datasize = (datasize == 0 ? 1 : datasize);
     ARRAY data;
 #ifdef __LINUX__
     data = (uint8_t *)malloc(datasize * sizeof(uint8_t));

@@ -375,6 +375,8 @@ void test_startp_state_powermode_stmachine(void)
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
+    timeout_init();
+
     /**
      * We will begin the execution of the PowerMode state machine for medium access.
      * We just initialized the state machine, and now should execute the STARTP state of the 
@@ -407,6 +409,56 @@ void test_startp_state_powermode_stmachine(void)
     assert(ARROW(ARROW(mclmac)mac)cfChannel == CF_FREQUENCY);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
+    timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
+    timeout_done();
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_passive_state_powermode_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t  dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+    timeout_init();
+
+    // Execute the STARTP state, and update state to PASSIVE state.
+    int ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+
+    /**
+     * We are now at the PASSIVE state. This state sets the radio on SLEEP mode, and
+     * execute other pertinent functions:
+     *  -Set the radio to SLEEP mode.
+     *  -Start the slot timer.
+     *  -On a loop, do the following:
+     *      *Check whether the timeout has expired.
+     *      *Once the timeout expires, unarm it and end the cycle.
+     *      *Read/write packets from/to other layers for sending or further processing.
+     *      *With the packets receive from the upper layers, create an array containing
+     *       the IDs of the nodes to send the packet.
+     *  -It should return:
+     *      *E_PM_EXECUTION_SUCCESS.
+     */
+    uint32_t time = ARROW(mclmac)_networkTime;
+    mclmac_set_powermode_state(REFERENCE mclmac, PASSIVE);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)powerMode.nextState == ACTIVE);
+    assert(ARROW(mclmac)_networkTime == time + 1);
+
+    timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
+    timeout_done();
 
     MCLMAC_destroy(&mclmac);
 }
@@ -435,6 +487,10 @@ void executetests_mac_powermode_statemachine(void)
 
     printf("Testing the PowerMode STARTP state.\n");
     test_startp_state_powermode_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the PowerMode PASSIVE state.\n");
+    test_passive_state_powermode_stmachine();
     printf("Test passed.\n");
 
     return;

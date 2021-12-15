@@ -130,16 +130,13 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
         // Arm the slot timer for the first time.
-        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)slot_duration);
+        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)slot_duration));
         break;
-#if 0    
+
     case PASSIVE: ;
         mclmac_set_current_cf_slot(mclmac, 0);
         /* Set radio to sleep */
         bool sleep = true;
-        uint8_t packets_read = 0;
-        uint16_t bytes = 0;
-        uint32_t read_from = 0;
         while (sleep)
         {
             if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1)
@@ -149,29 +146,26 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 sleep = false;
             }
 
-            /* Read at most 5 packets from the queue. */
-            if (packets_read < 5)
-            {
-                uint8_t nelement = stub_mclmac_read_queue_element(mclmac, &bytes, ARROW(mclmac->mac)_max_number_packets_buffer, &read_from);
-                if (nelement == 1)
-                    packets_read++;
-            }
-
+            /* 'Read' elements from the queue. */
+            stub_mclmac_read_queue_element(mclmac);
             /* 'Write' packets into queue. */
-            if (ARROW(mclmac->mac)_num_packets_received > 0)
-            {
-                uint8_t nelements = stub_mclmac_write_queue_element(mclmac, ARROW(mclmac->mac)_max_number_packets_buffer);
-                if (nelements == 1)
-                    ARROW(mclmac->mac)_num_packets_received--;
-            }
+            stub_mclmac_write_queue_element(mclmac);
+            // Sleep for a little while
+#ifdef __LINUX__
+            usleep(CF_SLOT_DURATION / 2);
+#endif
+#ifdef __RIOT__
+            ztimer_sleep(CLOCK, CF_SLOT_DURATION / 2);
+#endif
         }
-        ARROW(mclmac->mac)_packets_read += packets_read;
 
+        /* Increase by one the network time. */
+        mclmac->_networkTime++;
         /* Set once again the slot timer before leaving the state. */
-        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)slot_duration);
+        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)slot_duration));
         mclmac_set_next_powermode_state(mclmac, ACTIVE);
         break;
-    
+#if 0
     case ACTIVE: ;
         // Change to the cf channel
         stub_mclmac_change_cf_channel(mclmac);
