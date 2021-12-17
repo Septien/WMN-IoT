@@ -139,9 +139,6 @@ void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot);
 uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac);
 void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops);
 uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac);
-// ------>
-void mclmac_compute_free_slots_and_channels(MCLMAC_t *mclmac);
-// <-----
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number);
 void mclmac_increase_frame(MCLMAC_t *mclmac);
 void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot);
