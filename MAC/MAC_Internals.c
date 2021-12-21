@@ -63,7 +63,6 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
 #endif
 #ifdef __RIOT__
     controlpacket_destroy(&mac->ctrlpkt);
-    cfpacket_destroy(&mac->cfpkt);
 #endif
 }
 
