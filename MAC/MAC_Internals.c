@@ -17,7 +17,6 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     memset(SINGLE_POINTER mac, 0, sizeof(MAC_Internals_t));
 #ifdef __LINUX__
     (*mac)->radio = NULL;
-    (*mac)->cfpkt = NULL;
     (*mac)->ctrlpkt = NULL;
     (*mac)->frame = (Frame_t *)malloc(sizeof(Frame_t));
     if ((*mac)->frame == NULL)
@@ -56,8 +55,6 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
     /* Destroy packets data structures */
     if ((*mac)->ctrlpkt != NULL)
         controlpacket_destroy(&(*mac)->ctrlpkt);
-    if ((*mac)->cfpkt != NULL)
-        cfpacket_destroy(&(*mac)->cfpkt);
     // Destroy Frame
     if ((*mac)->frame != NULL)
         free((*mac)->frame);

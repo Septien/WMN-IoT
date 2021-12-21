@@ -54,20 +54,20 @@ typedef struct MAC_Internals
 #endif
     // Packets used by the protocol
     ControlPacket_t SINGLE_POINTER ctrlpkt;
-    CFPacket_t      SINGLE_POINTER cfpkt;
     Frame_t         SINGLE_POINTER frame;
     // Status variables
     uint8_t         selectedSlot;
     uint32_t        transmitChannel;
     uint32_t        receiveChannel;
     uint32_t        cfChannel;
-    uint16_t        indexChannel;
+    uint16_t        senderID;
     // Collision
     bool            _collisionDetected;
     uint8_t         _collisionSlot;
     uint32_t        _collisionFrequency;
     /* CF messages */
     bool            _cf_message_received;
+    /* On position 0, store the cf message to send, on pisition 1, the cf messages to receive. */
     CFPacket_t      _cf_messages[MAX_NUMBER_CF_PACKETS];
     uint8_t         _max_cf_messages;
     /* Messages received from other nodes */
