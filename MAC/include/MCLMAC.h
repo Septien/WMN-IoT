@@ -129,12 +129,15 @@ void mclmac_set_transmit_channel(MCLMAC_t *mclmac, uint32_t channel);
 uint32_t mclmac_get_transmit_channel(MCLMAC_t *mclmac);
 void mclmac_set_reception_channel(MCLMAC_t *mclmac, uint32_t rChannel);
 uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac);
+uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index);
 void mclmac_set_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t nChannels);
 void mclmac_get_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t *nChannels);
 
 // Properties and configuration
 void mclmac_set_nodeid(MCLMAC_t *mclmac, uint16_t id);
 uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac);
+void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id);
+uint16_t mclmac_get_transmiterid(MCLMAC_t *mclmac);
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot);
 uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac);
 void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops);
@@ -142,10 +145,12 @@ uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac);
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number);
 void mclmac_increase_frame(MCLMAC_t *mclmac);
 void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot);
+uint8_t mclmac_get_current_slot(MCLMAC_t *mclmac);
 void mclmac_increase_slot(MCLMAC_t *mclmac);
 void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t slots_number);
 void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t cf_slots_number);
 void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot);
+uint8_t mclmac_get_current_cf_slot(MCLMAC_t *mclmac);
 void mclmac_increase_cf_slot(MCLMAC_t *mclmac);
 void mclmac_set_slot_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__

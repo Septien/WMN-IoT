@@ -140,6 +140,14 @@ uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac)
     return ARROW(mclmac->mac)receiveChannel;
 }
 
+uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index)
+{
+    assert(mclmac != NULL);
+    assert(index < MAX_NUMBER_FREQS);
+
+    return mclmac->_frequencies[index];
+}
+
 /*void mclmac_set_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t nChannels)
 {
     assert(mclmac != NULL);
@@ -207,6 +215,35 @@ uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac)
 #endif
 
     return mclmac->_nodeID;
+}
+
+/**
+ * @brief Set the id of the node that will transmit a message to the 
+ * current node.
+ * 
+ * @param mclmac 
+ * @param id 
+ */
+void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id)
+{
+    assert(mclmac != NULL);
+    assert(id != mclmac->_nodeID);
+
+    ARROW(mclmac->mac)transmiterID = id;
+}
+
+/**
+ * @brief Get the id of the node that will transmit a message to the
+ * current node.
+ * 
+ * @param mclmac 
+ * @return uint16_t 
+ */
+uint16_t mclmac_get_transmiterid(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    return ARROW(mclmac->mac)transmiterID;
 }
 
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot)
@@ -283,6 +320,13 @@ void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot)
     ARROW(ARROW(mclmac->mac)frame)current_slot = current_slot;
 }
 
+uint8_t mclmac_get_current_slot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    return ARROW(ARROW(mclmac->mac)frame)current_slot;
+}
+
 void mclmac_increase_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
@@ -327,6 +371,13 @@ void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot)
 #endif
 
     ARROW(ARROW(mclmac->mac)frame)current_cf_slot = current_cf_slot;
+}
+
+uint8_t mclmac_get_current_cf_slot(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    return ARROW(ARROW(mclmac->mac)frame)current_cf_slot;
 }
 
 void mclmac_increase_cf_slot(MCLMAC_t *mclmac)
@@ -531,7 +582,11 @@ void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac)
     assert(mclmac != NULL);
     assert(ARROW(mclmac->mac)radio != NULL);
 
+    // Change the channel
+    stub_mclmac_change_cf_channel(mclmac);
     // Change the radio state to rx single
+    // Reset the cf counter to zero
+    mclmac_set_current_cf_slot(mclmac, 0);
 }
 
 /**
@@ -579,37 +634,30 @@ void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
     assert(mclmac->mac != NULL);
 #endif
     
-//    mclmac_clear_cf_packet(mclmac);
+    // Change radio to standby
+    // Get packet data string.
+    // Copy data to buffer.
+    // Change radio to tx and transmit.
+
 }
-/*
+
 bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    ARROW(mclmac->mac)_cf_message_received = ((rand() % 256) > 128 ? true : false);
+    ARROW(mclmac->mac)_cf_message_received = ((rand() % 1025) > 128 ? true : false);
+    CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
     if (ARROW(mclmac->mac)_cf_message_received)
     {
-        uint8_t element = rand() % 256;
-        element = (element == 0 ? 1 : element);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, element, 0);
-        element = rand() % 256;
-        element = (element == 0 ? 1 : element);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, element, 1);
-        element = rand() % 256;
-        element = (element == 0 ? 1 : element);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, element, 2);
-        element = rand() % 256;
-        element = (element == 0 ? 1 : element);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, element, 3);
+        uint16_t id = rand() % 256;
+        id = (id == mclmac->_nodeID ? id + 1 : id);
+        uint16_t nodeid = mclmac_get_nodeid(mclmac);
+        cfpacket_create(pkt, id, nodeid);
     }
     else
     {
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, 0, 0);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, 0, 1);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, 0, 2);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)_cf_messages, 0, 3);
+        cfpacket_create(pkt, 0, 0);
     }
 
     return ARROW(mclmac->mac)_cf_message_received;
 }
-*/

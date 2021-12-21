@@ -254,6 +254,29 @@ void test_mclmac_get_reception_channel(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_mclmac_get_frequency(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    for (int i = 0; i < MAX_NUMBER_FREQS; i++)
+    {
+        uint32_t freq = mclmac_get_frequency(REFERENCE mclmac, i);
+        assert(freq == ARROW(mclmac)_frequencies[i]);
+    }
+
+    MCLMAC_destroy(&mclmac);
+}
+
 /*void test_mclmac_set_available_channels(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -401,6 +424,58 @@ void test_mclmac_get_nodeid(void)
         uint16_t nodeidR = mclmac_get_nodeid(REFERENCE mclmac);
         assert(nodeidR == nodeid);
     }
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_set_transmiterid(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 100;
+    size_t dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    /**
+     * Set the sender id, it should comply that id is different to the
+     * current node's id.
+     */
+    uint16_t senderid = rand() % 16;
+    senderid = (senderid == ARROW(mclmac)_nodeID ? senderid + 1 : senderid);
+    mclmac_set_transmiterid(REFERENCE mclmac, senderid);
+    assert(ARROW(ARROW(mclmac)mac)transmiterID == senderid);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_get_transmiterid(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    /**
+     * Get the sender id, it should be different to the current node's id.
+     */
+    uint16_t senderid = rand() % 16;
+    senderid = (senderid == ARROW(mclmac)_nodeID ? senderid + 1 : senderid);
+    mclmac_set_transmiterid(REFERENCE mclmac, senderid);
+    uint16_t senderidA = mclmac_get_transmiterid(REFERENCE mclmac);
+    assert(senderid == senderidA);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -588,6 +663,32 @@ void test_mclmac_set_current_slot(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_mclmac_get_current_slot(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        uint8_t slot = (uint8_t)rand() % 256;
+        mclmac_set_current_slot(REFERENCE mclmac, slot);
+        uint8_t current_slot = mclmac_get_current_slot(REFERENCE mclmac);
+        assert(current_slot == slot);
+    }
+
+    MCLMAC_destroy(&mclmac);
+}
+
 void test_mclmac_increase_slot(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -688,6 +789,33 @@ void test_mclmac_set_current_cf_slot(void)
         current_cf_slot = (current_cf_slot == 0 ? 1 : current_cf_slot);
         mclmac_set_current_cf_slot(REFERENCE mclmac, current_cf_slot);
         assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == current_cf_slot);
+    }
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_get_current_cf_slot(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+    size_t dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        uint8_t current_cf_slot = ((uint8_t) rand() % 256);
+        current_cf_slot = (current_cf_slot == 0 ? 1 : current_cf_slot);
+        mclmac_set_current_cf_slot(REFERENCE mclmac, current_cf_slot);
+        uint8_t slot = mclmac_get_current_cf_slot(REFERENCE mclmac);
+        assert(slot == current_cf_slot);
     }
 
     MCLMAC_destroy(&mclmac);
@@ -1341,6 +1469,10 @@ void executeTestsMCLMAC(void)
     test_mclmac_get_reception_channel();
     printf("Test passed.\n");
 
+    printf("Testing mclmac_get_frequency function.\n");
+    test_mclmac_get_frequency();
+    printf("Test passed.\n");
+
     /*printf("Testing mclmac_set_available_channels function.\n");
     test_mclmac_set_available_channels();
     printf("Test passed.\n");
@@ -1355,6 +1487,18 @@ void executeTestsMCLMAC(void)
 
     printf("Testing mclmac_get_nodeid function.\n");
     test_mclmac_get_nodeid();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_get_destinationid function.\n");
+    test_mclmac_get_destinationid();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_set_transmiterid function.\n");
+    test_mclmac_set_transmiterid();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_get_transmiterid function.\n");
+    test_mclmac_get_transmiterid();
     printf("Test passed.\n");
 
     printf("Testing mclmac_set_selected_slot function.\n");
@@ -1385,6 +1529,10 @@ void executeTestsMCLMAC(void)
     test_mclmac_set_current_slot();
     printf("Test passed.\n");
 
+    printf("Testing mclmac_get_current_slot function.\n");
+    test_mclmac_get_current_slot();
+    printf("Test passed.\n");
+
     printf("Testing mclmac_increase_slot function.\n");
     test_mclmac_increase_slot();
     printf("Test passed.\n");
@@ -1399,6 +1547,10 @@ void executeTestsMCLMAC(void)
 
     printf("Testing mclmac_set_current_cf_slot function.\n");
     test_mclmac_set_current_cf_slot();
+    printf("Test passed.\n");
+
+    printf("Testing mclmac_get_current_cf_slot function.\n");
+    test_mclmac_get_current_cf_slot();
     printf("Test passed.\n");
 
     printf("Testing mclmac_increase_cf_slot function.\n");
