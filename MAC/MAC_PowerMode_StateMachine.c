@@ -165,75 +165,94 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)slot_duration));
         mclmac_set_next_powermode_state(mclmac, ACTIVE);
         break;
-#if 0
-    case ACTIVE: ;
-        // Change to the cf channel
-        stub_mclmac_change_cf_channel(mclmac);
-        stub_mclmac_start_cf_phase(mclmac);
-        // Reset the cf counter to zero
-        mclmac_set_current_cf_slot(mclmac, 0);
-        bool to_send = false;
-        /* Check if there are packets on the queue. */
-        if (ARROW(mclmac->mac)_packets_read > 0)
-        {
-            // Get the id of the destination from the first packet
-            //uint8_t destinationID = READ_ARRAY(REFERENCE ARROW(mclmac->mac)_packets, 0);
-            //mclmac_set_destination_id(mclmac, destinationID);
-//            mclmac_create_cf_packet(mclmac);
-            to_send = true;
-        }
 
-        // Craete and arm the cf_slot_timer
-        ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
-        bool active = true;
-        bool transmit = false;
+    case ACTIVE: ;
+        stub_mclmac_start_cf_phase(mclmac);
+        uint8_t current_slot = mclmac_get_current_slot(mclmac);
+        uint8_t selected_slot = mclmac_get_selected_slot(mclmac);
+        uint32_t selected_freq = mclmac_get_transmit_channel(mclmac);
+        ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)cf_duration));
+        bool ended = false;
+        bool is_current = false;
+        bool send = false;
         bool receive = false;
-        while (active)
+        uint8_t packets = 0;
+        if (current_slot == selected_slot)
+            is_current = true;
+
+        while (!ended)
         {
-            // Check if timeout passed
-            if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)cf_timer))
+            if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)cf_timer) == 1)
             {
                 timeout_unset(ARROW(ARROW(mclmac->mac)frame)cf_timer);
                 mclmac_increase_cf_slot(mclmac);
-                ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
-            }
-            // Check if cf phase is over
-            if (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == ARROW(ARROW(mclmac->mac)frame)cf_slots_number)
-            {
-                // Remove timer and end cycle
-                timeout_unset(ARROW(ARROW(mclmac->mac)frame)cf_timer);
-                active = false;
-            }
-            // check if current cf slot corresponds to the selected slot
-            if (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == ARROW(mclmac->mac)selectedSlot)
-            {
-                if (to_send)
+                // Check if all the cf slots are already traversed, if so, end the cycle
+                if (mclmac_get_current_cf_slot(mclmac) == MAX_NUMBER_FREQS)
                 {
-                    stub_mclmac_send_cf_message(mclmac);
-                    transmit = true;
+                    ended = true;
+                    continue;
+                }
+                // Otherwise, re-arm the timeout
+                else
+                {
+                    ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)cf_duration));
                 }
             }
-            // Check if a message is received
-            if (stub_mclmac_receive_cf_message(mclmac))
+            /* If the current slot is the selected slot, and the current cf slot corresponds to the 
+            selected frequency, check if a packet is ready to send. */
+            uint8_t current_cf_slot = mclmac_get_current_cf_slot(mclmac);
+            if (is_current && selected_freq == mclmac_get_frequency(mclmac, current_cf_slot))
             {
-                receive = true;
-                mclmac_set_transmit_channel(mclmac, rand());
+                if (ARROW(mclmac->mac)_packets_read > 0)
+                {
+                    /* Create the cf packet and send it. */
+                    uint8_t to_send = ARROW(mclmac->mac)_first_send;
+                    CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
+                    uint8_t nodeid = mclmac_get_nodeid(mclmac);
+                    cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_ids[to_send]);
+                    stub_mclmac_send_cf_message(mclmac);
+                    cfpacket_clear(cfpkt);
+                    mclmac_set_next_powermode_state(mclmac, TRANSMIT);
+                    send = true;
+                    is_current = false; // Indicate to send no more cf packets
+                }
             }
+            /* Hear for any incoming CF packets on the medium. */
+            else if (stub_mclmac_receive_cf_message(mclmac))
+            {
+                CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
+                uint16_t destinationid = cfpacket_get_destinationid(pkt);
+                if (destinationid == mclmac->_nodeID || destinationID == 0)
+                {
+                    uint16_t transmiterid = cfpacket_get_nodeid(pkt);
+                    mclmac_set_transmiterid(mclmac, transmiterid);
+                    uint32_t channel = mclmac_get_frequency(mclmac, current_cf_slot);
+                    mclmac_set_transmit_channel(mclmac, channel);
+                    mclmac_set_next_powermode_state(mclmac, RECEIVE);
+                    packets++;
+                    receive = true;
+                }
+            }
+#ifdef __LINUX__
+            usleep(CF_SLOT_DURATION / 2);
+#endif
+#ifdef __RIOT__
+            ztimer_sleep(CLOCK, CF_SLOT_DURATION / 2);
+#endif
         }
 
-        if (transmit)
-            mclmac_set_next_powermode_state(mclmac, TRANSMIT);        
-        else if (receive)
-            mclmac_set_next_powermode_state(mclmac, RECEIVE);
-        else
+        // If there are no packets to send
+        if (!send && !receive)
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
 
-#ifdef __LINUX__
-        // change radio to common channel
-#endif        
-        //mclmac_clear_cf_packet(mclmac);
+        // Collision detected
+        if ((send && receive) || (packets > 1))
+        {
+            mclmac_set_next_powermode_state(mclmac, FINISHP);
+            return E_PM_SYNCHRONIZATION_ERROR;
+        }
         break;
-#endif
+
     default: ;
         break;
     }
