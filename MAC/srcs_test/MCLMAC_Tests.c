@@ -1489,10 +1489,6 @@ void executeTestsMCLMAC(void)
     test_mclmac_get_nodeid();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_get_destinationid function.\n");
-    test_mclmac_get_destinationid();
-    printf("Test passed.\n");
-
     printf("Testing mclmac_set_transmiterid function.\n");
     test_mclmac_set_transmiterid();
     printf("Test passed.\n");
