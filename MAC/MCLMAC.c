@@ -641,22 +641,103 @@ void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
 
 }
 
+/* For the first test, I want this function to emulate properly the radio, that is, 
+as if the radio is hearing the medium. But I want to always return false, or to pretend
+that no message is received.
+For the second test, I want to simulate a packet is received, and return the randomly created
+packet.
+For the third case, no packets are either received or to send.
+The for case simulates a collision, where a packet should be sent and received on the same 
+time slot.
+The fifth case should be when two different packets are received on the same slot. A 
+collision situation.
+The function, or a part of it, will execute on an interrupt context. Meaning that 
+the execution of the program will stop, to handle the hardware-generated interrupt.
+How to simulate that? How to make it behave as the real one?
+For the moment, a quick and simple solution would be to use a state variable on mclmac data structure.
+For the state 1, always return false.
+For the state 2, return true just once, and then false the other
+For the state 3, return always false.
+For the state 4, return once true, and the other false.
+For the state 5, return true twice. 
+Have a counter indicating in which function call the function is at.
+Another variable for holding the last state of _cf_message_received. */
 bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+    static uint8_t trues = 0;
+    static uint8_t trues5 = 0;
 
-    ARROW(mclmac->mac)_cf_message_received = ((rand() % 1025) > 128 ? true : false);
-    CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
-    if (ARROW(mclmac->mac)_cf_message_received)
+    if (mclmac->_state == 1 || mclmac->_state == 3)
     {
-        uint16_t id = rand() % 256;
-        id = (id == mclmac->_nodeID ? id + 1 : id);
-        uint16_t nodeid = mclmac_get_nodeid(mclmac);
-        cfpacket_create(pkt, id, nodeid);
+        ARROW(mclmac->mac)_cf_message_received = false;
+        return false;
     }
-    else
+    if (mclmac->_state == 2)
     {
-        cfpacket_create(pkt, 0, 0);
+        if (trues == 1)
+        {
+            ARROW(mclmac->mac)_cf_message_received = false;
+            return false;
+        }
+        
+        ARROW(mclmac->mac)_cf_message_received = true;
+        CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
+        if (ARROW(mclmac->mac)_cf_message_received)
+        {
+            uint16_t id = rand() % 256;
+            id = (id == mclmac->_nodeID ? id + 1 : id);
+            uint16_t nodeid = mclmac_get_nodeid(mclmac);
+            cfpacket_create(pkt, id, nodeid);
+            trues++;
+        }
+        else
+        {
+            cfpacket_create(pkt, 0, 0);
+        }
+    }
+
+    if (mclmac->_state == 4)
+    {
+        if (mclmac_get_current_cf_slot(mclmac) == 0)
+        {
+            ARROW(mclmac->mac)_cf_message_received = false;
+            return false;
+        }
+        if (trues == 2)
+        {
+            ARROW(mclmac->mac)_cf_message_received = false;
+            return false;
+        }
+        ARROW(mclmac->mac)_cf_message_received = true;
+        CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
+        if (ARROW(mclmac->mac)_cf_message_received)
+        {
+            uint16_t id = rand() % 256;
+            id = (id == mclmac->_nodeID ? id + 1 : id);
+            uint16_t nodeid = mclmac_get_nodeid(mclmac);
+            cfpacket_create(pkt, id, nodeid);
+            trues++;
+        }
+    }
+
+    if (mclmac->_state == 5)
+    {
+        if (trues5 > 2)
+        {
+            ARROW(mclmac->mac)_cf_message_received = false;
+            return false;
+        }
+        ARROW(mclmac->mac)_cf_message_received = (rand() % 1024 > 256 ? true : false);
+        CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
+        if (ARROW(mclmac->mac)_cf_message_received)
+        {
+            uint16_t id = rand() % 256;
+            id = (id == mclmac->_nodeID ? id + 1 : id);
+            uint16_t nodeid = mclmac_get_nodeid(mclmac);
+            cfpacket_create(pkt, id, nodeid);
+            trues5++;
+        }
     }
 
     return ARROW(mclmac->mac)_cf_message_received;

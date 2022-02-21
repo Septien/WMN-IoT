@@ -514,7 +514,6 @@ void test_active_state_powermode_stmachine(void)
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
-    (void) ret;
 
     /**
      * We are now at the ACTIVE state. This state will determine whether the node should 
@@ -570,12 +569,14 @@ void test_active_state_powermode_stmachine(void)
             -The current cf slot should be equal to the number of frequencies.
             -The time passed should be approximately 20% of the total slot time.
     */
-    /*mclmac_set_current_slot(REFERENCE mclmac, 0);
+    // set state to 1, to indicate first test case.
+    ARROW(mclmac)_state = 1;
+    mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);*/
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
 
     /* Test case 2:
         -There are no packets to transmit, but a packet is received.
@@ -584,13 +585,14 @@ void test_active_state_powermode_stmachine(void)
             -The next state should be RECEIVE.
             -The current cf slot should be equal to the total number of frequencies.
     */
-    /*mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    ARROW(mclmac)_state = 2;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
     mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == RECEIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);*/
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
 
     /* Test case 3:
             -There are no packets to receive or send.
@@ -599,12 +601,13 @@ void test_active_state_powermode_stmachine(void)
                 -The next state should be PASSIVE.
                 -The current cf slot should be equal to the total number of frequencies.
     */
-    /*ARROW(ARROW(mclmac)mac)_packets_read = 0;
+    ARROW(mclmac)_state = 3;
+    ARROW(ARROW(mclmac)mac)_packets_read = 0;
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);*/
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
 
     /*  Test case 4:
             -A packet was received and it should send a packet.
@@ -613,13 +616,29 @@ void test_active_state_powermode_stmachine(void)
                 -The next state should be FINISHP.
                 -The current cf slot should be equal to the total number of frequencies.
     */
-    /*mclmac_set_current_slot(REFERENCE mclmac, 0);
+    ARROW(mclmac)_state = 4;
+    ARROW(ARROW(mclmac)mac)_packets_read = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_SYNCHRONIZATION_ERROR);
     assert(ARROW(mclmac)powerMode.nextState == FINISHP);
-    assert(ARROW(mclmac)powerMode.nextState == ACTIVE);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);*/
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+
+    /*  Test case 5:
+            -Two packets should be received, and no packets to sent.
+            It should return:
+                -E_PM_SYNCHRONIZATION_ERROR.
+                -The next state should be FINISHP.
+                -The current cf slot should be equal to the total number of frequencies.
+    */
+    ARROW(mclmac)_state = 5;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_SYNCHRONIZATION_ERROR);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
 
     timeout_done();
     MCLMAC_destroy(&mclmac);

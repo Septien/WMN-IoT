@@ -171,7 +171,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         uint8_t current_slot = mclmac_get_current_slot(mclmac);
         uint8_t selected_slot = mclmac_get_selected_slot(mclmac);
         uint32_t selected_freq = mclmac_get_transmit_channel(mclmac);
-        ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)cf_duration));
         bool ended = false;
         bool is_current = false;
         bool send = false;
@@ -180,8 +179,12 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if (current_slot == selected_slot)
             is_current = true;
 
+        /* Arm the cf timer. */
+        ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)cf_duration));
+        /* Iterate over all cf slots. */
         while (!ended)
         {
+            /* Check whether the current cf slot finished. */
             if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)cf_timer) == 1)
             {
                 timeout_unset(ARROW(ARROW(mclmac->mac)frame)cf_timer);
@@ -212,7 +215,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_ids[to_send]);
                     stub_mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
-                    mclmac_set_next_powermode_state(mclmac, TRANSMIT);
                     send = true;
                     is_current = false; // Indicate to send no more cf packets
                 }
@@ -222,13 +224,12 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             {
                 CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
                 uint16_t destinationid = cfpacket_get_destinationid(pkt);
-                if (destinationid == mclmac->_nodeID || destinationID == 0)
+                if (destinationid == mclmac->_nodeID || destinationid == 0) // destinationID = 0 means a broadcast.
                 {
                     uint16_t transmiterid = cfpacket_get_nodeid(pkt);
                     mclmac_set_transmiterid(mclmac, transmiterid);
                     uint32_t channel = mclmac_get_frequency(mclmac, current_cf_slot);
                     mclmac_set_transmit_channel(mclmac, channel);
-                    mclmac_set_next_powermode_state(mclmac, RECEIVE);
                     packets++;
                     receive = true;
                 }
@@ -241,16 +242,26 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 #endif
         }
 
+        // Collision detected
+        if ((send && receive) || (packets > 1))
+        {
+            printf("Packets: %d\n", packets);
+            mclmac_set_next_powermode_state(mclmac, FINISHP);
+            return E_PM_SYNCHRONIZATION_ERROR;
+        }
+        
+        // Packets to send
+        if (send)
+            mclmac_set_next_powermode_state(mclmac, TRANSMIT);
+        
+        // Packets to receive
+        if (receive)
+            mclmac_set_next_powermode_state(mclmac, RECEIVE);
+        
         // If there are no packets to send
         if (!send && !receive)
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
 
-        // Collision detected
-        if ((send && receive) || (packets > 1))
-        {
-            mclmac_set_next_powermode_state(mclmac, FINISHP);
-            return E_PM_SYNCHRONIZATION_ERROR;
-        }
         break;
 
     default: ;

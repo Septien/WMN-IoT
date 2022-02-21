@@ -88,6 +88,8 @@ typedef struct MCLMAC
     uint8_t             _occupied_frequencies_slots[MAX_NUMBER_FREQS][(MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0)];
     uint32_t            _wakeup_frame;
     uint32_t            _initTime;
+    // Temporal variable for testing
+    uint8_t             _state;
     // IPC Queues
 }MCLMAC_t;
 
