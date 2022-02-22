@@ -15,6 +15,7 @@ void test_controlpacket_init(void)
     controlpacket_init(&pkt);
 #ifdef __LINUX__
     assert(pkt != NULL);
+    assert(pkt->ack == NULL);
 #endif
 #ifdef __RIOT__
     assert(pkt.nodeID == 0);
@@ -24,7 +25,7 @@ void test_controlpacket_init(void)
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
     assert(pkt.initTime == 0);
-    assert(pkt.ack == 0);
+    assert(pkt.ack.size == 0);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -48,7 +49,7 @@ void test_controlpacket_destroy(void)
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
     assert(pkt.initTime == 0);
-    assert(pkt.ack == 0);
+    assert(pkt.ack.size == 0);
 #endif
 }
 
@@ -63,11 +64,20 @@ void test_controlpacket_create(void)
     uint8_t collisionSlot = 10;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
-    uint8_t ack = 0;
     uint64_t netTime = rand();
     uint32_t initTime = rand();
+    int n = rand() % 200;
+    ARRAY ack;
+#ifdef __LINUX__
+    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&ack, n);
+#endif
+    for (int i = 0; i < n; i++)
+        WRITE_ARRAY(REFERENCE ack, rand(), i);
 
-    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, &ack, n);
 
 #ifdef __LINUX__
     assert(pkt != NULL);
@@ -80,7 +90,8 @@ void test_controlpacket_create(void)
     assert(ARROW(pkt)hopCount == hopCount);
     assert(ARROW(pkt)networkTime == netTime);
     assert(ARROW(pkt)initTime == initTime);
-    assert(ARROW(pkt)ack == ack);
+    for (int i = 0; i < n; i++)
+        assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
 
     controlpacket_destroy(&pkt);
 }
@@ -90,18 +101,27 @@ void test_controlpacket_clear(void)
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
-    uint16_t nodeID = 1;    
+uint16_t nodeID = 1;
     uint32_t frame = 20;
     uint8_t slot = 8;
-    uint8_t collisionSlots = 0x01;
+    uint8_t collisionSlot = 10;
     uint32_t collisionFrequency = 915;
     uint8_t hopCount = 3;
     uint64_t netTime = rand();
     uint32_t initTime = rand();
-    uint8_t ack = 1;
+    int n = rand() % 200;
+    ARRAY ack;
+#ifdef __LINUX__
+    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&ack, n);
+#endif
+    for (int i = 0; i < n; i++)
+        WRITE_ARRAY(REFERENCE ack, rand(), i);
 
-    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, ack);
-
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, &ack, n);
+    
     controlpacket_clear(REFERENCE pkt);
 
     assert(ARROW(pkt)nodeID == 0);
@@ -110,7 +130,9 @@ void test_controlpacket_clear(void)
     assert(ARROW(pkt)hopCount == 0);
     assert(ARROW(pkt)networkTime == 0);
     assert(ARROW(pkt)initTime == 0);
-    assert(ARROW(pkt)ack == 0);
+#ifdef __RIOT__
+    assert(ARROW(pkt)ack.size == 0);
+#endif
     
     controlpacket_destroy(&pkt);
 }
@@ -362,10 +384,30 @@ void test_controlpacket_set_ACK(void)
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
-    uint8_t ack = 1;
-    controlpacket_set_ACK(REFERENCE pkt, ack);
-    assert(ARROW(pkt)ack == ack);
+    ARRAY ack;
+    int n = rand() % 200;
+#ifdef __LINUX__
+    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(REFERENCE ack, n);
+#endif
+    for (int i = 0; i < n; i++)
+        WRITE_ARRAY(REFERENCE ack, rand(), i);
 
+    controlpacket_set_ACK(REFERENCE pkt, &ack, n);
+
+    for (int i = 0; i < n; i++)
+    {
+        assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
+    }
+
+#ifdef __LINUX__
+    free(ack);
+#endif
+#ifdef __RIOT__
+    free_array(&ack);
+#endif
     controlpacket_destroy(&pkt);
 }
 
@@ -374,13 +416,34 @@ void test_controlpacket_get_ACK(void)
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
-    uint8_t ack = 1;
-    controlpacket_set_ACK(REFERENCE pkt, ack);
-    
-    uint8_t ack2 = controlpacket_get_ACK(REFERENCE pkt);
-    assert(ack2 == ARROW(pkt)ack);
-    assert(ack2 == ack);
+    ARRAY ack;
+    ARRAY ack2;
+    int n = rand() % 200;
+#ifdef __LINUX__
+    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
+    ack2 = (uint8_t *)malloc(n * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&ack, n);
+    create_array(&ack2, n);
+#endif
+    for (int i = 0; i < n; i++)
+        WRITE_ARRAY(REFERENCE ack, rand(), i);
 
+    controlpacket_set_ACK(REFERENCE pkt, &ack, n);
+
+    controlpacket_get_ACK(REFERENCE pkt, &ack2, n);
+    for (int i = 0; i < n; i++)
+        assert(READ_ARRAY(REFERENCE ack, i) == READ_ARRAY(REFERENCE ack2, i));
+
+#ifdef __LINUX__
+    free(ack);
+    free(ack2);
+#endif
+#ifdef __RIOT__
+    free_array(&ack);
+    free_array(&ack2);
+#endif
     controlpacket_destroy(&pkt);
 }
 
@@ -401,11 +464,21 @@ void test_controlpacket_get_packet_bytestring(void)
     uint8_t time[8];
     uint32_t initTime = rand();
     uint8_t inittime[4];
-    uint8_t ack = 0;
+    ARRAY ack;
+    int n = rand() % 200;
+#ifdef __LINUX__
+    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(REFERENCE ack, n);
+#endif
+    for (int i = 0; i < n; i++)
+        WRITE_ARRAY(REFERENCE ack, rand(), i);
+    
     size_t sizeA = sizeof(nodeID) + sizeof(frame) + sizeof(slot) + sizeof(collisionSlots);
-    sizeA += sizeof(collisionFrequency) + sizeof(hopCount) + sizeof(netTime) + sizeof(initTime) + sizeof(ack);
+    sizeA += sizeof(collisionFrequency) + sizeof(hopCount) + sizeof(netTime) + sizeof(initTime) + (size_t)n;
 
-    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, ack);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, &ack, n);
 
     frames[0] = (frame & 0xff000000) >> 24;
     frames[1] = (frame & 0x00ff0000) >> 16;
@@ -429,7 +502,7 @@ void test_controlpacket_get_packet_bytestring(void)
     inittime[3] = (initTime & 0x000000ff);
     ARRAY byteStr;
     size_t size;
-    controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr, &size);
+    controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr, &size, n);
 
     assert(size == sizeA);
     assert(READ_ARRAY(REFERENCE byteStr, 0)     == (nodeID & 0xff00) >> 8);
@@ -457,13 +530,18 @@ void test_controlpacket_get_packet_bytestring(void)
     assert(READ_ARRAY(REFERENCE byteStr, 22)    == inittime[1]);
     assert(READ_ARRAY(REFERENCE byteStr, 23)    == inittime[2]);
     assert(READ_ARRAY(REFERENCE byteStr, 24)    == inittime[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 25)    == ack);
+    for (int i = 25; i < 25 + n; i++)
+    {
+        assert(READ_ARRAY(REFERENCE byteStr, i) == READ_ARRAY(REFERENCE ack, i - 25));
+    }
 
 #ifdef __LINUX__
     free(byteStr);
+    free(ack);
 #endif
 #ifdef __RIOT__
     free_array(&byteStr);
+    free_array(&ack);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -482,7 +560,16 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     uint8_t hopCount = 3;
     uint64_t netTime = (uint64_t)rand();
     uint32_t initTime = rand();
-    uint8_t ack = 0;
+    uint8_t n = rand() % 200;
+    ARRAY ack;
+#ifdef __LINUX__
+    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&ack, n);
+#endif
+    for (int i = 0; i < n; i++)
+        WRITE_ARRAY(REFERENCE ack, rand() % 256, i);
 
     size_t size = sizeof(nodeID);
     size += sizeof(currentFrame);
@@ -492,7 +579,7 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     size += sizeof(hopCount);
     size += sizeof(netTime);
     size += sizeof(initTime);
-    size += sizeof(ack);
+    size += (size_t)n;
     size += 1;
     ARRAY byteStr;
 #ifdef __LINUX__
@@ -527,9 +614,13 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           22);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            23);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 24);
-    WRITE_ARRAY(REFERENCE byteStr, ack,                                     25);
+    for (int i = 0; i < n; i++)
+    {
+        uint8_t e = READ_ARRAY(REFERENCE ack, i);
+        WRITE_ARRAY(REFERENCE byteStr, e, i + 25);
+    }
     
-    controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr);
+    controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr, n);
 
     assert(ARROW(pkt)nodeID             == nodeID);
     assert(ARROW(pkt)currentFrame       == currentFrame);
@@ -539,13 +630,16 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     assert(ARROW(pkt)hopCount           == hopCount);
     assert(ARROW(pkt)networkTime        == netTime);
     assert(ARROW(pkt)initTime           == initTime);
-    assert(ARROW(pkt)ack                == ack);
+    for (int i = 0; i < n; i++)
+        assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
 
 #ifdef __LINUX__
     free(byteStr);
+    free(ack);
 #endif
 #ifdef __RIOT__
     free_array(&byteStr);
+    free_array(&ack);
 #endif
 
     controlpacket_destroy(&pkt);

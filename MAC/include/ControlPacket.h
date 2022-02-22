@@ -31,12 +31,12 @@ typedef struct
     uint8_t     hopCount;
     uint64_t    networkTime;
     uint32_t    initTime;
-    uint8_t     ack;
+    ARRAY       ack;
 } ControlPacket_t;
 
 void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt);
 void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt);
-void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame, uint8_t slot, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint64_t netTime, uint32_t initTime, uint8_t ack);
+void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame, uint8_t slot, uint8_t collisionSlots, uint32_t collisionFrequency, uint8_t hopCount, uint64_t netTime, uint32_t initTime, ARRAY *ack, int n);
 void controlpacket_clear(ControlPacket_t *pkt);
 void controlpacket_set_nodeID(ControlPacket_t *pkt, uint16_t nodeID);
 uint16_t controlpacket_get_nodeID(ControlPacket_t *pkt);
@@ -54,10 +54,10 @@ void controlpacket_set_network_time(ControlPacket_t *pkt, uint64_t time);
 uint64_t controlpacket_get_network_time(ControlPacket_t *pkt);
 void controlpacket_set_init_time(ControlPacket_t *pkt, uint32_t time);
 uint32_t controlpacket_get_init_time(ControlPacket_t *pkt);
-void controlpacket_set_ACK(ControlPacket_t *pkt, uint8_t ack);
-uint8_t controlpacket_get_ACK(ControlPacket_t *pkt);
-void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, size_t *size);
-void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString);
+void controlpacket_set_ACK(ControlPacket_t *pkt, ARRAY* ack, int n);
+void controlpacket_get_ACK(ControlPacket_t *pkt, ARRAY* ack, int n);
+void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, size_t *size, int n);
+void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString, int n);
 
 uint8_t get_number_bytes(uint8_t n);
 #endif // CTRLPKT_H
