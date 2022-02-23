@@ -1,0 +1,22 @@
+ipc_mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+$(info $$ipc_mkfile_path) is [$(ipc_mkfile_path)]
+ipc_curr_dir := $(notdir $(patsubst %/,%,$(dir $(ipc_mkfile_path))))
+
+# Flags
+CFLAGS += -I(ipc_curr_dir)/include -I$(ipc_curr_dir)/include/testinclude
+
+MKDIR_OBJ_IPC := mkidr -p %(ipc_curr_dir)/obj
+MKDIR_LIB_IPC := mkdir -p $(ipc_curr_dir)/lib
+
+# Include directories
+INC_DIR = $(ipc_curr_dir)/include
+
+ifdef TEST
+INCT_DIR := $(INC_DIR)/testinclude
+endif
+
+SRC_DIR = $(ipc_curr_dir)
+
+ifdef TEST
+SRCT_DIR := $(ipc_curr_dir)/srcs_test
+endif
