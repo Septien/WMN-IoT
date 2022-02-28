@@ -24,10 +24,12 @@
 
 int main(void)
 {
-    //timeout_init();
 #ifdef __LINUX__
+    printf("\nTesting the IPC API module.\n");
     ipc_queues_tests();
-    utils_tests(); 
+    printf("\nTesting the UTILS module.\n");
+    utils_tests();
+    printf("\nTesting the MAC protocol (MCLMAC).\n");
     mac_tests();
 #endif
 #ifdef __RIOT__
