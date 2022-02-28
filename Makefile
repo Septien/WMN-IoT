@@ -19,7 +19,7 @@ include utils/Makefile.linux
 include MAC/Makefile.linux
 
 BIN = bin/linux-x86_64
-$(info $$LIB is [${BIN}])
+$(info $$BIN is [${BIN}])
 
 ifdef TEST
 SRC = main_test.c
@@ -44,9 +44,9 @@ $(info $$MAC_PATH is [${MAC_PATH}])
 # Libraries to include
 #ipc-queues
 ifdef TEST
-LIBS += libipcqueuesT
+LIBS += ipcqueuesT
 endif
-LIBS += libipcqueues
+LIBS += ipcqueues
 
 # utils
 ifdef TEST
@@ -92,7 +92,7 @@ endif
 clean:
 # For ipc_queues
 	rm $(LIB_IPC_QUEUES)/*.a
-	RM $(OBJQ_DIR)/*.o
+	rm $(OBJQ_DIR)/*.o
 # For utils
 	rm $(OBJU_DIR)/*.o
 	rm $(LIB_UTILS)/*.a
@@ -142,4 +142,4 @@ endif
 
 include $(RIOTBASE)/Makefile.include
 
-endif
+endif	# RIOT compilation
