@@ -12,6 +12,9 @@ CFLAGS += -fpic -fstack-protector-strong -Werror -Wall -Wextra -pedantic -g3 -Og
 ifdef DEBUG
 	CFLAGS += -g
 endif
+ifdef TEST
+CFLAGS += -DTESTING
+endif
 CPPFLAGS += -D__LINUX__
 # Compile each of the submodules
 include ipc-queues/Makefile.linux
@@ -135,6 +138,9 @@ include WMNLoRa.include
 CFLAGS += -Wno-unused-variable
 CFLAGS += -Wno-unused-parameter
 CFLAGS += -D__RIOT__
+ifdef TEST
+CFLAGS += -DTESTING
+endif
 
 ifdef TEST
 DISABLE_MODULE += test_utils_interactive_sync
