@@ -1,9 +1,9 @@
 ipc_mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-$(info $$ipc_mkfile_path) is [$(ipc_mkfile_path)]
+$(info $$ipc_mkfile_path is [$(ipc_mkfile_path)])
 ipc_curr_dir := $(notdir $(patsubst %/,%,$(dir $(ipc_mkfile_path))))
 
 # Flags
-CFLAGS += -I(ipc_curr_dir)/include -I$(ipc_curr_dir)/include/testinclude
+CFLAGS += -I$(ipc_curr_dir)/include -I$(ipc_curr_dir)/include/testsinclude
 
 MKDIR_OBJ_IPC := mkidr -p %(ipc_curr_dir)/obj
 MKDIR_LIB_IPC := mkdir -p $(ipc_curr_dir)/lib
@@ -15,8 +15,70 @@ ifdef TEST
 INCT_DIR := $(INC_DIR)/testinclude
 endif
 
+# Sources directories
 SRC_DIR = $(ipc_curr_dir)
 
 ifdef TEST
 SRCT_DIR := $(ipc_curr_dir)/srcs_test
+endif
+
+# Source files
+SRCA := ipc-queues.c
+SCR = $(addprefix $(ipc_curr_dir)/, $(SRCA))
+$(info $$SCR is [$(SRC)])
+
+ifdef TEST
+SRCTA := ipc-queues_Tests.c
+SRCT := $(addprefix $(SRCT_DIR)/, $(SRCTA))
+endif
+
+# Dependencies
+DEPSA := config_ipc.h ipc-queues.h
+DEPS := $(addprefix $(INC_DIR)/, $(DEPSA))
+$(info $$DEPS is [$(DEPS)])
+
+ifdef TEST
+DEPSTA := ipc-queues_Tests.h
+DEPST := $(addprefix $(INCT_DIR)/, $(DEPSTA))
+endif
+
+# Objects
+OBJQ_DIR = $(ipc_curr_dir)/obj
+$(info $$OBJQ_DIR is [$(OBJQ_DIR)])
+ifdef TEST
+OBJQT_DIR = $(ipc_curr_dir)/obj
+$(info $$OBJQT_DIR is [$(OBJQT_DIR)])
+endif
+
+OBJA := ipc-queues.o
+OBJ := $(addprefix $(OBJ_DIR)/, $(OBJA))
+$(info $$OBJ is [$(OBJ)])
+
+ifdef TEST
+OBJTA := ipc-queues_Tests.o
+OBJT := $(addprefix $(OBJT_DIR)/, $(OBJA))
+endif
+
+TARGETS = directories_ipc_queues $(LIB_IPC_QUEUES)/libipcqueues
+ifdef TEST
+TARGETS += $(LIB_IPC_QUEUES)/libipcqueuesT
+endif
+$(info $$TARGETS is [$(TARGETS)])
+
+all : $(TARGETS)
+
+directories_ipc_queues:
+	$(MKDIR_OBJ_IPC)
+	$(MKDIR_LIB_IPC)
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -p $@
+
+$(OBJ_DIR)/%.0 : $(INC_DIR)/%.h
+
+ifdef TEST
+$(OBJT_DIR)/%.o : $(SRCT_DIR)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -p $@
+
+$(OBJT_DIR)/%.0 : $(INCT_DIR)/%.h
 endif

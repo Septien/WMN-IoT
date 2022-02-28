@@ -16,6 +16,7 @@
 #include "timeouts.h"
 #include "mclmac_tests.h"
 #include "utils_tests.h"
+#include "ipc-queues_Tests.h"
 
 #ifdef __RIOT__
 #include "memory.h"
@@ -23,16 +24,20 @@
 
 int main(void)
 {
-    printf("Testing the MAC protocol (MCLMAC).\n");
     //timeout_init();
 #ifdef __LINUX__
+    ipc_queues_tests();
     utils_tests(); 
     mac_tests();
 #endif
 #ifdef __RIOT__
     puts("Welcome to RIOT!\n");
     do {
+        printf("\nTesting the IPC API module.\n");
+        ipc_queues_tests();
+        printf("\nTesting the UTILS module.\n");
         utils_tests();
+        printf("\nTesting the MAC protocol (MCLMAC).\n");
         mac_tests();
     }while (0) ;
 #endif

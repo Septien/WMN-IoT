@@ -4,7 +4,7 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)
 USEMODULE += utils
 EXTERNAL_MODULE_DIRS += $(CURDIR)
 
-USEMODULE ipc-queues
+USEMODULE += ipc-queues
 EXTERNAL_MODULE_DIRS += $(CURDIR)
 
 ifdef TEST
@@ -14,6 +14,6 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/MAC
 USEMODULE += srcs_tests_utils
 EXTERNAL_MODULE_DIRS += $(CURDIR)/utils
 
-USEMODULE += srcs_test
+USEMODULE += srcs_test_ipc
 EXTERNAL_MODULE_DIRS += $(CURDIR)/ipc-queues
 endif

@@ -14,6 +14,7 @@ ifdef DEBUG
 endif
 CPPFLAGS += -D__LINUX__
 # Compile each of the submodules
+include ipc-queues/Makefile.linux
 include utils/Makefile.linux
 include MAC/Makefile.linux
 
@@ -32,6 +33,8 @@ ifdef TEST
 MKDIR_WMNL += $(OBJ)
 endif
 
+# Path to libipcqueues.a
+IPC_QUEUES_PATH = $(ipc_curr_dir)/lib
 # Path to libutils.a
 UTILS_PATH = $(utils_current_dir)/lib
 # Path to libmclmac.a
@@ -39,12 +42,18 @@ MAC_PATH = $(mac_current_dir)/lib
 $(info $$MAC_PATH is [${MAC_PATH}])
 
 # Libraries to include
+#ipc-queues
+ifdef TEST
+LIBS += libipcqueuesT
+endif
+LIBS += libipcqueues
+
 # utils
 ifdef TEST
 LIBS += utilsT
 endif
-
 LIBS += utils
+
 # MAC (optionally mactests)
 ifdef TEST
 LIBS += mclmacT
@@ -53,6 +62,7 @@ LIBS += mclmac
 $(info $$LIBS is [${LIBS}])
 
 # Paths to static libraries
+LDFLAGS += $(IPC_QUEUES_PATH)
 LDFLAGS += $(UTILS_PATH)
 LDFLAGS += $(MAC_PATH)
 $(info $$LDFLAGS is [${LDFLAGS}])
@@ -66,7 +76,7 @@ $(info $$TARGETS is [${TARGETS}])
 all: $(TARGETS)
 
 directories_main:
-			$(MKDIR_WMNL)
+	$(MKDIR_WMNL)
 
 ifdef TEST
 $(BIN)/wmnlora : $(OBJ)/main_test.o
@@ -80,13 +90,16 @@ endif
 
 # Remove object files and static libraries
 clean:
-# Para utils
+# For ipc_queues
+	rm $(LIB_IPC_QUEUES)/*.a
+	RM $(OBJQ_DIR)/*.o
+# For utils
 	rm $(OBJU_DIR)/*.o
 	rm $(LIB_UTILS)/*.a
-# Para MAC
+# For MAC
 	rm $(LIB_MAC)/*.a
 	rm $(OBJ_DIR)/*.o
-# Para main
+# For main
 	rm $(OBJ)/*.o
 	rm $(BIN)/*
 
