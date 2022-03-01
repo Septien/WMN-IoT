@@ -39,15 +39,15 @@ typedef struct queue
 {
     uint32_t        queue_id;
 #ifdef __LINUX__
-    struct mdq_t    queue;
+    mqd_t           queue;
     struct mq_attr  attr;
 #endif
 #ifdef __RIOT__
     char            *stack;
-    char            *queue;
+    msg_t           *queue;
 #endif
     size_t          queue_size;
-    size_t          queue_messages_size;
+    size_t          message_size;
     uint32_t        msgs_allow;
     uint32_t        msgs_on_queue;
 }Queue_t;
@@ -55,16 +55,33 @@ typedef struct queue
 typedef struct ipc_queues
 {
     Queue_t         queues[MAX_QUEUES];
+    uint32_t        last_queue_id;
 #ifdef __RIOT__
-    char            *free_space;
+    char            *free_stack;
     msg_t           *free_queue;
 #endif
 }IPC_Queues_t;
 
-static uint32_t last_queue_id = 0;
-
+/**
+ * @brief Initialize the IPC Queues API. Set the array *queues* to zero, the variable
+ * *last_queue_id* to 1, and for RIOT set the pointers *free_stack* and *free_queue* to 
+ * start of its corresponding array. For each Queue_t element, it initialize its memebers
+ * to zero, and set the pointers to NULL;
+ */
 void init_queues(void);
-uint32_t create_queue(uint32_t max_queue_size, char *stack);
+
+/**
+ * @brief Create a queue object with a queue lenght of *max_queue_size*, with a maximum of 
+ * *msgs_allow* number of messages, and a message size of *message_size*. It returns a
+ * pointer to the start of the stack for further usage (only for RIOT), and the queue's id
+ * for further usage.
+ * 
+ * @param max_queue_size 
+ * @param stack 
+ * @return uint32_t 
+ */
+uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_allow, char *stack);
+
 uint32_t elements_on_queue(uint32_t queue_id);
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size);
 uint32_t recv_message(uint32_t queue_id, void **msg, size_t *size);
@@ -73,5 +90,16 @@ uint32_t send_uint_message(uint32_t queue_id, uint32_t data);
 uint32_t recv_uint_message(uint32_t queue_id, uint32_t *data);
 #endif
 void end_queues(void);
+
+#ifdef TESTING
+// Only for testing purposes
+IPC_Queues_t *get_queues_pointer(void);
+
+#ifdef __RIOT__
+char *_get_stack_pointer(void);
+msg_t *_get_queue_pointer(void);
+#endif  // __RIOT__
+
+#endif  // TESTING
 
 #endif      // IPC_QUEUES_H
