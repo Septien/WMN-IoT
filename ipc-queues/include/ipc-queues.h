@@ -41,6 +41,7 @@ typedef struct queue
 #ifdef __LINUX__
     mqd_t           queue;
     struct mq_attr  attr;
+    char            *q_name;
 #endif
 #ifdef __RIOT__
     char            *stack;
