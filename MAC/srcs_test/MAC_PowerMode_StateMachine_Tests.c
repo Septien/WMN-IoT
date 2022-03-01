@@ -645,6 +645,97 @@ void test_active_state_powermode_stmachine(void)
 
 }
 
+void test_transmit_powermode_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 10;
+    size_t  dataQsize = 256;
+
+    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+
+    /* Execute the MAC state machine, as we require a time slot selected. */
+    /*Execute START state */
+    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute INITIALIZATION state, the first time will fail. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
+    so we will modify it for testing. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the TIMESLOT_AND_CHANNEL_SELECTION state, assuring a free slot */
+    uint8_t slot = 0x7f;
+    int n = MAX_NUMBER_FREQS;
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            ARROW(mclmac)_occupied_frequencies_slots[i][j] = slot;
+        }
+    }
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the PowerMode State machine. */
+    // Execute the STARTP state, and update state to PASSIVE state.
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+    // Execute the PASSIVE state and update state machine.
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+
+    /* Transit to state ACTIVE, and simulate that a packet should be sent. */
+    ARROW(mclmac)_state = 1;
+    mclmac_set_current_slot(REFERENCE mclmac, 0);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+    (void) ret;
+
+    /**  We are now at the TRANSMIT state, where we are at our own slot, and a packet should
+     * sent. A CF packet was already sent to the corresponding channel, now we should execute the
+     * TRANSMIT state. On the TRANSMIT state, the split phase is executed, which consists of
+     * the following actions:
+     *      -Set the radio to TX mode.
+     *      -Create and send a control packet, including if any collisions were found, at which slot and frequency.
+     *          -If a previous packet was created, remove its content.
+     *          -Create a new packet with the updated data.
+     *          -Get the node id, network time, init time, and hop count from the MCLMAC data structure.
+     *          -Get the current frame and current slot from the Frame data structure.
+     *          -Get the collision slot and collsision frequency from the MAC_Internals data structure. 
+     *           If there is no collision detected, set to 0 both values.
+     *      -Send the data packet or packets.
+     *          -Read the most recent packet from the queue.
+     *          -Create a data packet from it.
+     *          -Copy to the radio and send.
+     *      -Set the radio to RX mode.
+     *      -Wait for another control packet which contains the ACK for the sent packets.
+     *      -Get the ACK fields and verify which packets were received.
+     *  For the ACKs, we will take a similar approach to that of the transport layer, report only a window
+     * of received packets. This layer won't retransmit any packet in case of packet loss, it will
+     * report the loss to upper layers, which will decide what to do about it.
+    */
+    /** Test case 1:
+        * We have only one packet to send on the queue.
+    */
+
+    timeout_done();
+    MCLMAC_destroy(&mclmac);
+}
+
 void executetests_mac_powermode_statemachine(void)
 {
     printf("Testing _mclmac_init_powermode_state_machine function.\n");
