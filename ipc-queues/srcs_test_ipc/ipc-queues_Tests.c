@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 #include "ipc-queues_Tests.h"
 #include "ipc-queues.h"
@@ -30,6 +31,9 @@ void test_init_queues(void)
 #ifdef __RIOT__ 
         assert(q->stack == NULL);
         assert(q->queue == NULL);
+#endif
+#ifdef __LINUX__
+        assert(q->q_name == NULL);
 #endif
     }
     assert(Queues->last_queue_id == 1);
@@ -76,21 +80,39 @@ void test_create_queue(void)
      *      -The stack and queue pointers of the corresponding queue, should equal the previous
      * value of free_stack and free_queue.
      */
+    /* When some of the input parameters exceed its maximuma allowed (defined on header file),
+    return 0 from the function. */
+    qid = create_queue(QUEUE_SIZE + 1, message_size, msgs_allow, &stack);
+    assert(qid == 0);
+    qid = create_queue(queue_size, MAX_MESSAGE_SIZE + 1, msgs_allow, &stack);
+    assert(qid == 0);
+    qid = create_queue(queue_size, message_size, MAX_ELEMENTS_ON_QUEUE + 1, &stack);
+    assert(qid == 0);
 #ifdef __RIOT__
     // Get the last position from stack and queue.
     char *last_stack = Queues->free_stack;
     msg_t *last_queue = Queues->free_queue;
+    printf("last_stack = %p\n", (void *)last_stack);
+    printf("last_queue = %p\n", (void *)last_queue);
+    printf("stack = %p\n", (void *)stack);
 #endif
-    qid = create_queue(queue_size, message_size, msgs_allow, stack);
+    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
     assert(qid == Queues->last_queue_id - 1);
     Queue_t *q = &Queues->queues[qid - 1];
     assert(q->queue_size == queue_size);
     assert(q->message_size == message_size);
     assert(q->msgs_allow == msgs_allow);
+    assert(q->msgs_on_queue == 0);
 #ifdef __LINUX__
     assert(stack == NULL);
+    char name[4] = { 0 };
+    sprintf(name, "/%d", qid);
+    assert(strcmp(name, q->q_name) == 0);
 #endif
 #ifdef __RIOT__
+    printf("last_stack = %p\n", (void *)last_stack);
+    printf("last_queue = %p\n", (void *)last_queue);
+    printf("stack = %p\n", (void *)stack);
     assert(stack == last_stack);
     assert(q->stack == last_stack);
     assert(q->queue == last_queue);

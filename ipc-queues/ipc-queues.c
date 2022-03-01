@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
+#include <errno.h>
 
 #include "ipc-queues.h"
 
@@ -33,17 +35,52 @@ void init_queues(void)
         Queues.free_stack = stack;
         Queues.free_queue = queue;
 #endif
+#ifdef __LINUX__
+        q->q_name = NULL;
+#endif
         Queues.last_queue_id = 1;
     }
 }
 
-uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_allow, char *stack)
+uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_allow, char **stack)
 {
-    (void) max_queue_size;
-    (void) message_size;
-    (void) msgs_allow;
-    (void) stack;
-    return 0;
+    assert(stack != NULL);
+
+    if (max_queue_size > QUEUE_SIZE)
+        return 0;
+    if (message_size > MAX_MESSAGE_SIZE)
+        return 0;
+    if (msgs_allow > MAX_ELEMENTS_ON_QUEUE)
+        return 0;
+    // Generate the new id
+    uint32_t q_id = Queues.last_queue_id;
+    Queues.last_queue_id++;
+    Queue_t *q = &Queues.queues[q_id - 1];
+    // Store the data
+    q->queue_id = q_id;
+    q->queue_size = max_queue_size;
+    q->message_size = message_size;
+    q->msgs_allow = msgs_allow;
+    q->msgs_on_queue = 0;
+#ifdef __RIOT__
+    // Update the pointers
+    *stack = Queues.free_stack;
+    q->stack = *stack;
+    q->queue = Queues.free_queue;
+    Queues.free_stack += THREAD_STACKSIZE_DEFAULT;
+    Queues.free_queue += QUEUE_SIZE;
+#endif
+#ifdef __LINUX__
+    q->attr.mq_maxmsg = q->msgs_allow;
+    q->attr.mq_msgsize = q->message_size;
+    // For the string's name, just use the queue id
+    q->q_name = (char *)malloc(4 * sizeof(char));
+    sprintf(q->q_name, "/%d", q->queue_id);
+    *stack = NULL;
+    (void) stack; // Don't use
+#endif
+
+    return q_id;
 }
 
 #ifdef TESTING

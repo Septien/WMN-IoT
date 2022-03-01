@@ -81,7 +81,7 @@ void init_queues(void);
  * @param stack 
  * @return uint32_t 
  */
-uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_allow, char *stack);
+uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_allow, char **stack);
 
 /**
  * @brief Given a queue_id, which was previously created with the create_queue function, this
@@ -91,6 +91,14 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
  * @return uint32_t 
  */
 uint32_t open_queue(uint32_t queue_id);
+
+/**
+ * @brief It returns the number of elements available on the queue.
+ * 
+ * @param queue_id 
+ * @return uint32_t 
+ */
+
 uint32_t elements_on_queue(uint32_t queue_id);
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size);
 uint32_t recv_message(uint32_t queue_id, void **msg, size_t *size);
