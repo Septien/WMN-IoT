@@ -78,6 +78,8 @@ void end_queues(void)
 uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_allow, char **stack)
 {
     assert(stack != NULL);
+    assert(Queues.free_stack != NULL);
+    assert(Queues.free_queue != NULL);
 
     if (max_queue_size > QUEUE_SIZE)
         return 0;
@@ -141,6 +143,14 @@ uint32_t open_queue(uint32_t queue_id)
 #ifdef __RIOT__
     msg_init_queue(q->queue, q->queue_size);
 #endif
+    return 0;
+}
+
+uint32_t send_message(uint32_t queue_id, void *msg, size_t size)
+{
+    (void) queue_id;
+    (void msg;
+    (void) size;
     return 0;
 }
 
