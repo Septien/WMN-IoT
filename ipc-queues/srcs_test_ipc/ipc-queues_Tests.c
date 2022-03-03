@@ -5,6 +5,10 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef __RIOT__
+#include "thread.h"
+#endif
+
 #include "ipc-queues_Tests.h"
 #include "ipc-queues.h"
 #include "config_ipc.h"
@@ -116,8 +120,56 @@ void test_create_queue(void)
     assert(stack == last_stack);
     assert(q->stack == last_stack);
     assert(q->queue == last_queue);
-    assert(Queues->free_stack == last_stack + THREAD_STACKSIZE_DEFAULT);
-    assert(Queues->free_queue == last_queue + QUEUE_SIZE);
+    char *new_stack = last_stack;
+    new_stack = new_stack + THREAD_STACKSIZE_DEFAULT;
+    msg_t *new_queue = last_queue;
+    new_queue = last_queue + QUEUE_SIZE;
+    assert(Queues->free_stack == new_stack);
+    assert(Queues->free_queue == new_queue);
+#endif
+}
+#ifdef __RIOT__
+static void *func(void *arg)
+{
+    uint32_t *qid = (uint32_t *)arg;
+    printf("%d\n", *qid);
+    open_queue(*qid);
+    //msg_t msg;
+
+    return NULL;
+}
+#endif
+
+void test_open_queue(void)
+{
+    init_queues();
+    IPC_Queues_t *Queues = get_queues_pointer();
+
+    uint32_t qid = 0;
+    uint32_t queue_size, msgs_allow, message_size;
+    char *stack = NULL;
+    queue_size = QUEUE_SIZE;
+    msgs_allow = rand() % queue_size;
+    message_size = MAX_MESSAGE_SIZE;
+    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+
+    /**
+     * Open or initialize the queue, depending on which OS you are. For linux, call the function
+     * mq_open, and for RIOT, call the function msg_init_queue. For this last one, it is necessary
+     * to be in a threading context for the function to work. The queue should already be created.
+     */
+    int ret = open_queue(MAX_QUEUES + 1);
+    assert(ret == 0);
+    Queue_t *q = &Queues->queues[qid - 1];
+#ifdef __LINUX__
+    open_queue(qid);
+    assert(q->queue != -1);
+#endif
+
+#ifdef __RIOT__
+    thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+    func, (void *)&qid, "Name");
+    (void) q;
 #endif
 }
 
@@ -131,6 +183,10 @@ void ipc_queues_tests(void)
 
     printf("Testing the create_queue function.\n");
     test_create_queue();
+    printf("Test passed.\n");
+
+    printf("Testing the open_queue function.\n");
+    test_open_queue();
     printf("Test passed.\n");
 
     return;

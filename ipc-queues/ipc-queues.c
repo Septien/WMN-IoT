@@ -67,8 +67,8 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     *stack = Queues.free_stack;
     q->stack = *stack;
     q->queue = Queues.free_queue;
-    Queues.free_stack += THREAD_STACKSIZE_DEFAULT;
-    Queues.free_queue += QUEUE_SIZE;
+    Queues.free_stack = Queues.free_stack + THREAD_STACKSIZE_DEFAULT;
+    Queues.free_queue = Queues.free_queue + QUEUE_SIZE;
 #endif
 #ifdef __LINUX__
     q->attr.mq_maxmsg = q->msgs_allow;
@@ -81,6 +81,28 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 #endif
 
     return q_id;
+}
+
+uint32_t open_queue(uint32_t queue_id)
+{
+    assert(queue_id != 0);
+    if (queue_id > MAX_QUEUES)
+        return 0;
+    Queue_t *q = &Queues.queues[queue_id - 1];
+#ifdef __LINUX__
+    q->queue = mq_open(q->q_name, O_RDWR | O_CREAT, S_IRWXG, &q->attr);
+    int error = errno;
+    if (q->queue == -1 && error == EEXIST)
+    {
+        // Queue already exists, just open it
+        q->queue = mq_open(q->q_name, O_RDWR);
+        error = 0;
+    }
+#endif
+#ifdef __RIOT__
+    msg_init_queue(q->queue, q->queue_size);
+#endif
+    return 0;
 }
 
 #ifdef TESTING

@@ -98,7 +98,6 @@ uint32_t open_queue(uint32_t queue_id);
  * @param queue_id 
  * @return uint32_t 
  */
-
 uint32_t elements_on_queue(uint32_t queue_id);
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size);
 uint32_t recv_message(uint32_t queue_id, void **msg, size_t *size);
