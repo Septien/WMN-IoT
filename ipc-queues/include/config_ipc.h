@@ -27,11 +27,13 @@
 #endif
 
 #ifndef QUEUE_SIZE
-#define QUEUE_SIZE                  10
+#define QUEUE_SIZE                  16
 #endif
 
+#ifdef __LINUX__
 #ifndef THREAD_STACKSIZE_DEFAULT
-#define THREAD_STACKSIZE_DEFAULT    2028
+#define THREAD_STACKSIZE_DEFAULT    2048
 #endif
+#endif // __LINUX__
 
 #endif      // IPC_QUEUES_CONFIG_HEADER
