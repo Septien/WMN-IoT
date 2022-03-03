@@ -53,7 +53,7 @@ void test_end_queues(void)
 {
     init_queues();
     IPC_Queues_t *Queues = get_queues_pointer();
-    
+
     /**
      * end_queue will finish the API by doing the following:
      *      -Sets the last_queue_id to 0.
@@ -96,7 +96,7 @@ void test_create_queue(void)
 {
     init_queues();
     IPC_Queues_t *Queues = get_queues_pointer();
-    
+
     uint32_t qid = 0;
     uint32_t queue_size, msgs_allow, message_size;
     char *stack = NULL;

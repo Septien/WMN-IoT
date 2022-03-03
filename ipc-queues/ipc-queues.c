@@ -32,8 +32,6 @@ void init_queues(void)
 #ifdef __RIOT__
         q->stack = NULL;
         q->queue = NULL;
-        Queues.free_stack = stack;
-        Queues.free_queue = queue;
 #endif
 #ifdef __LINUX__
         q->queue = (mqd_t) -1;
@@ -41,6 +39,10 @@ void init_queues(void)
 #endif
         Queues.last_queue_id = 1;
     }
+#ifdef __RIOT__
+    Queues.free_stack = stack;
+    Queues.free_queue = queue;
+#endif
 }
 
 void end_queues(void)
@@ -117,6 +119,7 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 uint32_t open_queue(uint32_t queue_id)
 {
     assert(queue_id != 0);
+
     if (queue_id > MAX_QUEUES)
         return 0;
     Queue_t *q = &Queues.queues[queue_id - 1];
