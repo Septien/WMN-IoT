@@ -38,12 +38,57 @@ void test_init_queues(void)
 #endif
 #ifdef __LINUX__
         assert(q->q_name == NULL);
+        assert(q->queue == (mqd_t) - 1);
 #endif
     }
     assert(Queues->last_queue_id == 1);
 #ifdef __RIOT__
     assert(Queues->free_stack != NULL);
     assert(Queues->free_queue != NULL);
+#endif
+    end_queues();
+}
+
+void test_end_queues(void)
+{
+    init_queues();
+    IPC_Queues_t *Queues = get_queues_pointer();
+    
+    /**
+     * end_queue will finish the API by doing the following:
+     *      -Sets the last_queue_id to 0.
+     *      -For each queue, it clears its variables.
+     * For Linux, it does the following:
+     *      -Close the queue.
+     *      -Free the name variable and set to NULL.
+     *      -Set the mqd to -1.
+     * For RIOT, it does the following:
+     *      -Clears the static memory stack and queue.
+     *      -For each queue, set the queue and stack pointer to NULL.
+     *      -Sets the free_stack and free_queue pointers to zero.
+     */
+    end_queues();
+    assert(Queues->last_queue_id == 0);
+    for (int i = 0; i < MAX_QUEUES; i++)
+    {
+        Queue_t *q = &Queues->queues[i];
+        assert(q->queue_id == 0);
+        assert(q->queue_size == 0);
+        assert(q->message_size == 0);
+        assert(q->msgs_allow == 0);
+        assert(q->msgs_on_queue == 0);
+#ifdef __LINUX__
+        assert(q->queue == (mqd_t) -1);
+        assert(q->q_name == NULL);
+#endif
+#ifdef __RIOT__
+        assert(q->stack == NULL);
+        assert(q->queue == NULL);
+#endif
+    }
+#ifdef __RIOT__
+    assert(Queues->free_stack == NULL);
+    assert(Queues->free_queue == NULL);
 #endif
 }
 
@@ -127,6 +172,7 @@ void test_create_queue(void)
     assert(Queues->free_stack == new_stack);
     assert(Queues->free_queue == new_queue);
 #endif
+    end_queues();
 }
 #ifdef __RIOT__
 static void *func(void *arg)
@@ -171,6 +217,7 @@ void test_open_queue(void)
     func, (void *)&qid, "Name");
     (void) q;
 #endif
+    end_queues();
 }
 
 void ipc_queues_tests(void)
@@ -179,6 +226,10 @@ void ipc_queues_tests(void)
 
     printf("Testing the init_queues function.\n");
     test_init_queues();
+    printf("Test passed.\n");
+
+    printf("Testing the end_queues function.\n");
+    test_end_queues();
     printf("Test passed.\n");
 
     printf("Testing the create_queue function.\n");

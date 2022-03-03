@@ -36,9 +36,40 @@ void init_queues(void)
         Queues.free_queue = queue;
 #endif
 #ifdef __LINUX__
+        q->queue = (mqd_t) -1;
         q->q_name = NULL;
 #endif
         Queues.last_queue_id = 1;
+    }
+}
+
+void end_queues(void)
+{
+    Queues.last_queue_id = 0;
+ #ifdef __RIOT__
+    Queues.free_stack = NULL;
+    Queues.free_queue = NULL;
+#endif
+    for (int i = 0; i < MAX_QUEUES; i++)
+    {
+        Queue_t *q = &Queues.queues[i];
+        q->queue_id = 0;
+        q->queue_size = 0;
+        q->message_size = 0;
+        q->msgs_allow = 0;
+        q->msgs_on_queue = 0;
+#ifdef __LINUX__
+        if (q->queue != -1)
+            mq_close(q->queue);
+        q->queue = (mqd_t) -1;
+        if (q->q_name != NULL)
+            free(q->q_name);
+        q->q_name = NULL;
+#endif
+#ifdef __RIOT__
+        q->stack = NULL;
+        q->queue = NULL;
+#endif
     }
 }
 
@@ -90,7 +121,7 @@ uint32_t open_queue(uint32_t queue_id)
         return 0;
     Queue_t *q = &Queues.queues[queue_id - 1];
 #ifdef __LINUX__
-    q->queue = mq_open(q->q_name, O_RDWR | O_CREAT, S_IRWXG, &q->attr);
+    q->queue = mq_open(q->q_name, O_RDWR | O_CREAT, S_IRWXU, &q->attr);
     int error = errno;
     if (q->queue == -1 && error == EEXIST)
     {

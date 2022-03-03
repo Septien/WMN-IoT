@@ -72,6 +72,13 @@ typedef struct ipc_queues
 void init_queues(void);
 
 /**
+ * @brief Finish the queues API by closing any remaining opened queue, and freeing any
+ * necessary memory. It clears as well any static memory in use as well as all the variables 
+ * used.
+ */
+void end_queues(void);
+
+/**
  * @brief Create a queue object with a queue lenght of *max_queue_size*, with a maximum of 
  * *msgs_allow* number of messages, and a message size of *message_size*. It returns a
  * pointer to the start of the stack for further usage (only for RIOT), and the queue's id
@@ -105,7 +112,6 @@ uint32_t recv_message(uint32_t queue_id, void **msg, size_t *size);
 uint32_t send_uint_message(uint32_t queue_id, uint32_t data);
 uint32_t recv_uint_message(uint32_t queue_id, uint32_t *data);
 #endif
-void end_queues(void);
 
 #ifdef TESTING
 // Only for testing purposes
