@@ -85,6 +85,11 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
         return 0;
     if (msgs_allow > MAX_ELEMENTS_ON_QUEUE)
         return 0;
+    if (Queues.last_queue_id == 0)
+        return 0;
+    if (Queues.last_queue_id == MAX_QUEUES)
+        return 0;
+
     // Generate the new id
     uint32_t q_id = Queues.last_queue_id;
     Queues.last_queue_id++;

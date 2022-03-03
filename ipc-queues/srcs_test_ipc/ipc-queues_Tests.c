@@ -137,6 +137,14 @@ void test_create_queue(void)
     assert(qid == 0);
     qid = create_queue(queue_size, message_size, MAX_ELEMENTS_ON_QUEUE + 1, &stack);
     assert(qid == 0);
+    Queues->last_queue_id = 0;
+    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    assert(qid == 0);
+    Queues->last_queue_id = 1;
+    Queues->last_queue_id = MAX_QUEUES;
+    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    assert(qid == 0);
+    Queues->last_queue_id = 1;
 #ifdef __RIOT__
     // Get the last position from stack and queue.
     char *last_stack = Queues->free_stack;
