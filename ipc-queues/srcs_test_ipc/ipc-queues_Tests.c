@@ -146,7 +146,6 @@ void test_create_queue(void)
     Queues->last_queue_id = 0;
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
     assert(qid == 0);
-    Queues->last_queue_id = 1;
     Queues->last_queue_id = MAX_QUEUES;
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
     assert(qid == 0);
