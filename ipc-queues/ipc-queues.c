@@ -213,6 +213,9 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
     return 1;
 }
 
+
+// ---------------------------------- Testing funcitons ----------------------------------------
+
 #ifdef TESTING
 IPC_Queues_t *get_queues_pointer(void)
 {
