@@ -15,15 +15,18 @@
 #define IPC_QUEUES_CONFIG_HEADER
 
 #ifndef MAX_QUEUES
-#define MAX_QUEUES                  100
+#define MAX_QUEUES                  128
 #endif
 
+/* On Linux, the upper limit is 10. See mq_overview(7) for more details. */
 #ifndef MAX_ELEMENTS_ON_QUEUE
-#define MAX_ELEMENTS_ON_QUEUE       100
+#define MAX_ELEMENTS_ON_QUEUE       10
 #endif
 
+/* The minimum message size in Linux is 128 bytes, 
+so set to 256 bytes, the maximum allowed by LoRa.*/
 #ifndef MAX_MESSAGE_SIZE
-#define MAX_MESSAGE_SIZE            100
+#define MAX_MESSAGE_SIZE            256
 #endif
 
 #ifndef QUEUE_SIZE
