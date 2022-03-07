@@ -83,7 +83,7 @@ directories_main:
 
 ifdef TEST
 $(BIN)/wmnlora : $(OBJ)/main_test.o
-	$(CC) $< -o $@ $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -lrt
+	$(CC) $< -o $@ $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -lrt -lpthread
 
 $(OBJ)/main_test.o : main.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
