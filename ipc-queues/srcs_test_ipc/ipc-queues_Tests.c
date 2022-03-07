@@ -5,8 +5,14 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef __LINUX__
+#include <unistd.h>
+#include <errno.h>
+#endif
+
 #ifdef __RIOT__
 #include "thread.h"
+#include "ztimer.h"
 #endif
 
 #include "ipc-queues_Tests.h"
@@ -101,7 +107,7 @@ void test_create_queue(void)
     uint32_t queue_size, msgs_allow, message_size;
     char *stack = NULL;
     queue_size = QUEUE_SIZE;
-    msgs_allow = rand() % queue_size;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
     message_size = MAX_MESSAGE_SIZE;
 
     /**
@@ -203,12 +209,12 @@ void test_open_queue(void)
     uint32_t queue_size, msgs_allow, message_size;
     char *stack = NULL;
     queue_size = QUEUE_SIZE;
-    msgs_allow = rand() % queue_size;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
     message_size = MAX_MESSAGE_SIZE;
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
 
     /**
-     * Open or initialize the queue, depending on which OS you are. For linux, call the function
+     * Open or initialize the queue, depending on which OS you are on. For linux, call the function
      * mq_open, and for RIOT, call the function msg_init_queue. For this last one, it is necessary
      * to be in a threading context for the function to work. The queue should already be created.
      */
@@ -225,6 +231,158 @@ void test_open_queue(void)
     func, (void *)&qid, "Name");
     (void) q;
 #endif
+    end_queues();
+}
+
+#ifdef __LINUX__
+void *recv(void *arg)
+{
+    uint32_t *qid = (uint32_t *)arg;
+    open_queue(*qid);
+    IPC_Queues_t *Queues = get_queues_pointer();
+    Queue_t *q = &Queues->queues[(*qid) - 1];
+    mqd_t qd = q->queue;
+    char _msg[MAX_MESSAGE_SIZE] = {0};
+    size_t len = MAX_MESSAGE_SIZE;
+    struct mq_attr attr;
+
+    usleep(100U);
+    mq_getattr(qd, &attr);
+    int count = 0;
+    while (attr.mq_curmsgs > 0)
+    {
+        int ret = mq_receive(qd, _msg, len, NULL);
+        assert(ret == MAX_MESSAGE_SIZE);
+        count ++;
+    }
+    printf("\n");
+    assert(count > 0);
+    return (NULL);
+}
+#endif
+#ifdef __RIOT__
+static void *recv(void *arg)
+{
+    uint32_t *qid = (uint32_t *)arg;
+    open_queue(*qid);
+    ztimer_sleep(ZTIMER_USEC, 100);
+    int count = 0;
+    while (msg_avail())
+    {
+        msg_t msg;
+        msg_receive(&msg);
+        assert(msg.type > 0);
+        assert(msg.content.ptr != NULL);
+        printf("%d ", msg.type);
+        count++;
+    }
+    printf("\n");
+    assert(count > 0);
+
+    return NULL;
+}
+#endif
+
+void test_send_message(void)
+{
+    init_queues();
+
+    IPC_Queues_t *Queues = get_queues_pointer();
+
+    uint32_t queue_size, msgs_allow, message_size;
+    char *stack = NULL;
+    queue_size = QUEUE_SIZE;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
+    message_size = MAX_MESSAGE_SIZE;
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+
+    size_t msg_size = MAX_MESSAGE_SIZE;
+    uint8_t msg[msg_size];
+    for (uint i = 0; i < msg_size; i++)
+        msg[i] = rand();
+    /**    
+     * We have now created and open a new queue. Now is time for sending a message. For the function
+     * to work properly, the following should be true:
+     *      -The queue must be open/initiated.
+     *      -The queue_id must be valid [1, MAX_QUEUES].
+     *      -Stack and queue pointers should not be NULL (RIOT.)
+     *      -q_name should not be NULL and queue should be different to -1 (Linux.)
+     *      -The message's size should not be greater than q->message_size.
+     *      -The msg should not be a pointer.
+     *      -In RIOT, the message should be a void pointer, while in Linux, it should be
+     *       a string of characters.
+     *      -It is assumed that there is space for sendign messages on the queue (the user shoudl
+     *       verify it.)
+     *      -In Linux, the messages have an associated priority, set the priority to 1 for all messages.
+     * Steps to be executed by the function:
+     *      -Check that the queue_id is valid.
+     *      -Get the pointer to the corresponding queue.
+     *      -Verify the message's size is within the limits.
+     *      -Send the message to the queue.
+     */
+    /** Test case 1:
+     *      The queue_id falls outside the allowed range. Return 0.
+    */
+    int ret = send_message(0, (void *)msg, msg_size, 0);
+    assert(ret == 0);
+    ret = send_message(MAX_QUEUES + 1, (void *)msg, msg_size, 0);
+    assert(ret == 0);
+    /** Test case 2:
+     *      Create the queue, then send the message to the queue. Send it N times (random), then 
+     *      receive the message on the other size. Verify that the received message is equal to 
+     *      sent one. On RIOT, use the type variable to store the size of the message.
+     */
+    Queue_t *q = &Queues->queues[qid - 1];
+    int n = 10; //rand() % MAX_ELEMENTS_ON_QUEUE;
+#ifdef __LINUX__
+    open_queue(qid);
+    for (int i = 0; i < n; i++)
+    {
+        ret = send_message(qid, (void *) msg, msg_size, 0);
+        assert(ret == 1);
+    }
+    // Receive the messages
+    usleep(100U);
+    char *msg2;
+    msg2 = (char *)malloc(msg_size * sizeof(char));
+    unsigned int priority = 0;
+    for (int i = 0; i < n; i++)
+    {
+        ssize_t ret = mq_receive(q->queue, msg2, msg_size, &priority);
+        int err = errno;
+        if (ret == -1)
+        {
+            if (err == EAGAIN)
+                printf("Queue empty.\n");
+            if (err == EBADF)
+                printf("Invalid file descriptor or not opened for read.\n");
+            if (err == EINTR)
+                printf("Call interrupted by signal.\n");
+            if (err == EINVAL)
+                printf("Call would have blocked, or invalid abs_timeout\n");
+            if (err == EMSGSIZE)
+                printf("Message size less than mq_msgsize.\n");
+            if (err == ETIMEDOUT)
+                printf("The call timed out before a message could be transferred.\n");
+        }
+        assert(ret == MAX_MESSAGE_SIZE);
+        for (uint j = 0; j < msg_size; j++)
+        {
+            uint8_t v = (uint8_t) msg2[j];
+            assert(v == msg[j]);
+        }
+    }
+#endif
+#ifdef __RIOT__
+    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+    recv, (void *)&qid, "Name");
+    for (int i = 0; i < n; i++)
+    {
+        ret = send_message(qid, msg, msg_size, pid);
+        assert(ret == 1);
+    }
+#endif
+
     end_queues();
 }
 
@@ -246,6 +404,10 @@ void ipc_queues_tests(void)
 
     printf("Testing the open_queue function.\n");
     test_open_queue();
+    printf("Test passed.\n");
+
+    printf("Testing the send_message function.\n");
+    test_send_message();
     printf("Test passed.\n");
 
     return;

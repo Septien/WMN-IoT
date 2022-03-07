@@ -62,7 +62,10 @@ void end_queues(void)
         q->msgs_on_queue = 0;
 #ifdef __LINUX__
         if (q->queue != -1)
+        {
+            mq_unlink(q->q_name);
             mq_close(q->queue);
+        }
         q->queue = (mqd_t) -1;
         if (q->q_name != NULL)
             free(q->q_name);
@@ -115,6 +118,7 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 #ifdef __LINUX__
     q->attr.mq_maxmsg = q->msgs_allow;
     q->attr.mq_msgsize = q->message_size;
+    q->attr.mq_curmsgs = 0;
     // For the string's name, just use the queue id
     q->q_name = (char *)malloc(4 * sizeof(char));
     sprintf(q->q_name, "/%d", q->queue_id);
@@ -133,27 +137,80 @@ uint32_t open_queue(uint32_t queue_id)
         return 0;
     Queue_t *q = &Queues.queues[queue_id - 1];
 #ifdef __LINUX__
-    q->queue = mq_open(q->q_name, O_RDWR | O_CREAT, S_IRWXU, &q->attr);
+    //printf("Queue attribute:\nMax msgs: %ld\nMsg size: %ld\n", q->attr.mq_maxmsg, q->attr.mq_msgsize);
+    q->queue = mq_open(q->q_name, O_RDWR | O_CREAT | O_CLOEXEC, S_IRWXU, &q->attr);
     int error = errno;
+    if (q->queue == -1)
+    {
+        if (error == EACCES)
+            printf("EACCES\n");
+        if (error == EEXIST)
+            printf("EEXISTS\n");
+        if (error == EINVAL)
+            printf("EINVAL\n");
+        if (error == EMFILE)
+            printf("EMFILE\n");
+        if (error == ENAMETOOLONG)
+            printf("ENAMETOOLONG\n");
+        if (error == ENOENT)
+            printf("ENOENT\n");
+        if (error == ENOMEM)
+            printf("ENOMEM\n");
+    }
     if (q->queue == -1 && error == EEXIST)
     {
         // Queue already exists, just open it
         q->queue = mq_open(q->q_name, O_RDWR);
         error = 0;
     }
+    struct mq_attr attr;
+    mq_getattr(q->queue, &attr);
 #endif
 #ifdef __RIOT__
     msg_init_queue(q->queue, q->queue_size);
 #endif
-    return 0;
+    return 1;
 }
 
-uint32_t send_message(uint32_t queue_id, void *msg, size_t size)
+uint32_t send_message(uint32_t queue_id, void *msg, size_t size
+#ifdef __LINUX__
+, int pid
+#endif
+#ifdef __RIOT__
+, kernel_pid_t pid
+#endif
+)
 {
-    (void) queue_id;
-    (void) msg;
-    (void) size;
-    return 0;
+    assert(msg != NULL);
+
+    if (queue_id < 1 || queue_id > MAX_QUEUES)
+        return 0;
+    Queue_t *q = &Queues.queues[queue_id - 1];
+
+#ifdef __LINUX__
+    assert(q->queue_id != 0);
+    assert(q->queue != -1);
+    (void) pid;
+#endif
+#ifdef __RIOT__
+    assert(q->stack != NULL);
+    assert(q->queue != NULL);
+#endif
+    assert(size <= q->message_size);
+
+#ifdef __LINUX__
+    // Set the priority to 1 for all messages
+    unsigned int priority = 1;
+    char *_msg = (char *)msg;
+    mq_send(q->queue, _msg, size, priority);
+#endif
+#ifdef __RIOT__
+    msg_t _msg;
+    _msg.content.ptr = msg;
+    _msg.type = (uint16_t) size;
+    msg_send(&_msg, pid);
+#endif
+    return 1;
 }
 
 #ifdef TESTING

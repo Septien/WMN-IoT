@@ -100,13 +100,32 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 uint32_t open_queue(uint32_t queue_id);
 
 /**
+ * @brief Send a message *msg* of size *size* to the queue identified by queue_id. It returns
+ * 1 in case of success, and 0 in case of failure. In RIOT, pid is the process id of the 
+ * destination thread; in Linux it means nothing.
+ * 
+ * @param queue_id 
+ * @param msg 
+ * @param size 
+ * @param pid
+ * @return uint32_t 
+ */
+uint32_t send_message(uint32_t queue_id, void *msg, size_t size
+#ifdef __LINUX__
+, int pid
+#endif
+#ifdef __RIOT__
+, kernel_pid_t pid
+#endif
+);
+
+/**
  * @brief It returns the number of elements available on the queue.
  * 
  * @param queue_id 
  * @return uint32_t 
  */
 uint32_t elements_on_queue(uint32_t queue_id);
-uint32_t send_message(uint32_t queue_id, void *msg, size_t size);
 uint32_t recv_message(uint32_t queue_id, void **msg, size_t *size);
 #ifdef __RIOT__
 uint32_t send_uint_message(uint32_t queue_id, uint32_t data);
