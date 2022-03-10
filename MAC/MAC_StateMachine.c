@@ -305,6 +305,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         mclmac_init_powermode_state_machine(mclmac);
         int ret = mclmac_execute_powermode_state(mclmac);
         (void) ret;
+        break;
 
     default:
         break;
