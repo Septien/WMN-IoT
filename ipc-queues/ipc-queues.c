@@ -160,23 +160,6 @@ uint32_t open_queue(uint32_t queue_id)
     //printf("Queue attribute:\nMax msgs: %ld\nMsg size: %ld\n", q->attr.mq_maxmsg, q->attr.mq_msgsize);
     q->queue = mq_open(q->q_name, O_RDWR | O_CREAT | O_CLOEXEC, S_IRWXU, &q->attr);
     int error = errno;
-    if (q->queue == -1)
-    {
-        if (error == EACCES)
-            printf("EACCES\n");
-        if (error == EEXIST)
-            printf("EEXISTS\n");
-        if (error == EINVAL)
-            printf("EINVAL\n");
-        if (error == EMFILE)
-            printf("EMFILE\n");
-        if (error == ENAMETOOLONG)
-            printf("ENAMETOOLONG\n");
-        if (error == ENOENT)
-            printf("ENOENT\n");
-        if (error == ENOMEM)
-            printf("ENOMEM\n");
-    }
     if (q->queue == -1 && error == EEXIST)
     {
         // Queue already exists, just open it
