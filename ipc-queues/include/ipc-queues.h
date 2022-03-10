@@ -30,9 +30,6 @@
 #ifdef __RIOT__
 #include "msg.h"
 #include "thread.h"
-
-static char stack[MAX_QUEUES * THREAD_STACKSIZE_DEFAULT];
-static msg_t queue[MAX_QUEUES * QUEUE_SIZE];
 #endif
 
 typedef struct queue
@@ -120,13 +117,31 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 );
 
 /**
+ * @brief Receive the messages present on the queue identified by *queue_id*. Store the 
+ * message on *msg* and its size on *size*.
+ * 
+ * @param queue_id 
+ * @param msg 
+ * @param size 
+ * @return uint32_t 
+ */
+uint32_t recv_message(uint32_t queue_id, 
+#ifdef __LINUX__
+uint8_t **msg
+#endif
+#ifdef __RIOT__
+msg_t *msg
+#endif
+, size_t size
+);
+
+/**
  * @brief It returns the number of elements available on the queue.
  * 
  * @param queue_id 
  * @return uint32_t 
  */
 uint32_t elements_on_queue(uint32_t queue_id);
-uint32_t recv_message(uint32_t queue_id, void **msg, size_t *size);
 #ifdef __RIOT__
 uint32_t send_uint_message(uint32_t queue_id, uint32_t data);
 uint32_t recv_uint_message(uint32_t queue_id, uint32_t *data);

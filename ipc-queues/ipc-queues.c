@@ -9,18 +9,21 @@
 #include "ipc-queues.h"
 
 #ifdef __RIOT__
-extern char stack[MAX_QUEUES * THREAD_STACKSIZE_DEFAULT];
-extern msg_t queue[MAX_QUEUES * QUEUE_SIZE];
+static char stack[MAX_QUEUES * THREAD_STACKSIZE_DEFAULT];
+static msg_t queue[MAX_QUEUES * QUEUE_SIZE];
 #endif
 
 static IPC_Queues_t Queues;
 
 void init_queues(void)
 {
-#ifdef __RIOT__
-    memset(stack, 0, sizeof(char) * MAX_QUEUES * THREAD_STACKSIZE_DEFAULT);
+/*#ifdef __RIOT__
+    int i = 0;
+    printf("MAX_QUEUES = %d, THREAD_STACKSIZE_DEFAULT = %d, TOTAL = %d\n", MAX_QUEUES, THREAD_STACKSIZE_DEFAULT, MAX_QUEUES * THREAD_STACKSIZE_DEFAULT);
+    for (i = 0; i < MAX_QUEUES * THREAD_STACKSIZE_DEFAULT; i++)
+        stack[i] = 0;
     memset(queue, 0, sizeof(msg_t) * MAX_QUEUES * QUEUE_SIZE);
-#endif
+#endif*/
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues.queues[i];
@@ -137,6 +140,13 @@ uint32_t open_queue(uint32_t queue_id)
         return 0;
     Queue_t *q = &Queues.queues[queue_id - 1];
 #ifdef __LINUX__
+    assert(q->q_name != NULL);
+#endif
+#ifdef __RIOT__
+    assert(q->stack != NULL);
+    assert(q->queue != NULL);
+#endif
+#ifdef __LINUX__
     //printf("Queue attribute:\nMax msgs: %ld\nMsg size: %ld\n", q->attr.mq_maxmsg, q->attr.mq_msgsize);
     q->queue = mq_open(q->q_name, O_RDWR | O_CREAT | O_CLOEXEC, S_IRWXU, &q->attr);
     int error = errno;
@@ -213,8 +223,68 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
     return 1;
 }
 
+uint32_t recv_message(uint32_t queue_id, 
+#ifdef __LINUX__
+uint8_t **msg
+#endif
+#ifdef __RIOT__
+msg_t *msg
+#endif
+, size_t size
+)
+{
+    assert(msg != NULL);
+#ifdef __LINUX__
+    assert(*msg != NULL);
+#endif
 
-// ---------------------------------- Testing funcitons ----------------------------------------
+    if (queue_id < 1 || queue_id > MAX_QUEUES)
+        return 0;
+    if (size == 0)
+        return 0;
+
+    Queue_t *q = &Queues.queues[queue_id - 1];
+#ifdef __LINUX__
+    assert(q->queue != -1);
+#endif
+#ifdef __RIOT__
+    assert(q->stack != NULL);
+    assert(q->queue != NULL);
+#endif
+#ifdef __LINUX__
+    unsigned int priority = 0;
+    ssize_t length = mq_receive(q->queue, (char *)*msg, size, &priority);
+    int err = errno;
+    if (length == -1)
+    {
+        switch (err)
+        {
+        case EINTR:
+            /* Interrupted by signal, try again */
+            length = mq_receive(q->queue, (char *)*msg, size, &priority);
+            break;
+        case EBADF:
+            /* Invalid queue descriptor */
+            return -1;
+        default:
+            break;
+        }
+    }
+#endif
+#ifdef __RIOT__
+    msg_receive(msg);
+    // Invalid message, discard
+    if (msg->type != q->message_size)
+    {
+        msg = NULL;
+        return 0;
+    }
+#endif
+
+    return 1;
+}
+
+// ---------------------------------- Testing functions ----------------------------------------
 
 #ifdef TESTING
 IPC_Queues_t *get_queues_pointer(void)

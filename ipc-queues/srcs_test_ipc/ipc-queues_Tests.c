@@ -264,8 +264,8 @@ static void *recv(void *arg)
 {
     uint32_t *qid = (uint32_t *)arg;
     open_queue(*qid);
-    ztimer_sleep(ZTIMER_USEC, 100);
     int count = 0;
+    thread_sleep();
     while (msg_avail())
     {
         msg_t msg;
@@ -281,7 +281,6 @@ static void *recv(void *arg)
     return NULL;
 }
 #endif
-
 void test_send_message(void)
 {
     init_queues();
@@ -373,12 +372,124 @@ void test_send_message(void)
     }
 #endif
 #ifdef __RIOT__
-    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
-    recv, (void *)&qid, "Name");
+    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
+    THREAD_CREATE_SLEEPING, recv, (void *)&qid, "Name");
+    thread_wakeup(pid);
     for (int i = 0; i < n; i++)
     {
         ret = send_message(qid, msg, msg_size, pid);
         assert(ret == 1);
+    }
+    thread_wakeup(pid);
+    ztimer_sleep(ZTIMER_USEC, 100);
+#endif
+
+    end_queues();
+}
+
+#ifdef __RIOT__
+static void *recv_recv(void *arg)
+{
+    uint32_t *qid = (uint32_t *)arg;
+    open_queue(*qid);
+    printf("%d\n", *qid);
+    int count = 0;
+    thread_sleep();
+    while (msg_avail())
+    {
+        size_t msg_size = MAX_MESSAGE_SIZE;
+        msg_t msg;
+        int ret = recv_message(*qid, &msg, msg_size);
+        char *msg_content = msg.content.ptr;
+        assert(ret == 1);
+        for (uint i = 0; i < msg_size; i++)
+            assert(msg_content[i] == 'a');
+        count++;
+    }
+    assert(count > 0);
+
+    return NULL;
+}
+#endif
+void test_recv_message(void)
+{
+    init_queues();
+
+    //IPC_Queues_t *Queues = get_queues_pointer();
+
+    uint32_t queue_size, msgs_allow, message_size;
+    char *stack = NULL;
+    queue_size = QUEUE_SIZE;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
+    message_size = MAX_MESSAGE_SIZE;
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+
+    size_t msg_size = MAX_MESSAGE_SIZE;
+    uint8_t msg[msg_size];
+    for (uint i = 0; i < msg_size; i++)
+        msg[i] = 'a';
+
+    int n = 10;
+#ifdef __LINUX__
+    open_queue(qid);
+    for (int i = 0; i < n; i++)
+        send_message(qid, (void *)msg, msg_size, 0);
+#endif
+#ifdef __RIOT__
+    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
+    THREAD_CREATE_SLEEPING, recv_recv, (void *)&qid, "Name");
+    thread_wakeup(pid);
+    for (int i = 0; i < n; i++)
+        send_message(qid, msg, msg_size, pid);
+    thread_wakeup(pid);
+    ztimer_sleep(ZTIMER_USEC, 100);
+#endif
+
+#ifdef __LINUX__
+    uint8_t msg2[msg_size];
+    uint8_t *_msg2 = msg2;
+#endif
+#ifdef __RIOT__
+    msg_t _msg2;
+#endif
+    size_t size = message_size;
+    /**
+     * We have a way to send messages through the queues. We now need a way to receive them 
+     * without using directly the different calls provided by the OSs. We now will test a function 
+     * that will do so.
+     * This function should hide the details of the different systems calls, and provide
+     * an easy way to receive the messages.
+     * The function will receive as parameters the following:
+     *      -The queue_id, the queue's identifier.
+     *      -A pointer of size msg_size (MAX_MESSAGE_SIZE on Linux), to store the incomming message.
+     *      -A pointer to store the size of the message.
+     * The following should comply:
+     *      -The received message should be the same as the sent one.
+     *      -The received size should be equal to the sent one.
+     *      -The queue_id should point to a valid queue.
+     */
+    /* Test case 1:
+        -The queue id is invalid, that is, is outside the limits [1, MAX_QUEUES].
+        The function should return 0.
+        -The size is zero.
+        The function should return 0.
+    */
+    int ret = recv_message(0, &_msg2, size);
+    assert(ret == 0);
+    ret = recv_message(MAX_QUEUES + 1, &_msg2, size);
+    assert(ret == 0);
+    ret = recv_message(MAX_QUEUES + 1, &_msg2, 0);
+    assert(ret == 0);
+#ifdef __LINUX__
+    for (int i = 0; i < n; i++)
+    {
+        ret = recv_message(qid, &_msg2, size);
+        assert(ret == 1);
+        for (uint j = 0; j < msg_size; j++)
+        {
+            uint8_t v = msg2[i];
+            assert(v == msg[i]);
+        }
     }
 #endif
 
@@ -407,6 +518,10 @@ void ipc_queues_tests(void)
 
     printf("Testing the send_message function.\n");
     test_send_message();
+    printf("Test passed.\n");
+
+    printf("Testing the recv_message function.\n");
+    test_recv_message();
     printf("Test passed.\n");
 
     return;
