@@ -15,7 +15,7 @@
 #define IPC_QUEUES_CONFIG_HEADER
 
 #ifndef MAX_QUEUES
-#define MAX_QUEUES                  128
+#define MAX_QUEUES                  10
 #endif
 
 /* On Linux, the upper limit is 10. See mq_overview(7) for more details. */
