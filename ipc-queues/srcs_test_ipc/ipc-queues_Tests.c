@@ -415,8 +415,6 @@ void test_recv_message(void)
 {
     init_queues();
 
-    //IPC_Queues_t *Queues = get_queues_pointer();
-
     uint32_t queue_size, msgs_allow, message_size;
     char *stack = NULL;
     queue_size = QUEUE_SIZE;
@@ -496,6 +494,87 @@ void test_recv_message(void)
     end_queues();
 }
 
+void test_close_queue(void)
+{
+    init_queues();
+
+    uint32_t queue_size, msgs_allow, message_size;
+    char *stack = NULL;
+    queue_size = QUEUE_SIZE;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
+    message_size = MAX_MESSAGE_SIZE;
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+
+    size_t msg_size = MAX_MESSAGE_SIZE;
+    uint8_t msg[msg_size];
+    for (uint i = 0; i < msg_size; i++)
+        msg[i] = 'a';
+
+    int n = 10;
+#ifdef __LINUX__
+    open_queue(qid);
+    for (int i = 0; i < n; i++)
+        send_message(qid, (void *)msg, msg_size, 0);
+#endif
+#ifdef __RIOT__
+    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
+    THREAD_CREATE_SLEEPING, recv_recv, (void *)&qid, "Name");
+    thread_wakeup(pid);
+    for (int i = 0; i < n; i++)
+        send_message(qid, msg, msg_size, pid);
+    thread_wakeup(pid);
+    ztimer_sleep(ZTIMER_USEC, 100);
+#endif
+
+#ifdef __LINUX__
+    uint8_t msg2[msg_size];
+    uint8_t *_msg2 = msg2;
+#endif
+#ifdef __RIOT__
+    msg_t _msg2;
+#endif
+    size_t size = message_size;
+#ifdef __LINUX__
+    for (int i = 0; i < n; i++)
+    {
+        recv_message(qid, &_msg2, size);
+    }
+#endif
+    IPC_Queues_t *Queues = get_queues_pointer();
+
+    /**
+     * We have a way to open queues for using among the threads. Now we want a method for
+     * closing them and releasing its resources. This method should check that the queue
+     * indeed exists, and that the queue_id is valid (within the range). It should clean 
+     * as well the corresponding queue and stack. Any thread associated to the queue, should
+     * be already stopped.
+     */
+    /* Test case 1:
+    *   We opened and used a queue for IPC, now we want to close it and assert that all
+    * all its associated variables are clear. For Linux, the name should be freed, and for
+    * for RIOT, the pointers should be set to NULL.
+    */
+    Queue_t *q = &Queues->queues[qid - 1];
+    close_queue(qid);
+    assert(q->queue_id == 0);
+    assert(q->queue_size == 0);
+    assert(q->message_size == 0);
+    assert(q->msgs_allow == 0);
+    assert(q->msgs_on_queue == 0);
+#ifdef __LINUX__
+    assert(q->queue == -1);
+    assert(q->q_name == NULL);
+    assert(q->attr.mq_maxmsg == 0);
+    assert(q->attr.mq_msgsize == 0);
+#endif
+#ifdef __RIOT__
+    assert(q->stack == NULL);
+    assert(q->queue == NULL);
+#endif
+
+    end_queues();
+}
+
 void ipc_queues_tests(void)
 {
     printf("Testing the IPC Queues API.\n");
@@ -522,6 +601,10 @@ void ipc_queues_tests(void)
 
     printf("Testing the recv_message function.\n");
     test_recv_message();
+    printf("Test passed.\n");
+
+    printf("Testing the close_queue function.\n");
+    test_close_queue();
     printf("Test passed.\n");
 
     return;

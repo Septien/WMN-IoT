@@ -97,6 +97,14 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 uint32_t open_queue(uint32_t queue_id);
 
 /**
+ * @brief Close the queue associated with the *queue_id*, cleaning all its related content 
+ * and variables.
+ * 
+ * @param queue_id 
+ */
+void close_queue(uint32_t queue_id);
+
+/**
  * @brief Send a message *msg* of size *size* to the queue identified by queue_id. It returns
  * 1 in case of success, and 0 in case of failure. In RIOT, pid is the process id of the 
  * destination thread; in Linux it means nothing.

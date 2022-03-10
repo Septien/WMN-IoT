@@ -182,6 +182,38 @@ uint32_t open_queue(uint32_t queue_id)
     return 1;
 }
 
+void close_queue(uint32_t queue_id)
+{
+    assert(queue_id > 0);
+    assert(queue_id <= MAX_QUEUES);
+
+    Queue_t *q = &Queues.queues[queue_id - 1];
+
+    q->queue_id = 0;
+    q->queue_size = 0;
+    q->message_size = 0;
+    q->msgs_allow = 0;
+    q->msgs_on_queue = 0;
+#ifdef __LINUX__
+    if (q->q_name != NULL)
+    {
+        mq_unlink(q->q_name);
+        free(q->q_name);
+        q->q_name = NULL;
+    }
+    if (q->queue != (mqd_t) -1)
+    {
+        mq_close(q->queue);
+        q->queue = (mqd_t) -1;
+    }
+    memset(&q->attr, 0, sizeof(q->attr));
+#endif
+#ifdef __RIOT__
+    q->stack = NULL;
+    q->queue = NULL;
+#endif
+}
+
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 #ifdef __LINUX__
 , int pid
