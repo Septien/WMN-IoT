@@ -142,10 +142,6 @@ msg_t *msg
  * @return uint32_t 
  */
 uint32_t elements_on_queue(uint32_t queue_id);
-#ifdef __RIOT__
-uint32_t send_uint_message(uint32_t queue_id, uint32_t data);
-uint32_t recv_uint_message(uint32_t queue_id, uint32_t *data);
-#endif
 
 #ifdef TESTING
 // Only for testing purposes
