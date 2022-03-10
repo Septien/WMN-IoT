@@ -47,7 +47,8 @@ void test_init_queues(void)
         assert(q->queue == (mqd_t) - 1);
 #endif
     }
-    assert(Queues->last_queue_id == 1);
+    for (int i = 0; i < MAX_QUEUES; i++)
+        assert(Queues->queues_ids[i] == 0);
 #ifdef __RIOT__
     assert(Queues->free_stack != NULL);
     assert(Queues->free_queue != NULL);
@@ -74,7 +75,6 @@ void test_end_queues(void)
      *      -Sets the free_stack and free_queue pointers to zero.
      */
     end_queues();
-    assert(Queues->last_queue_id == 0);
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues->queues[i];
@@ -91,6 +91,7 @@ void test_end_queues(void)
         assert(q->stack == NULL);
         assert(q->queue == NULL);
 #endif
+        assert(Queues->queues_ids[i] == 0);
     }
 #ifdef __RIOT__
     assert(Queues->free_stack == NULL);
@@ -143,13 +144,6 @@ void test_create_queue(void)
     assert(qid == 0);
     qid = create_queue(queue_size, message_size, MAX_ELEMENTS_ON_QUEUE + 1, &stack);
     assert(qid == 0);
-    Queues->last_queue_id = 0;
-    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
-    assert(qid == 0);
-    Queues->last_queue_id = MAX_QUEUES;
-    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
-    assert(qid == 0);
-    Queues->last_queue_id = 1;
 #ifdef __RIOT__
     // Get the last position from stack and queue.
     char *last_stack = Queues->free_stack;
@@ -158,8 +152,18 @@ void test_create_queue(void)
     printf("last_queue = %p\n", (void *)last_queue);
     printf("stack = %p\n", (void *)stack);
 #endif
+    uint32_t _qid = 0;
+    for (int i = 0; i < MAX_QUEUES; i++)
+    {
+        if (Queues->queues_ids[i] == 0)
+        {
+            _qid = i + 1;
+            break;
+        }
+    }
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
-    assert(qid == Queues->last_queue_id - 1);
+    assert(qid == _qid);
+    assert(Queues->queues_ids[qid - 1] == 1);
     Queue_t *q = &Queues->queues[qid - 1];
     assert(q->queue_size == queue_size);
     assert(q->message_size == message_size);
@@ -178,13 +182,37 @@ void test_create_queue(void)
     assert(stack == last_stack);
     assert(q->stack == last_stack);
     assert(q->queue == last_queue);
-    char *new_stack = last_stack;
-    new_stack = new_stack + THREAD_STACKSIZE_DEFAULT;
-    msg_t *new_queue = last_queue;
-    new_queue = last_queue + QUEUE_SIZE;
-    assert(Queues->free_stack == new_stack);
-    assert(Queues->free_queue == new_queue);
 #endif
+
+    /**
+     * Test case 2:
+     *      -We will now create MAX_QUEUES queues consequently. All should be valid, and the pointers
+     * should be automatically updated.
+     */
+    for (int i = 1; i < MAX_QUEUES; i++)
+    {
+        qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+        _qid++;
+        assert(qid == _qid);
+        assert(Queues->queues_ids[i] == 1);
+#ifdef __RIOT__
+        assert(stack != NULL);
+        assert(stack == last_stack + (i * THREAD_STACKSIZE_DEFAULT));
+        Queue_t *q = &Queues->queues[qid - 1];
+        assert(q->stack == last_stack + (i * THREAD_STACKSIZE_DEFAULT));
+        assert(q->queue == last_queue + (i * QUEUE_SIZE));
+#endif
+    }
+
+    /**
+     * Test case 3:
+     *      -Attempt to create a last queue object. The function should fail and
+     * return 0, stack should be NULL.
+     */
+    qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    assert(qid == 0);
+    assert(stack == NULL);
+
     end_queues();
 }
 #ifdef __RIOT__

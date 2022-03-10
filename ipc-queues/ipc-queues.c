@@ -17,13 +17,6 @@ static IPC_Queues_t Queues;
 
 void init_queues(void)
 {
-/*#ifdef __RIOT__
-    int i = 0;
-    printf("MAX_QUEUES = %d, THREAD_STACKSIZE_DEFAULT = %d, TOTAL = %d\n", MAX_QUEUES, THREAD_STACKSIZE_DEFAULT, MAX_QUEUES * THREAD_STACKSIZE_DEFAULT);
-    for (i = 0; i < MAX_QUEUES * THREAD_STACKSIZE_DEFAULT; i++)
-        stack[i] = 0;
-    memset(queue, 0, sizeof(msg_t) * MAX_QUEUES * QUEUE_SIZE);
-#endif*/
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues.queues[i];
@@ -40,7 +33,8 @@ void init_queues(void)
         q->queue = (mqd_t) -1;
         q->q_name = NULL;
 #endif
-        Queues.last_queue_id = 1;
+        for (int i = 0; i < MAX_QUEUES; i++)
+            Queues.queues_ids[i] = 0;
     }
 #ifdef __RIOT__
     Queues.free_stack = stack;
@@ -50,8 +44,7 @@ void init_queues(void)
 
 void end_queues(void)
 {
-    Queues.last_queue_id = 0;
- #ifdef __RIOT__
+#ifdef __RIOT__
     Queues.free_stack = NULL;
     Queues.free_queue = NULL;
 #endif
@@ -78,6 +71,7 @@ void end_queues(void)
         q->stack = NULL;
         q->queue = NULL;
 #endif
+        Queues.queues_ids[i] = 0;
     }
 }
 
@@ -95,14 +89,32 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
         return 0;
     if (msgs_allow > MAX_ELEMENTS_ON_QUEUE)
         return 0;
-    if (Queues.last_queue_id == 0)
-        return 0;
-    if (Queues.last_queue_id == MAX_QUEUES)
-        return 0;
 
-    // Generate the new id
-    uint32_t q_id = Queues.last_queue_id;
-    Queues.last_queue_id++;
+    // Find a new available id and get the pointers to the corresponding array entry
+#ifdef __RIOT__
+    char *_stack = NULL;
+    msg_t *_queue = NULL;
+#endif
+    uint32_t q_id = 0;
+    for (int i = 0; i < MAX_QUEUES; i++)
+    {
+        if (Queues.queues_ids[i] == 0)
+        {
+            q_id = i + 1;
+            Queues.queues_ids[i] = 1;
+#ifdef __RIOT__
+            _stack = Queues.free_stack + (i * THREAD_STACKSIZE_DEFAULT);
+            _queue = Queues.free_queue + (i * QUEUE_SIZE);
+#endif
+            break;
+        }
+    }
+    // No available queues found
+    if (q_id == 0)
+    {
+        *stack = NULL;
+        return 0;
+    }
     Queue_t *q = &Queues.queues[q_id - 1];
     // Store the data
     q->queue_id = q_id;
@@ -112,11 +124,9 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     q->msgs_on_queue = 0;
 #ifdef __RIOT__
     // Update the pointers
-    *stack = Queues.free_stack;
+    *stack = _stack;
     q->stack = *stack;
-    q->queue = Queues.free_queue;
-    Queues.free_stack = Queues.free_stack + THREAD_STACKSIZE_DEFAULT;
-    Queues.free_queue = Queues.free_queue + QUEUE_SIZE;
+    q->queue = _queue;
 #endif
 #ifdef __LINUX__
     q->attr.mq_maxmsg = q->msgs_allow;

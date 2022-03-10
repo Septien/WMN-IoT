@@ -53,7 +53,7 @@ typedef struct queue
 typedef struct ipc_queues
 {
     Queue_t         queues[MAX_QUEUES];
-    uint32_t        last_queue_id;
+    uint32_t        queues_ids[MAX_QUEUES];
 #ifdef __RIOT__
     char            *free_stack;
     msg_t           *free_queue;
