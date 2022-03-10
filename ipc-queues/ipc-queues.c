@@ -205,6 +205,7 @@ void close_queue(uint32_t queue_id)
     q->stack = NULL;
     q->queue = NULL;
 #endif
+    Queues.queues_ids[queue_id - 1] = 0;
 }
 
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size

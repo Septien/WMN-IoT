@@ -599,6 +599,7 @@ void test_close_queue(void)
     assert(q->stack == NULL);
     assert(q->queue == NULL);
 #endif
+    assert(Queues->queues_ids[qid - 1] == 0);
 
     end_queues();
 }
