@@ -604,6 +604,94 @@ void test_close_queue(void)
     end_queues();
 }
 
+void test_open_close_queues(void)
+{
+    init_queues();
+    IPC_Queues_t *Queues = get_queues_pointer();
+
+    uint32_t queue_size, msgs_allow, message_size;
+    char *stack = NULL;
+    queue_size = QUEUE_SIZE;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
+    message_size = MAX_MESSAGE_SIZE;
+    /**
+     * This tests the creation and closing of several non-consecutive queues, for
+     * knowing how the API handles such situations. 
+     * The fist test does the following:
+     *      -Create N queues.
+     *      -Closes M queues at random (M < N);
+     *      -Creates once again M queues.
+     *      -The queues might be or might not be consecutive.
+     */
+    int n = rand() % MAX_QUEUES;
+    int m = rand() % n;         // m < n
+    int i;
+    uint32_t qs[n];
+    memset(qs, 0, n * sizeof(uint32_t));
+    for (i = 0; i < n; i++)
+    {
+        qs[i] = create_queue(queue_size, message_size, msgs_allow, &stack);
+    }
+    int count = 0;
+    for (i = 0; i < n; i++)
+    {
+        /* Close at random at most m queues. */
+        if (count < m)
+        {
+            if (i % 2 == 0)
+            {
+                uint8_t _qid = qs[i];
+                Queue_t *q = &Queues->queues[qs[i] - 1];
+#ifdef __LINUX__
+                assert(q->q_name != NULL);
+#endif
+#ifdef __RIOT__
+                assert(q->stack == Queues->free_stack + (i * THREAD_STACKSIZE_DEFAULT));
+                assert(q->queue == Queues->free_queue + (i * QUEUE_SIZE));
+#endif
+                close_queue(qs[i]);
+                assert(Queues->queues_ids[_qid - 1] == 0);
+#ifdef __LINUX__
+                assert(q->queue == (mqd_t) -1);
+                assert(q->q_name == NULL);
+#endif
+#ifdef __RIOT__
+                assert(q->stack == NULL);
+                assert(q->queue == NULL);
+#endif
+                qs[i] = 0;
+                count++;
+                
+               ;
+            }
+        }
+    }
+
+    /* Re-open the closed queues. */
+    for (i = 0; i < MAX_QUEUES; i++)
+    {
+        if (qs[i] == 0)
+        {
+            assert(Queues->queues_ids[i] == 0);
+            qs[i] = create_queue(queue_size, message_size, msgs_allow, &stack);
+            assert(qs[i] != 0);
+            uint8_t qid = qs[i];
+            Queue_t *q = &Queues->queues[qid - 1];
+            assert(Queues->queues_ids[qid - 1] == 1);
+#ifdef __LINUX__
+            assert(q->q_name != NULL);
+#endif
+#ifdef __RIOT__
+            assert(q->stack == Queues->free_stack + (i * THREAD_STACKSIZE_DEFAULT));
+            assert(q->queue == Queues->free_queue + (i * QUEUE_SIZE));
+#endif
+            assert(Queues->queues_ids[qid - 1] != 0);
+        }
+    }
+
+    end_queues();
+}
+
 void ipc_queues_tests(void)
 {
     printf("Testing the IPC Queues API.\n");
@@ -635,6 +723,10 @@ void ipc_queues_tests(void)
     printf("Testing the close_queue function.\n");
     test_close_queue();
     printf("Test passed.\n");
+
+    /*printf("Testing the creation and closing of non-consecutive queues.\n");
+    test_open_close_queues();
+    printf("Test passed.\n");*/
 
     return;
 }
