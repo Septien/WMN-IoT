@@ -221,7 +221,6 @@ static void *func(void *arg)
     uint32_t *qid = (uint32_t *)arg;
     printf("%d\n", *qid);
     open_queue(*qid);
-    //msg_t msg;
 
     return NULL;
 }
@@ -692,6 +691,58 @@ void test_open_close_queues(void)
     end_queues();
 }
 
+#ifdef __RIOT__
+static void *open_q(void *arg)
+{
+    uint32_t *qid = (uint32_t *)arg;
+    printf("%d\n", *qid);
+    open_queue(*qid);
+    //thread_sleep();
+
+    return NULL;
+}
+#endif
+void test_elements_on_queue(void)
+{
+    init_queues();
+    //IPC_Queues_t *Queues = get_queues_pointer();
+
+    uint32_t queue_size, msgs_allow, message_size;
+    char *stack = NULL;
+    queue_size = QUEUE_SIZE;
+    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
+    message_size = MAX_MESSAGE_SIZE;
+    /**
+     * This function will test that elements_on_queue returns the right number of 
+     * elements present on a given queue.
+     * The test cases are the following:
+     *      -No messages on the queue.
+     *      -One message on the queue.
+     *      -Something between (1, MAX_ELEMENTS_ON_QUEUE).
+     *      -MAX_ELEMENTS_ON_QUEUE.
+     * For the test, we need to create and open a queue first, for RIOT we need to create a 
+     * thread to call the function open_queue.
+     */
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+
+#ifdef __LINUX__
+    open_queue(qid);
+#endif
+
+#ifdef __RIOT__
+    thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+    open_q, (void *)&qid, "Name");
+#endif
+    /**
+     * Test case 1:
+     * No elements on the queue, the function should return 0.
+     */
+    uint32_t elements = elements_on_queue(qid);
+    assert(elements == 0);
+
+    end_queues();
+}
+
 void ipc_queues_tests(void)
 {
     printf("Testing the IPC Queues API.\n");
@@ -727,6 +778,10 @@ void ipc_queues_tests(void)
     /*printf("Testing the creation and closing of non-consecutive queues.\n");
     test_open_close_queues();
     printf("Test passed.\n");*/
+
+    printf("Testing the elements_on_queue function.\n");
+    test_elements_on_queue();
+    printf("Test passed.\n");
 
     return;
 }

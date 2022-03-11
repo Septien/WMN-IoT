@@ -310,6 +310,17 @@ msg_t *msg
     return 1;
 }
 
+uint32_t elements_on_queue(uint32_t queue_id)
+{
+    assert(queue_id > 0);
+    assert(queue_id <= MAX_QUEUES);
+
+    Queue_t *q = &Queues.queues[queue_id - 1];
+    (void) q;
+
+    return 0;
+}
+
 // ---------------------------------- Testing functions ----------------------------------------
 
 #ifdef TESTING

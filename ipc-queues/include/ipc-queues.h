@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <mqueue.h>
+#include <pthread.h>
 #endif
 
 #ifdef __RIOT__
