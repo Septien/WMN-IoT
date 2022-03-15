@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <mqueue.h>
 #include <pthread.h>
+#include <unistd.h>
 #endif
 
 #ifdef __RIOT__
@@ -51,10 +52,21 @@ typedef struct queue
     uint32_t        msgs_on_queue;
 }Queue_t;
 
+typedef struct queue_thread_id
+{
+    uint32_t queue_id;
+#ifdef __LINUX__
+    pthread_t       pid;
+#endif
+#ifdef __RIOT__
+    kernel_pid_t    pid;
+#endif
+}queue_thread_t;
+
 typedef struct ipc_queues
 {
     Queue_t         queues[MAX_QUEUES];
-    uint32_t        queues_ids[MAX_QUEUES];
+    queue_thread_t  queues_ids[MAX_QUEUES];
 #ifdef __RIOT__
     char            *free_stack;
     msg_t           *free_queue;
@@ -90,12 +102,21 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 
 /**
  * @brief Given a queue_id, which was previously created with the create_queue function, this
- * functio opens the queue once the threads are already initialize.
+ * function opens the queue once the threads are already initialize, and stores the process id
+ * of the thread that will use the function.
  * 
  * @param queue_id 
+ * @param pid
  * @return uint32_t 
  */
-uint32_t open_queue(uint32_t queue_id);
+uint32_t open_queue(uint32_t queue_id,
+#ifdef __LINUX__
+pthread_t pid
+#endif
+#ifdef __RIOT__
+kernel_pid_t pid
+#endif
+);
 
 /**
  * @brief Close the queue associated with the *queue_id*, cleaning all its related content 
@@ -118,7 +139,7 @@ void close_queue(uint32_t queue_id);
  */
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 #ifdef __LINUX__
-, int pid
+, pthread_t pid
 #endif
 #ifdef __RIOT__
 , kernel_pid_t pid
@@ -127,19 +148,21 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 
 /**
  * @brief Receive the messages present on the queue identified by *queue_id*. Store the 
- * message on *msg* and its size on *size*.
+ * message on *msg* and its size on *size*. On *pid* returns the process id that sent 
+ * the message.
  * 
  * @param queue_id 
  * @param msg 
+ * @param pid
  * @param size 
  * @return uint32_t 
  */
 uint32_t recv_message(uint32_t queue_id, 
 #ifdef __LINUX__
-uint8_t **msg
+char *msg, pthread_t *pid
 #endif
 #ifdef __RIOT__
-msg_t *msg
+msg_t *msg, kernel_pid_t *pid
 #endif
 , size_t size
 );

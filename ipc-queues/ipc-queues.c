@@ -13,6 +13,18 @@ static char stack[MAX_QUEUES * THREAD_STACKSIZE_DEFAULT];
 static msg_t queue[MAX_QUEUES * QUEUE_SIZE];
 #endif
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte) \
+        ((byte) & 0x80 ? '1' : '0'), \
+        ((byte) & 0x40 ? '1' : '0'), \
+        ((byte) & 0x20 ? '1' : '0'), \
+        ((byte) & 0x10 ? '1' : '0'), \
+        ((byte) & 0x08 ? '1' : '0'), \
+        ((byte) & 0x04 ? '1' : '0'), \
+        ((byte) & 0x02 ? '1' : '0'), \
+        ((byte) & 0x01 ? '1' : '0')
+
+
 static IPC_Queues_t Queues;
 
 void init_queues(void)
@@ -34,7 +46,10 @@ void init_queues(void)
         q->q_name = NULL;
 #endif
         for (int i = 0; i < MAX_QUEUES; i++)
-            Queues.queues_ids[i] = 0;
+        {
+            Queues.queues_ids[i].queue_id = 0;
+            Queues.queues_ids[i].pid = 0;
+        }
     }
 #ifdef __RIOT__
     Queues.free_stack = stack;
@@ -71,7 +86,8 @@ void end_queues(void)
         q->stack = NULL;
         q->queue = NULL;
 #endif
-        Queues.queues_ids[i] = 0;
+        Queues.queues_ids[i].queue_id = 0;
+        Queues.queues_ids[i].pid = 0;
     }
 }
 
@@ -98,10 +114,11 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     uint32_t q_id = 0;
     for (int i = 0; i < MAX_QUEUES; i++)
     {
-        if (Queues.queues_ids[i] == 0)
+        if (Queues.queues_ids[i].queue_id == 0)
         {
             q_id = i + 1;
-            Queues.queues_ids[i] = 1;
+            Queues.queues_ids[i].queue_id = 1;
+            Queues.queues_ids[i].pid = 0;
 #ifdef __RIOT__
             _stack = Queues.free_stack + (i * THREAD_STACKSIZE_DEFAULT);
             _queue = Queues.free_queue + (i * QUEUE_SIZE);
@@ -130,7 +147,8 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 #endif
 #ifdef __LINUX__
     q->attr.mq_maxmsg = q->msgs_allow;
-    q->attr.mq_msgsize = q->message_size;
+    // Add the width of pthread_t, so the pid of the thread can be stored on the message.
+    q->attr.mq_msgsize = q->message_size + sizeof(pthread_t);
     q->attr.mq_curmsgs = 0;
     // For the string's name, just use the queue id
     q->q_name = (char *)malloc(4 * sizeof(char));
@@ -142,13 +160,21 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     return q_id;
 }
 
-uint32_t open_queue(uint32_t queue_id)
+uint32_t open_queue(uint32_t queue_id,
+#ifdef __LINUX__
+pthread_t pid
+#endif
+#ifdef __RIOT__
+kernel_pid_t pid
+#endif
+)
 {
     assert(queue_id != 0);
 
     if (queue_id > MAX_QUEUES)
         return 0;
     Queue_t *q = &Queues.queues[queue_id - 1];
+    Queues.queues_ids[queue_id - 1].pid = pid;
 #ifdef __LINUX__
     assert(q->q_name != NULL);
 #endif
@@ -157,7 +183,6 @@ uint32_t open_queue(uint32_t queue_id)
     assert(q->queue != NULL);
 #endif
 #ifdef __LINUX__
-    //printf("Queue attribute:\nMax msgs: %ld\nMsg size: %ld\n", q->attr.mq_maxmsg, q->attr.mq_msgsize);
     q->queue = mq_open(q->q_name, O_RDWR | O_CREAT | O_CLOEXEC, S_IRWXU, &q->attr);
     int error = errno;
     if (q->queue == -1 && error == EEXIST)
@@ -166,8 +191,6 @@ uint32_t open_queue(uint32_t queue_id)
         q->queue = mq_open(q->q_name, O_RDWR);
         error = 0;
     }
-    struct mq_attr attr;
-    mq_getattr(q->queue, &attr);
 #endif
 #ifdef __RIOT__
     msg_init_queue(q->queue, q->queue_size);
@@ -205,12 +228,13 @@ void close_queue(uint32_t queue_id)
     q->stack = NULL;
     q->queue = NULL;
 #endif
-    Queues.queues_ids[queue_id - 1] = 0;
+    Queues.queues_ids[queue_id - 1].queue_id = 0;
+    Queues.queues_ids[queue_id - 1].pid = 0;
 }
 
 uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 #ifdef __LINUX__
-, int pid
+, pthread_t pid
 #endif
 #ifdef __RIOT__
 , kernel_pid_t pid
@@ -218,15 +242,29 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 )
 {
     assert(msg != NULL);
-
     if (queue_id < 1 || queue_id > MAX_QUEUES)
         return 0;
     Queue_t *q = &Queues.queues[queue_id - 1];
+    // Get the associated queue
+    Queue_t *recv_q = NULL;
+    if (pid == 0)
+        return 0;
+    for (int i = 0; i < MAX_QUEUES; i++)
+    {
+        if (Queues.queues_ids[i].pid == pid && Queues.queues_ids[i].queue_id == 1)
+        {
+            recv_q = &Queues.queues[i];
+            break;
+        }
+    }
+    if (recv_q == NULL)
+        return 0;
 
 #ifdef __LINUX__
+    assert(recv_q->queue_id != 0);
+    assert(recv_q->queue != -1);
     assert(q->queue_id != 0);
     assert(q->queue != -1);
-    (void) pid;
 #endif
 #ifdef __RIOT__
     assert(q->stack != NULL);
@@ -238,7 +276,44 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
     // Set the priority to 1 for all messages
     unsigned int priority = 1;
     char *_msg = (char *)msg;
-    mq_send(q->queue, _msg, size, priority);
+    // Create the message to send
+    char *out_msg = (char *)malloc((size + sizeof(pthread_t)) * sizeof(char));
+    // Add the pid to the message
+    out_msg[0] = (pid & 0xff00000000000000) >> 56;
+    out_msg[1] = (pid & 0x00ff000000000000) >> 48;
+    out_msg[2] = (pid & 0x0000ff0000000000) >> 40;
+    out_msg[3] = (pid & 0x000000ff00000000) >> 32;
+    out_msg[4] = (pid & 0x00000000ff000000) >> 24;
+    out_msg[5] = (pid & 0x0000000000ff0000) >> 16;
+    out_msg[6] = (pid & 0x000000000000ff00) >> 8;
+    out_msg[7] = (pid & 0x00000000000000ff);
+    // Copy the original message to the out_msg
+    for (uint i = 0; i < size; i++)
+        out_msg[i + 8] = _msg[i];
+    int ret = mq_send(recv_q->queue, out_msg, size + sizeof(pthread_t), priority);
+    int err = errno;
+    if (ret == -1)
+    {
+        switch (err)
+        {
+        case EAGAIN:
+            usleep(50U);
+            mq_send(recv_q->queue, out_msg, size + sizeof(pthread_t), priority);
+            break;
+        case EBADF:
+            printf("Invalid descriptor or no opened.\n");
+            break;
+        case EINTR:
+            printf("Call interrupted by signal handler.\n");
+            break;
+        case EMSGSIZE:
+            printf("msg_len was greater then mq_msgsize attribute of the queue.\n");
+            break;
+        default:
+            printf("Non detected.\n");
+            break;
+        }
+    }
 #endif
 #ifdef __RIOT__
     msg_t _msg;
@@ -251,18 +326,16 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
 
 uint32_t recv_message(uint32_t queue_id, 
 #ifdef __LINUX__
-uint8_t **msg
+char *msg, pthread_t *pid
 #endif
 #ifdef __RIOT__
-msg_t *msg
+msg_t *msg, kernel_pid_t *pid
 #endif
 , size_t size
 )
 {
     assert(msg != NULL);
-#ifdef __LINUX__
-    assert(*msg != NULL);
-#endif
+    assert(pid != NULL);
 
     if (queue_id < 1 || queue_id > MAX_QUEUES)
         return 0;
@@ -279,7 +352,9 @@ msg_t *msg
 #endif
 #ifdef __LINUX__
     unsigned int priority = 0;
-    ssize_t length = mq_receive(q->queue, (char *)*msg, size, &priority);
+    /* Create an array to temporarly store the message. */
+    char *_msg = (char *)malloc((size + sizeof(pthread_t)) * sizeof(char));
+    ssize_t length = mq_receive(q->queue, _msg, size + sizeof(pthread_t), &priority);
     int err = errno;
     if (length == -1)
     {
@@ -287,7 +362,7 @@ msg_t *msg
         {
         case EINTR:
             /* Interrupted by signal, try again */
-            length = mq_receive(q->queue, (char *)*msg, size, &priority);
+            length = mq_receive(q->queue, _msg, size, &priority);
             break;
         case EBADF:
             /* Invalid queue descriptor */
@@ -296,6 +371,22 @@ msg_t *msg
             break;
         }
     }
+    /* Get the pid. */
+    pthread_t _pid = 0;
+    _pid |= ((pthread_t)_msg[0]) << 56;
+    _pid |= ((pthread_t)_msg[1]) << 48;
+    _pid |= ((pthread_t)_msg[2]) << 40;
+    _pid |= ((pthread_t)_msg[3]) << 32;
+    _pid |= ((pthread_t)_msg[4]) << 24;
+    _pid |= ((pthread_t)_msg[5]) << 16;
+    _pid |= ((pthread_t)_msg[6]) << 8;
+    _pid |= ((pthread_t)_msg[7]);
+    /* Copy the message back to the return message. */
+    for (uint i = 0; i < size; i++)
+        msg[i] = _msg[i + 8];
+    *pid = _pid;
+
+    free(_msg);
 #endif
 #ifdef __RIOT__
     msg_receive(msg);
@@ -305,6 +396,7 @@ msg_t *msg
         msg = NULL;
         return 0;
     }
+    *pid = msg->sender_pid;
 #endif
 
     return 1;
