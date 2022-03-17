@@ -36,7 +36,6 @@ void init_queues(void)
         q->queue_size = 0;
         q->message_size = 0;
         q->msgs_allow = 0;
-        q->msgs_on_queue = 0;
 #ifdef __RIOT__
         q->stack = NULL;
         q->queue = NULL;
@@ -70,7 +69,6 @@ void end_queues(void)
         q->queue_size = 0;
         q->message_size = 0;
         q->msgs_allow = 0;
-        q->msgs_on_queue = 0;
 #ifdef __LINUX__
         if (q->queue != -1)
         {
@@ -138,7 +136,6 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     q->queue_size = max_queue_size;
     q->message_size = message_size;
     q->msgs_allow = msgs_allow;
-    q->msgs_on_queue = 0;
 #ifdef __RIOT__
     // Update the pointers
     *stack = _stack;
@@ -209,7 +206,6 @@ void close_queue(uint32_t queue_id)
     q->queue_size = 0;
     q->message_size = 0;
     q->msgs_allow = 0;
-    q->msgs_on_queue = 0;
 #ifdef __LINUX__
     if (q->q_name != NULL)
     {

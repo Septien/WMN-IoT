@@ -49,7 +49,6 @@ typedef struct queue
     size_t          queue_size;
     size_t          message_size;
     uint32_t        msgs_allow;
-    uint32_t        msgs_on_queue;
 }Queue_t;
 
 typedef struct queue_thread_id

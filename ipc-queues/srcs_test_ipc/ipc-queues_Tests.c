@@ -48,7 +48,6 @@ void test_init_queues(void)
         assert(q->queue_size == 0);
         assert(q->message_size == 0);
         assert(q->msgs_allow == 0);
-        assert(q->msgs_on_queue == 0);
 #ifdef __RIOT__ 
         assert(q->stack == NULL);
         assert(q->queue == NULL);
@@ -96,7 +95,6 @@ void test_end_queues(void)
         assert(q->queue_size == 0);
         assert(q->message_size == 0);
         assert(q->msgs_allow == 0);
-        assert(q->msgs_on_queue == 0);
 #ifdef __LINUX__
         assert(q->queue == (mqd_t) -1);
         assert(q->q_name == NULL);
@@ -184,7 +182,6 @@ void test_create_queue(void)
     assert(q->queue_size == queue_size);
     assert(q->message_size == message_size);
     assert(q->msgs_allow == msgs_allow);
-    assert(q->msgs_on_queue == 0);
 #ifdef __LINUX__
     assert(stack == NULL);
     char name[4] = { 0 };
@@ -628,7 +625,6 @@ void test_close_queue(void)
     assert(q->queue_size == 0);
     assert(q->message_size == 0);
     assert(q->msgs_allow == 0);
-    assert(q->msgs_on_queue == 0);
 #ifdef __LINUX__
     assert(q->queue == -1);
     assert(q->q_name == NULL);
