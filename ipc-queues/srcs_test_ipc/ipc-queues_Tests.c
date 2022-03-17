@@ -733,13 +733,66 @@ void test_open_close_queues(void)
     end_queues();
 }
 
+#ifdef __LINUX__
+void *open_q(void *arg)
+{
+    uint32_t *qid = (uint32_t *)arg;
+    pthread_t pid = pthread_self();
+    open_queue(*qid, pid);
+    /**
+     * Test case 1:
+     * No elements on the queue, the function should return 0.
+     */
+    uint32_t elements = elements_on_queue(*qid);
+    assert(elements == 0);
+
+    size_t size = MAX_MESSAGE_SIZE;
+    char *msg = (char *)malloc(size * sizeof(char));
+    for (uint i = 0; i < size; i++)
+        msg[i] = 'a';
+    
+    send_message(*qid, (void *)msg, size, pid);
+    elements = elements_on_queue(*qid);
+    assert(elements == 1);
+
+    uint n = rand() % QUEUE_SIZE;
+    for (uint i = 0; i < n - 1; i++)
+        send_message(*qid, (void *)msg, size, pid);
+    elements = elements_on_queue(*qid);
+    assert(elements == n);
+
+    return (NULL);
+}
+#endif
 #ifdef __RIOT__
 static void *open_q(void *arg)
 {
     uint32_t *qid = (uint32_t *)arg;
-    printf("%d\n", *qid);
-    //open_queue(*qid);
-    //thread_sleep();
+    kernel_pid_t pid = thread_getpid();
+    open_queue(*qid, pid);
+    /**
+     * Test case 1:
+     * No elements on the queue, the function should return 0.
+     */
+    uint32_t elements = elements_on_queue(*qid);
+    assert(elements == 0);
+
+    size_t size = MAX_MESSAGE_SIZE;
+    char msg[size];
+    for (uint i = 0; i < size; i++)
+        msg[i] = 'a';
+    char *_msg = msg;
+
+    send_message(*qid, (void *)_msg, size, pid);
+    elements = elements_on_queue(*qid);
+    assert(elements == 1);
+
+    uint n = rand() % QUEUE_SIZE;
+    for (uint i = 0; i < n - 1; i++)
+        send_message(*qid, (void *)_msg, size, pid);
+    elements = elements_on_queue(*qid);
+    assert(elements == n);
+    thread_sleep();
 
     return NULL;
 }
@@ -768,19 +821,17 @@ void test_elements_on_queue(void)
     uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
 
 #ifdef __LINUX__
-    //open_queue(qid);
+    pthread_t pid = 0;
+    pthread_create(&pid, NULL, open_q, (void *)&qid);
+    pthread_join(pid, NULL);
 #endif
 
 #ifdef __RIOT__
-    thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
     open_q, (void *)&qid, "Name");
+    ztimer_sleep(ZTIMER_USEC, 100);
+    thread_wakeup(pid);
 #endif
-    /**
-     * Test case 1:
-     * No elements on the queue, the function should return 0.
-     */
-    uint32_t elements = elements_on_queue(qid);
-    assert(elements == 0);
 
     end_queues();
 }

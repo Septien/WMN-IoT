@@ -407,10 +407,18 @@ uint32_t elements_on_queue(uint32_t queue_id)
     assert(queue_id > 0);
     assert(queue_id <= MAX_QUEUES);
 
+    uint32_t n_messages;
+#ifdef __LINUX__
     Queue_t *q = &Queues.queues[queue_id - 1];
-    (void) q;
+    
+    mq_getattr(q->queue, &q->attr);
+    n_messages = q->attr.mq_curmsgs;
+#endif
+#ifdef __RIOT__
+    n_messages = msg_avail();
+#endif
 
-    return 0;
+    return n_messages;
 }
 
 // ---------------------------------- Testing functions ----------------------------------------
