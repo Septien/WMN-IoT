@@ -73,10 +73,9 @@ typedef struct ipc_queues
 }IPC_Queues_t;
 
 /**
- * @brief Initialize the IPC Queues API. Set the array *queues* to zero, the variable
- * *last_queue_id* to 1, and for RIOT set the pointers *free_stack* and *free_queue* to 
- * start of its corresponding array. For each Queue_t element, it initialize its memebers
- * to zero, and set the pointers to NULL;
+ * @brief Initialize the IPC Queues API. Set the array *queues* to zero, and for RIOT set 
+ * the pointers *free_stack* and *free_queue* to start of its corresponding array. For 
+ * each Queue_t element, it initialize its memebers to zero, and set the pointers to NULL.
  */
 void init_queues(void);
 
