@@ -14,6 +14,7 @@
 
 #include "assert.h"
 #include "timeouts.h"
+#include "ipc-queues.h"
 #include "mclmac_tests.h"
 #include "utils_tests.h"
 #include "ipc-queues_Tests.h"
