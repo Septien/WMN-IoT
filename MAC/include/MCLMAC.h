@@ -20,16 +20,19 @@
 #include "memory_macros.h"
 #include "timeouts.h"
 #include "config_mac.h"
+#include "ipc-queues.h"
 
 #ifdef __LINUX__
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <pthread.h>
 #endif
 
 #ifdef __RIOT__
 #include "ztimer.h"
 #include "sx127x.h"
+#include "thread.h"
 #endif
 
 typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, TIMESLOT_AND_CHANNEL_SELECTION, MEDIUM_ACCESS, FINISH, NONE} state_t;
@@ -88,9 +91,19 @@ typedef struct MCLMAC
     uint8_t             _occupied_frequencies_slots[MAX_NUMBER_FREQS][(MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0)];
     uint32_t            _wakeup_frame;
     uint32_t            _initTime;
+    // IPC Queue
+    uint32_t            _mac_queue_id;
+    char                *stack;
+#ifdef __LINUX__
+    pthread_t           _self_pid;
+#endif
+#ifdef __RIOT__
+    kernel_pid_t        _self_pid;
+#endif
+#ifdef TESTING
     // Temporal variable for testing
     uint8_t             _state;
-    // IPC Queues
+#endif
 }MCLMAC_t;
 
 void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 

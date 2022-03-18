@@ -464,8 +464,6 @@ void test_start_state_mac_stmachine(void)
     assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
     assert(ARROW(mclmac)_wakeup_frame > 0);
 
-    timeout_done();
-
     MCLMAC_destroy(&mclmac);
     
 }
@@ -518,8 +516,6 @@ void test_initialization_state_mac_stmachine(void)
     assert(ret == E_MAC_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
     assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-
-    timeout_done();
 
     MCLMAC_destroy(&mclmac);
 }
@@ -578,8 +574,6 @@ void test_synchronization_state_mac_stmachine(void)
         }
         printf("\n");
     }
-    
-    timeout_done();
 
     MCLMAC_destroy(&mclmac);
 }
@@ -587,8 +581,7 @@ void test_synchronization_state_mac_stmachine(void)
 void test_timeslot_frequency_state_mac_stmachine(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
-
-    #ifdef __LINUX__
+#ifdef __LINUX__
     uint8_t radio;
 #endif
 #ifdef __RIOT__
@@ -665,15 +658,13 @@ void test_timeslot_frequency_state_mac_stmachine(void)
     assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
     assert(ARROW(ARROW(mclmac)mac)selectedSlot == pos);
 
-    timeout_done();
     MCLMAC_destroy(&mclmac);
 }
 
 void test_medium_access_state_stmachine(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
-
-    #ifdef __LINUX__
+#ifdef __LINUX__
     uint8_t radio;
 #endif
 #ifdef __RIOT__
@@ -739,10 +730,15 @@ void test_medium_access_state_stmachine(void)
      *          **At the RECEIVE state: Synchronization error. It should return synchronization
      *            error; set the next state to INITIALIZATION and end the cycle.
      */
+
+    MCLMAC_destroy(&mclmac);
 }
 
 void executetests_mac_statemachine(void)
 {
+    init_queues();
+    timeout_init();
+
     printf("Testing mclmac_init_MAC_state_machine function.\n");
     test_mclmac_init_MAC_state_machine();
     printf("Test passed.\n");
@@ -779,6 +775,9 @@ void executetests_mac_statemachine(void)
     printf("Testing the TIMESLOT_AND_CHANNEL_SELECTION state.\n");
     test_timeslot_frequency_state_mac_stmachine();
     printf("Test passed.\n");
+
+    timeout_done();
+    end_queues();
 
     return;
 }

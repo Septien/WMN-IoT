@@ -42,6 +42,13 @@ void test_MCLMAC_init(void)
         for (int j = 0; j < m; j++)
             assert(ARROW(mclmac)_occupied_frequencies_slots[i][j] == 0);
     }
+#ifdef __LINUX__
+    assert(mclmac->stack == NULL);
+#endif
+#ifdef __RIOT__
+    assert(mclmac.stack != NULL);
+#endif
+    assert(ARROW(mclmac)_mac_queue_id != 0);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -91,6 +98,8 @@ void test_MCLMAC_clear(void)
     assert(ARROW(mclmac)macState.currentState == START);
     assert(ARROW(mclmac)_hopCount == 0);
     assert(ARROW(mclmac)_networkTime == 0);
+    assert(ARROW(mclmac)_mac_queue_id == 0);
+    assert(ARROW(mclmac)stack == NULL);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -1432,6 +1441,7 @@ void test_mclmac_receive_cf_message(void)
 void executeTestsMCLMAC(void)
 {
     srand(time(NULL));
+    init_queues();
 
     printf("Testing MAC_init function.\n");
     test_MCLMAC_init();
@@ -1608,5 +1618,7 @@ void executeTestsMCLMAC(void)
     /*printf("Testing mclmac_receive_cf_message function.\n");
     test_mclmac_receive_cf_message();
     printf("Test passed.\n");*/
+
+    end_queues();
     return;
 }

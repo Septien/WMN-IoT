@@ -375,8 +375,6 @@ void test_startp_state_powermode_stmachine(void)
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
-    timeout_init();
-
     /**
      * We will begin the execution of the PowerMode state machine for medium access.
      * We just initialized the state machine, and now should execute the STARTP state of the 
@@ -410,7 +408,6 @@ void test_startp_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
     timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
-    timeout_done();
 
     MCLMAC_destroy(&mclmac);
 }
@@ -430,7 +427,6 @@ void test_passive_state_powermode_stmachine(void)
     MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
-    timeout_init();
 
     // Execute the STARTP state, and update state to PASSIVE state.
     int ret = mclmac_execute_powermode_state(REFERENCE mclmac);
@@ -457,7 +453,6 @@ void test_passive_state_powermode_stmachine(void)
     assert(ARROW(mclmac)_networkTime == time + 1);
 
     timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
-    timeout_done();
 
     MCLMAC_destroy(&mclmac);
 }
@@ -640,7 +635,6 @@ void test_active_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
 
-    timeout_done();
     MCLMAC_destroy(&mclmac);
 
 }
@@ -732,12 +726,14 @@ void test_transmit_powermode_stmachine(void)
         * We have only one packet to send on the queue.
     */
 
-    timeout_done();
     MCLMAC_destroy(&mclmac);
 }
 
 void executetests_mac_powermode_statemachine(void)
 {
+    timeout_init();
+    init_queues();
+
     printf("Testing _mclmac_init_powermode_state_machine function.\n");
     test_mclmac_init_powermode_state_machine();
     printf("Test passed.\n");
@@ -770,5 +766,7 @@ void executetests_mac_powermode_statemachine(void)
     test_active_state_powermode_stmachine();
     printf("Test passed.\n");
 
+    end_queues();
+    timeout_done();
     return;
 }

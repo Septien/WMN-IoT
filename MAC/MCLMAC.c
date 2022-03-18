@@ -30,6 +30,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     (SINGLE_POINTER mclmac)->_nSlots = MAX_NUMBER_SLOTS;
     (SINGLE_POINTER mclmac)->_hopCount = 0;
     (SINGLE_POINTER mclmac)->_networkTime = 0;
+    (SINGLE_POINTER mclmac)->_mac_queue_id = 0;
 
     // Initialize state machines
     mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
@@ -48,6 +49,8 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     (SINGLE_POINTER mclmac)->_frequencies[5] = FREQ6;
     (SINGLE_POINTER mclmac)->_frequencies[6] = FREQ7;
     (SINGLE_POINTER mclmac)->_frequencies[7] = FREQ8;
+
+    (SINGLE_POINTER mclmac)->_mac_queue_id = create_queue(QUEUE_SIZE, MAX_MESSAGE_SIZE, MAX_ELEMENTS_ON_QUEUE, &(SINGLE_POINTER mclmac)->stack);
 }
  
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac)
@@ -58,6 +61,8 @@ void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac)
 #endif
 
     MAC_internals_destroy(&(SINGLE_POINTER mclmac)->mac);
+    if ((SINGLE_POINTER mclmac)->_mac_queue_id != 0)
+        close_queue((SINGLE_POINTER mclmac)->_mac_queue_id);
 #ifdef __LINUX__
     free((*mclmac));
     *mclmac = NULL;
@@ -78,6 +83,10 @@ void MCLMAC_clear(MCLMAC_t *mclmac)
     mclmac->powerMode.currentState = STARTP;
     mclmac->_networkTime = 0;
     mclmac->_hopCount = 0;
+    mclmac->stack = NULL;
+    if (mclmac->_mac_queue_id != 0)
+        close_queue(mclmac->_mac_queue_id);
+    mclmac->_mac_queue_id = 0;
 }
 
 void mclmac_set_cf_channel(MCLMAC_t *mclmac, uint32_t cfchannel)

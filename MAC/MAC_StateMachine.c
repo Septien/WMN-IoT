@@ -108,9 +108,16 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
     switch (mclmac->macState.currentState)
     {
     case START: ;
-        // Initialize the timeouts API
-        timeout_init();
         mclmac->_wakeup_frame = MAX_NUMBER_FREQS + (rand() % MAX_NUMBER_SLOTS);
+        // Get the current thread's pid
+#ifdef __LINUX__
+        mclmac->_self_pid = pthread_self();
+#endif
+#ifdef __RIOT__
+        mclmac->_self_pid = thread_getpid();
+#endif
+        // Open a new queue using the default values (defined on config_ipc.h)
+        open_queue(mclmac->_mac_queue_id, mclmac->_self_pid);
         mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
         break;
     

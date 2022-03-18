@@ -305,6 +305,7 @@ void test_stub_mclmac_receive_ctrlpkt_sync(void)
 
 void executetests_packets_handlers(void)
 {
+    init_queues();
     /*pintf("Testing mclmac_create_cf_packet function.\n");
     test_mclmac_create_cf_packet();
     printf("Test passed.\n");
@@ -336,5 +337,6 @@ void executetests_packets_handlers(void)
     printf("Tetsing test_stub_mclmac_receive_ctrlpkt_sync function.\n");
     test_stub_mclmac_receive_ctrlpkt_sync();
     printf("Test passed.\n");
+    end_queues();
     return;
 }
