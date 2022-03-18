@@ -61,7 +61,7 @@ void test_timeout(void)
 
 void timeouts_test(void)
 {
-    printf("\nTestint the timeouts API.\n");
+    printf("\nTesting the timeouts API.\n");
     test_timeout();
     return;
 }
