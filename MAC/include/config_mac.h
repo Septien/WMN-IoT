@@ -134,11 +134,11 @@
 
 /* Configuration for the PowerMode state machine. */
 #ifndef MAX_NUMBER_CF_PACKETS
-#define MAX_NUMBER_CF_PACKETS   10
+#define MAX_NUMBER_CF_PACKETS   16
 #endif
 
 #ifndef MAX_NUMBER_DATA_PACKETS
-#define MAX_NUMBER_DATA_PACKETS 10
+#define MAX_NUMBER_DATA_PACKETS 16
 #endif
 
 /* Clock type for RIOT. */
