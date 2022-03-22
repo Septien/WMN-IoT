@@ -272,7 +272,6 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
     // Set the priority to 1 for all messages
     unsigned int priority = 1;
     char *_msg = (char *)msg;
-    printf("%d\n", _msg[0]);
     // Create the message to send
     char *out_msg = (char *)malloc((size + sizeof(pthread_t)) * sizeof(char));
     // Add the pid to the message
