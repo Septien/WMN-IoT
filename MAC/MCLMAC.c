@@ -514,20 +514,21 @@ int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac)
 
     uint8_t position = ARROW(mclmac->mac)_last_send;
     DataPacket_t *pkt = &ARROW(mclmac->mac)_packet_to_send[position];
+    (void) pkt;
     uint8_t element;
     /* Node id */
     element = rand();
     ARROW(mclmac->mac)_destination_ids[position] = element;
     /* Is fragment */
     element = ((rand() % 256) > 128 ? 1 : 0);
-    datapacket_set_isFragment(pkt, element);
+//    datapacket_set_isFragment(pkt, element);
     /* total fragment */
     element = rand();
     element = (element == 0 ? 1 : element);
-    datapacket_set_total_fragments(pkt, element);
+    //datapacket_set_total_fragments(pkt, element);
     /* Fragment number */
     element--;
-    datapacket_set_fragment_number(pkt, element);
+//    datapacket_set_fragment_number(pkt, element);
     /* data size */
     uint16_t datasize = rand() % 250;
     datasize = (datasize == 0 ? 1 : datasize);
@@ -544,7 +545,7 @@ int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac)
         element = rand();
         WRITE_ARRAY(REFERENCE data, element, i);
     }
-    datapacket_set_data(pkt, &data, datasize);
+//    datapacket_set_data(pkt, &data, datasize);
 
     // Increase the number of packets read
     ARROW(mclmac->mac)_packets_read++;
@@ -565,8 +566,9 @@ int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac)
     uint8_t first = ARROW(mclmac->mac)_first_received;
     // Get the first packet of the queue
     DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received [first];
+    (void) pkt;
     // Push the packet on the inter-layer queue (just clear it for now)
-    datapacket_clear(pkt);
+    //datapacket_clear(pkt);
     first = (first + 1) % MAX_NUMBER_DATA_PACKETS;
     ARROW(mclmac->mac)_first_received = first;
     ARROW(mclmac->mac)_number_packets_received--;
