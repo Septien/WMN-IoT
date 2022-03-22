@@ -1169,32 +1169,8 @@ void test_stub_mclmac_write_queue_element(void)
     */
     // Fill the packet
     DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[0];
-    /* Is fragment */
-    uint8_t element = ((rand() % 256) > 128 ? 1 : 0);
-    datapacket_set_isFragment(pkt, element);
-    /* total fragment */
-    element = rand();
-    element = (element == 0 ? 1 : element);
-    datapacket_set_total_fragments(pkt, element);
-    /* Fragment number */
-    element--;
-    datapacket_set_fragment_number(pkt, element);
-    /* data size */
-    uint16_t datasize = rand() % 250;
-    ARRAY data;
-#ifdef __LINUX__
-    data = (uint8_t *)malloc(datasize * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&data, datasize);
-#endif
-    uint8_t i;
-    for (i = 0; i < datasize; i++)
-    {
-        element = rand();
-        WRITE_ARRAY(REFERENCE data, element, i);
-    }
-    datapacket_set_data(pkt, &data, datasize);
+    (void) pkt;
+
     // Increase the number of packets store.
     ARROW(ARROW(mclmac)mac)_number_packets_received = 1;
     ARROW(ARROW(mclmac)mac)_last_received = 1;
@@ -1214,35 +1190,11 @@ void test_stub_mclmac_write_queue_element(void)
     ARROW(ARROW(mclmac)mac)_number_packets_received = 0;
     ARROW(ARROW(mclmac)mac)_last_received = 0;
     ARROW(ARROW(mclmac)mac)_first_received = 0;
+    uint i;
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
         DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
-        /* Is fragment */
-        uint8_t element = ((rand() % 256) > 128 ? 1 : 0);
-        datapacket_set_isFragment(pkt, element);
-        /* total fragment */
-        element = rand();
-        element = (element == 0 ? 1 : element);
-        datapacket_set_total_fragments(pkt, element);
-        /* Fragment number */
-        element--;
-        datapacket_set_fragment_number(pkt, element);
-        /* data size */
-        uint16_t datasize = rand() % 250;
-        datasize = (datasize == 0 ? 1 : datasize);
-        ARRAY data;
-#ifdef __LINUX__
-        data = (uint8_t *)malloc(datasize * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-        create_array(&data, datasize);
-#endif
-        for (uint8_t j = 0; j < datasize; j++)
-        {
-            element = rand();
-            WRITE_ARRAY(REFERENCE data, element, j);
-        }
-        datapacket_set_data(pkt, &data, datasize);
+        (void) pkt;
     }
     // Total of packets store.
     ARROW(ARROW(mclmac)mac)_number_packets_received = MAX_NUMBER_DATA_PACKETS;
