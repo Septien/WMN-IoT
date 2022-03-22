@@ -134,7 +134,7 @@
 
 /* Configuration for the PowerMode state machine. */
 #ifndef MAX_NUMBER_CF_PACKETS
-#define MAX_NUMBER_CF_PACKETS   16
+#define MAX_NUMBER_CF_PACKETS   2
 #endif
 
 #ifndef MAX_NUMBER_DATA_PACKETS
