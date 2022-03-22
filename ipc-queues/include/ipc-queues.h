@@ -135,7 +135,7 @@ void close_queue(uint32_t queue_id);
  * @param pid
  * @return uint32_t 
  */
-uint32_t send_message(uint32_t queue_id, void *msg, size_t size
+uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
 #ifdef __LINUX__
 , pthread_t pid
 #endif
@@ -155,14 +155,13 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
  * @param size 
  * @return uint32_t 
  */
-uint32_t recv_message(uint32_t queue_id, 
+uint32_t recv_message(uint32_t queue_id, uint8_t *msg, size_t size,
 #ifdef __LINUX__
-char *msg, pthread_t *pid
+pthread_t *pid
 #endif
 #ifdef __RIOT__
-msg_t *msg, kernel_pid_t *pid
+kernel_pid_t *pid
 #endif
-, size_t size
 );
 
 /**

@@ -368,10 +368,6 @@ void test_send_message(void)
     uint8_t msg[msg_size];
     for (uint i = 0; i < msg_size; i++)
         msg[i] = rand();
-#ifdef __LINUX__
-    // Store the pid on the first 8 possitions
-    
-#endif
     /**    
      * We have now created and open a new queue. Now is time for sending a message. For the function
      * to work properly, the following should be true:
@@ -448,7 +444,7 @@ void *recv_recv(void *arg)
     Queue_t *q = &Queues->queues[(*qid) - 1];
     mqd_t qd = q->queue;
     size_t size = MAX_MESSAGE_SIZE;
-    char *_msg = (char *)malloc(size * sizeof(char));
+    uint8_t *_msg = (uint8_t *)malloc(size * sizeof(uint8_t));
     struct mq_attr attr;
 
     usleep(100U);
@@ -456,11 +452,11 @@ void *recv_recv(void *arg)
     int count = 0;
     while (attr.mq_curmsgs > 0)
     {
-        int ret = recv_message(*qid, _msg, &s_pid, size);
+        int ret = recv_message(*qid, _msg, size, &s_pid);
         assert(ret == 1);
         assert(s_pid > 0);
         for (uint i = 0; i < size; i++)
-            assert(_msg[i] == 'a');
+            assert(_msg[i] == 10);
         count++;
         mq_getattr(qd, &attr);
     }
@@ -480,13 +476,12 @@ static void *recv_recv(void *arg)
     while (msg_avail())
     {
         size_t msg_size = MAX_MESSAGE_SIZE;
-        msg_t msg;
-        int ret = recv_message(*qid, &msg, &s_pid, msg_size);
-        char *msg_content = msg.content.ptr;
+        uint8_t msg[msg_size];
+        int ret = recv_message(*qid, msg, msg_size, &s_pid);
         assert(s_pid > 0);
         assert(ret == 1);
         for (uint i = 0; i < msg_size; i++)
-            assert(msg_content[i] == 'a');
+            assert(msg[i] == 10);
         count++;
     }
     assert(count > 0);
@@ -508,7 +503,7 @@ void test_recv_message(void)
     size_t msg_size = MAX_MESSAGE_SIZE;
     uint8_t msg[msg_size];
     for (uint i = 0; i < msg_size; i++)
-        msg[i] = 'a';
+        msg[i] = 10;
     /**
      * We have a way to send messages through the queues. We now need a way to receive them 
      * without using directly the different calls provided by the OSs. We now will test a function 
@@ -544,13 +539,13 @@ void test_recv_message(void)
 #endif
 
 #ifdef __LINUX__
-    char msg2[msg_size];
-    char *_msg2 = msg2;
+    uint8_t msg2[msg_size];
+    uint8_t *_msg2 = msg2;
     pthread_t _pid;
 #endif
 #ifdef __RIOT__
-    msg_t __msg2;
-    msg_t *_msg2 = &__msg2;
+    uint8_t msg2[msg_size];
+    uint8_t *_msg2 = msg2;
     kernel_pid_t _pid;
 #endif
     size_t size = message_size;
@@ -560,11 +555,11 @@ void test_recv_message(void)
         -The size is zero.
         The function should return 0.
     */
-    int ret = recv_message(0, _msg2, &_pid, size);
+    int ret = recv_message(0, _msg2, size, &_pid);
     assert(ret == 0);
-    ret = recv_message(MAX_QUEUES + 1, _msg2, &_pid, size);
+    ret = recv_message(MAX_QUEUES + 1, _msg2, size, &_pid);
     assert(ret == 0);
-    ret = recv_message(MAX_QUEUES + 1, _msg2, &_pid, 0);
+    ret = recv_message(MAX_QUEUES + 1, _msg2, 0, &_pid);
     assert(ret == 0);
 
     end_queues();
@@ -584,7 +579,7 @@ void test_close_queue(void)
     size_t msg_size = MAX_MESSAGE_SIZE;
     uint8_t msg[msg_size];
     for (uint i = 0; i < msg_size; i++)
-        msg[i] = 'a';
+        msg[i] = 10;
 
     int n = 10;
 #ifdef __LINUX__

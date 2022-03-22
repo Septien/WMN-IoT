@@ -228,7 +228,7 @@ void close_queue(uint32_t queue_id)
     Queues.queues_ids[queue_id - 1].pid = 0;
 }
 
-uint32_t send_message(uint32_t queue_id, void *msg, size_t size
+uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
 #ifdef __LINUX__
 , pthread_t pid
 #endif
@@ -272,6 +272,7 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
     // Set the priority to 1 for all messages
     unsigned int priority = 1;
     char *_msg = (char *)msg;
+    printf("%d\n", _msg[0]);
     // Create the message to send
     char *out_msg = (char *)malloc((size + sizeof(pthread_t)) * sizeof(char));
     // Add the pid to the message
@@ -284,8 +285,7 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
     out_msg[6] = (pid & 0x000000000000ff00) >> 8;
     out_msg[7] = (pid & 0x00000000000000ff);
     // Copy the original message to the out_msg
-    for (uint i = 0; i < size; i++)
-        out_msg[i + 8] = _msg[i];
+    memcpy(out_msg + 8, _msg, sizeof(char) * size);
     int ret = mq_send(recv_q->queue, out_msg, size + sizeof(pthread_t), priority);
     int err = errno;
     if (ret == -1)
@@ -310,24 +310,24 @@ uint32_t send_message(uint32_t queue_id, void *msg, size_t size
             break;
         }
     }
+    free(out_msg);
 #endif
 #ifdef __RIOT__
     msg_t _msg;
-    _msg.content.ptr = msg;
+    _msg.content.ptr = (void *)msg;
     _msg.type = (uint16_t) size;
     msg_send(&_msg, pid);
 #endif
     return 1;
 }
 
-uint32_t recv_message(uint32_t queue_id, 
+uint32_t recv_message(uint32_t queue_id, uint8_t *msg, size_t size,
 #ifdef __LINUX__
-char *msg, pthread_t *pid
+pthread_t *pid
 #endif
 #ifdef __RIOT__
-msg_t *msg, kernel_pid_t *pid
+kernel_pid_t *pid
 #endif
-, size_t size
 )
 {
     assert(msg != NULL);
@@ -378,21 +378,23 @@ msg_t *msg, kernel_pid_t *pid
     _pid |= ((pthread_t)_msg[6]) << 8;
     _pid |= ((pthread_t)_msg[7]);
     /* Copy the message back to the return message. */
-    for (uint i = 0; i < size; i++)
-        msg[i] = _msg[i + 8];
+    uint8_t *p = (uint8_t *)(_msg + 8);
+    memcpy(msg, p, sizeof(uint8_t) * size);
     *pid = _pid;
 
     free(_msg);
 #endif
 #ifdef __RIOT__
-    msg_receive(msg);
+    msg_t _msg;
+    msg_receive(&_msg);
     // Invalid message, discard
-    if (msg->type != q->message_size)
+    if (_msg.type != q->message_size)
     {
         msg = NULL;
         return 0;
     }
-    *pid = msg->sender_pid;
+    memcpy(msg, _msg.content.ptr, sizeof(uint8_t) * size);
+    *pid = _msg.sender_pid;
 #endif
 
     return 1;
