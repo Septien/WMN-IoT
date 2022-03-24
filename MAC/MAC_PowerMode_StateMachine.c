@@ -122,7 +122,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_current_frame(mclmac, mclmac->_wakeup_frame + 1);
         mclmac_set_current_slot(mclmac, 0);
         mclmac_set_current_cf_slot(mclmac, 0);
-        ARROW(mclmac->mac)_packets_read = 0;
+        ARROW(mclmac->mac)_packets_to_send_read = 0;
         ARROW(mclmac->mac)_number_packets_received = 0;
         
         ARROW(mclmac->mac)cfChannel = CF_FREQUENCY;
@@ -147,7 +147,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             }
 
             /* 'Read' elements from the queue. */
-            stub_mclmac_read_queue_element(mclmac);
+            mclmac_read_queue_element(mclmac);
             /* 'Write' packets into queue. */
             stub_mclmac_write_queue_element(mclmac);
             // Sleep for a little while
@@ -206,13 +206,12 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             uint8_t current_cf_slot = mclmac_get_current_cf_slot(mclmac);
             if (is_current && selected_freq == mclmac_get_frequency(mclmac, current_cf_slot))
             {
-                if (ARROW(mclmac->mac)_packets_read > 0)
+                if (ARROW(mclmac->mac)_packets_to_send_read > 0)
                 {
                     /* Create the cf packet and send it. */
-                    uint8_t to_send = ARROW(mclmac->mac)_first_send;
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
                     uint8_t nodeid = mclmac_get_nodeid(mclmac);
-                    cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_ids[to_send]);
+                    cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_id);
                     stub_mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
                     send = true;

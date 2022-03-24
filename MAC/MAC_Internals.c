@@ -32,7 +32,9 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     for (int i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
         DataPacket_t *pkt;
-        pkt = &(SINGLE_POINTER mac)->_packet_to_send[i];
+        pkt = &(SINGLE_POINTER mac)->_message_packets_to_send[i];
+        datapacket_init(REFERENCE2 pkt);
+        pkt = &(SINGLE_POINTER mac)->_control_packets_to_send[i];
         datapacket_init(REFERENCE2 pkt);
         pkt = &(SINGLE_POINTER mac)->_packets_received[i];
         datapacket_init(REFERENCE2 pkt);

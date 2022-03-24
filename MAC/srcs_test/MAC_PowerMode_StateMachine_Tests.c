@@ -402,7 +402,7 @@ void test_startp_state_powermode_stmachine(void)
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame == ARROW(mclmac)_wakeup_frame + 1);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot == 0);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == 0);
-    assert(ARROW(ARROW(mclmac)mac)_packets_read == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_read == 0);
     assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
     assert(ARROW(ARROW(mclmac)mac)cfChannel == CF_FREQUENCY);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
@@ -597,7 +597,7 @@ void test_active_state_powermode_stmachine(void)
                 -The current cf slot should be equal to the total number of frequencies.
     */
     ARROW(mclmac)_state = 3;
-    ARROW(ARROW(mclmac)mac)_packets_read = 0;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_read = 0;
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
@@ -612,7 +612,7 @@ void test_active_state_powermode_stmachine(void)
                 -The current cf slot should be equal to the total number of frequencies.
     */
     ARROW(mclmac)_state = 4;
-    ARROW(ARROW(mclmac)mac)_packets_read = 1;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_read = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_SYNCHRONIZATION_ERROR);
