@@ -504,54 +504,66 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
     return;
 }
 
-int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac)
+int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    assert(ARROW(mclmac->mac)_packets_read <= MAX_NUMBER_DATA_PACKETS);
+    assert(ARROW(mclmac->mac)_packets_to_send_read <= MAX_NUMBER_DATA_PACKETS);
 
-    if (ARROW(mclmac->mac)_packets_read == MAX_NUMBER_DATA_PACKETS)
+    if (ARROW(mclmac->mac)_packets_to_send_read == MAX_NUMBER_DATA_PACKETS)
         return 0;
 
-    uint8_t position = ARROW(mclmac->mac)_last_send;
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_packet_to_send[position];
-    (void) pkt;
-    uint8_t element;
-    /* Node id */
-    element = rand();
-    ARROW(mclmac->mac)_destination_ids[position] = element;
-    /* Is fragment */
-    element = ((rand() % 256) > 128 ? 1 : 0);
-//    datapacket_set_isFragment(pkt, element);
-    /* total fragment */
-    element = rand();
-    element = (element == 0 ? 1 : element);
-    //datapacket_set_total_fragments(pkt, element);
-    /* Fragment number */
-    element--;
-//    datapacket_set_fragment_number(pkt, element);
-    /* data size */
-    uint16_t datasize = rand() % 250;
-    datasize = (datasize == 0 ? 1 : datasize);
-    ARRAY data;
+    if (elements_on_queue(mclmac->_mac_queue_id) == 0)
+        return 0;
+
+    if (elements_on_queue(mclmac->_mac_queue_id) > 0)
+    {
+        size_t size = MAX_MESSAGE_SIZE;
+        uint8_t *msg;
 #ifdef __LINUX__
-    data = (uint8_t *)malloc(datasize * sizeof(uint8_t));
+        msg = (uint8_t *)malloc(size * sizeof(uint8_t));
+        pthread_t pid;
 #endif
 #ifdef __RIOT__
-    create_array(&data, datasize);
+        uint8_t _msg[size];
+        msg = _msg;
+        kernel_pid_t pid;
 #endif
-    uint8_t i;
-    for (i = 0; i < datasize; i++)
-    {
-        element = rand();
-        WRITE_ARRAY(REFERENCE data, element, i);
+        recv_message(mclmac->_mac_queue_id, msg, size, &pid);
+        ARRAY byteString;
+        // The message's data size
+        size_t size_bs = size - 3;
+#ifdef __LINUX__
+        byteString = (uint8_t *)malloc((size - 1) * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+        create_array(&byteString, size - 1);
+#endif
+        // Copy the message to the byte string
+        for (uint i = 0; i < size - 1; i++)
+        {
+            uint8_t e = msg[i + 1];
+            WRITE_ARRAY(REFERENCE byteString, e, i);
+        }
+        if (msg[0] == 0)
+        {
+            uint8_t last = ARROW(mclmac->mac)_last_send_message;
+            DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[last];
+            datapacket_construct_from_bytestring(pkt, &byteString, size_bs);
+            ARROW(mclmac->mac)_last_send_message++;
+            ARROW(mclmac->mac)_packets_to_send_read++;
+        }
+        else if (msg[0] == 1)
+        {
+            uint8_t last = ARROW(mclmac->mac)_last_send_control;
+            DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[last];
+            datapacket_construct_from_bytestring(pkt, &byteString, size_bs);
+            ARROW(mclmac->mac)_last_send_control++;
+            ARROW(mclmac->mac)_packets_to_send_read++;
+        }
+        // Invalid type, return 0
+        else
+            return 0;
     }
-//    datapacket_set_data(pkt, &data, datasize);
-
-    // Increase the number of packets read
-    ARROW(mclmac->mac)_packets_read++;
-    // Increase the last element
-    position = (position + 1) % MAX_NUMBER_DATA_PACKETS;
-    ARROW(mclmac->mac)_last_send = position;
 
     return 1;
 }

@@ -1068,7 +1068,95 @@ void test_mclmac_get_network_time(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_stub_mclmac_read_queue_element(void)
+void _read_queue(MCLMAC_t *mclmac)
+{
+    open_queue(mclmac->_mac_queue_id, mclmac->_self_pid);
+    
+    /* Test case 1:
+    *   When the array is full, that is, when _packets_read == MAX_NUMER_DATA_PACKETS.
+    *       -nelements should be 0.
+    *       -_packets_read should be MAX_NUMBER_DATA_PACKETS
+    * */
+    ARROW(mclmac->mac)_packets_to_send_read = MAX_NUMBER_DATA_PACKETS;
+    int nelements = mclmac_read_queue_element(mclmac);
+    assert(nelements == 0);
+    assert(ARROW(mclmac->mac)_packets_to_send_read == MAX_NUMBER_DATA_PACKETS);
+    /** Test case 2:
+     * The queue is empty. It should not increase the number of elements on the queue,
+     * and the function should return 0.
+    */
+    ARROW(mclmac->mac)_packets_to_send_read = 0;
+    nelements = mclmac_read_queue_element(mclmac);
+    assert(nelements == 0);
+    /** Test case 3:
+     * There is only one element on the queue (a message). The changes should be the following:
+     *      -At position zero, there should be a packet on the array _messages_packet_to_send.
+     *      -first_send_message should remaing the same.
+     *      -last_send_message should increase by one.
+     *      -packets_read should increase by one.
+     *      -the functino should return one.
+    */
+    size_t size = MAX_MESSAGE_SIZE;
+    uint8_t message[size];
+    // Store the type of message
+    message[0] = 0;
+    for (uint i = 1; i < size; i++)
+        message[i] = rand();
+    send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
+    nelements = mclmac_read_queue_element(mclmac);
+    assert(nelements == 1);
+    assert(ARROW(mclmac->mac)_first_send_message == 0);
+    assert(ARROW(mclmac->mac)_last_send_message == 1);
+    assert(ARROW(mclmac->mac)_packets_to_send_read == 1);
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[0];
+    uint16_t destination_id = (((uint16_t)message[1]) << 8) | (message[2]);
+    assert(pkt->destination_id == destination_id);
+    // Only the packet's data
+    assert(pkt->size == MAX_MESSAGE_SIZE - 3);
+    for (uint i = 0; i < pkt->size; i++)
+        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 3]);
+    // Type 1, a control packet
+    message[0] = 1;
+    send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
+    nelements = mclmac_read_queue_element(mclmac);
+    assert(nelements == 1);
+    assert(ARROW(mclmac->mac)_first_send_control == 0);
+    assert(ARROW(mclmac->mac)_last_send_control == 1);
+    assert(ARROW(mclmac->mac)_packets_to_send_read == 2);
+    pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
+    assert(pkt->destination_id == destination_id);
+    assert(pkt->size == MAX_MESSAGE_SIZE - 3);
+    for (uint i = 0; i < pkt->size; i++)
+        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 3]);
+    
+    message[0] = rand() + 3;
+    send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
+    nelements = mclmac_read_queue_element(mclmac);
+    assert(nelements == 0);
+}
+#ifdef __LINUX__
+void *read_queue(void *arg)
+{
+    MCLMAC_t *mclmac;
+    mclmac = (MCLMAC_t *)arg;
+    mclmac->_self_pid = pthread_self();
+    
+    _read_queue(mclmac);
+    return NULL;
+}
+#endif
+#ifdef __RIOT__
+static void* read_queue(void *arg)
+{
+    MCLMAC_t *mclmac;
+    mclmac = (MCLMAC_t *)arg;
+    mclmac->_self_pid = thread_getpid();
+    
+    _read_queue(mclmac);
+    return NULL;
+}
+#endif
+void test_mclmac_read_queue_element(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
@@ -1084,54 +1172,25 @@ void test_stub_mclmac_read_queue_element(void)
 
     /**
      * read_queue_element.
-     * This function should read data send from other layers via a shared queue.
+     * This function should read data sent from other layers via a shared queue.
      * We should get the following data from the upper layer:
-     *  -Node id: destination of the packet.
-     *  -Is Fragment: Whether the packet is a fragment or not.
-     *  -Total Fragment: The total number of fragments.
-     *  -Fragment number: The number of fragment this packet corresponds to.
-     *  -Data size: the size of the data.
+     *  -Destination ID.
+     *  -The size of the data.
+     *  -The data itself.
      * Store this in the array of data packets on the mac data structure.
      * Increase by one the number of elements read, when appropiate.
      */
-
-    /* Test case 1: 
-    *   When the array is full, that is, when _packets_read == MAX_NUMER_DATA_PACKETS.
-    *       -nelements should be 0.
-    *       -_packets_read should be MAX_NUMBER_DATA_PACKETS
-    * */
-    ARROW(ARROW(mclmac)mac)_packets_read = MAX_NUMBER_DATA_PACKETS;
-    int nelements = stub_mclmac_read_queue_element(REFERENCE mclmac);
-    assert(nelements == 0);
-    assert(ARROW(ARROW(mclmac)mac)_packets_read == MAX_NUMBER_DATA_PACKETS);
-
-    /* Test case 2: 
-    *   -The array is emtpy. The function should generate the elements randomly.
-    *   It should return:
-    *       -nelements = 1.
-    *       -first_send should be 0.
-    *       -last_send should be 1.
-    **/
-    ARROW(ARROW(mclmac)mac)_packets_read = 0;
-    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac);
-    assert(nelements == 1);
-    assert(ARROW(ARROW(mclmac)mac)_first_send == 0);
-    assert(ARROW(ARROW(mclmac)mac)_last_send == 1);
-
-    /**
-     * Test case 3:
-     * -The array alreaady contains elements, it should add the data at the first empty place.
-     *  It should return:
-     *      -nelements = 1.
-     *      -_first_send should remain the same.
-     *      -_last_send should increase by one.
-     * */
-    uint8_t last_send = ARROW(ARROW(mclmac)mac)_last_send;
-    uint8_t first_send = ARROW(ARROW(mclmac)mac)_first_send;
-    nelements = stub_mclmac_read_queue_element(REFERENCE mclmac);
-    assert(nelements == 1);
-    assert(ARROW(ARROW(mclmac)mac)_first_send == first_send);
-    assert(ARROW(ARROW(mclmac)mac)_last_send == last_send + 1);
+#ifdef __LINUX__
+    pthread_t pid;
+    pthread_create(&pid, NULL, read_queue, (void *)mclmac);
+    pthread_join(pid, NULL);
+#endif
+#ifdef __RIOT__
+    kernel_pid_t pid = thread_create(mclmac.stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1,
+                        THREAD_CREATE_SLEEPING, read_queue, (void *)&mclmac, "Read queue");
+    thread_wakeup(pid);
+    while (thread_getstatus(pid) == STATUS_RUNNING) ;
+#endif
 
     MCLMAC_destroy(&mclmac);
 }
@@ -1547,8 +1606,8 @@ void executeTestsMCLMAC(void)
     test_mclmac_get_network_time();
     printf("Test passed.\n");
 
-    printf("Testing stub_mclmac_read_queue_element function.\n");
-    test_stub_mclmac_read_queue_element();
+    printf("Testing mclmac_read_queue_element function.\n");
+    test_mclmac_read_queue_element();
     printf("Test passed.\n");
 
     printf("Testing stub_mclmac_write_queue_element function.\n");

@@ -233,7 +233,7 @@ bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
  * @param mclmac 
  * @return int32_t 
  */
-int32_t stub_mclmac_read_queue_element(MCLMAC_t *mclmac);
+int32_t mclmac_read_queue_element(MCLMAC_t *mclmac);
 
 /**
  * @brief From the array _packets_received at the mac data structure, which
