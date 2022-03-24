@@ -24,9 +24,11 @@
 #endif
 
 /* The minimum message size in Linux is 128 bytes, 
-so set to 256 bytes, the maximum allowed by LoRa.*/
+so set to 256 + 3 bytes, which includes the maximum 
+message size allowed by LoRa plus the spaces for store
+the type and destination id.*/
 #ifndef MAX_MESSAGE_SIZE
-#define MAX_MESSAGE_SIZE            256
+#define MAX_MESSAGE_SIZE            256 + 3
 #endif
 
 #ifndef QUEUE_SIZE

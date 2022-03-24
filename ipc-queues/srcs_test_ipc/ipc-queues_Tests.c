@@ -303,7 +303,7 @@ void *recv(void *arg)
     mqd_t qd = q->queue;
     
     size_t len = MAX_MESSAGE_SIZE + sizeof(pthread_t);
-    char _msg[MAX_MESSAGE_SIZE] = {0};
+    char _msg[len];
     struct mq_attr attr;
 
     usleep(100U);
@@ -311,6 +311,7 @@ void *recv(void *arg)
     int count = 0;
     while (attr.mq_curmsgs > 0)
     {
+        memset(_msg, 0, len);
         int ret = mq_receive(qd, _msg, len, NULL);
 
         assert(ret == MAX_MESSAGE_SIZE + sizeof(pthread_t));
