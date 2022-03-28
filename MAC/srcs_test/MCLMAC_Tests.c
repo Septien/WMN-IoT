@@ -1111,10 +1111,11 @@ void _read_queue(MCLMAC_t *mclmac)
     DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[0];
     uint16_t destination_id = (((uint16_t)message[1]) << 8) | (message[2]);
     assert(pkt->destination_id == destination_id);
+    assert(pkt->type == message[0]);
     // Only the packet's data
-    assert(pkt->size == MAX_MESSAGE_SIZE - 3);
+    assert(pkt->size == message[3]);
     for (uint i = 0; i < pkt->size; i++)
-        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 3]);
+        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
     // Type 1, a control packet
     message[0] = 1;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
@@ -1125,10 +1126,11 @@ void _read_queue(MCLMAC_t *mclmac)
     assert(ARROW(mclmac->mac)_packets_to_send_read == 2);
     pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
     assert(pkt->destination_id == destination_id);
-    assert(pkt->size == MAX_MESSAGE_SIZE - 3);
+    assert(pkt->size == message[3]);
     for (uint i = 0; i < pkt->size; i++)
-        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 3]);
+        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
     
+    // Invalid packet type
     message[0] = rand() + 3;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);

@@ -530,25 +530,28 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
 #endif
         recv_message(mclmac->_mac_queue_id, msg, size, &pid);
         ARRAY byteString;
-        // The message's data size
-        size_t size_bs = size - 3;
 #ifdef __LINUX__
-        byteString = (uint8_t *)malloc((size - 1) * sizeof(uint8_t));
+        byteString = (uint8_t *)malloc((size) * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-        create_array(&byteString, size - 1);
+        create_array(&byteString, size);
 #endif
         // Copy the message to the byte string
-        for (uint i = 0; i < size - 1; i++)
+        // Store the  destination id
+        WRITE_ARRAY(REFERENCE byteString, msg[1], 0);
+        WRITE_ARRAY(REFERENCE byteString, msg[2], 1);
+        // Store the type
+        WRITE_ARRAY(REFERENCE byteString, msg[0], 2);
+        for (uint i = 3; i < size; i++)
         {
-            uint8_t e = msg[i + 1];
+            uint8_t e = msg[i];
             WRITE_ARRAY(REFERENCE byteString, e, i);
         }
         if (msg[0] == 0)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_message;
             DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[last];
-            datapacket_construct_from_bytestring(pkt, &byteString, size_bs);
+            datapacket_construct_from_bytestring(pkt, &byteString);
             ARROW(mclmac->mac)_last_send_message++;
             ARROW(mclmac->mac)_packets_to_send_read++;
         }
@@ -556,7 +559,7 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_control;
             DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[last];
-            datapacket_construct_from_bytestring(pkt, &byteString, size_bs);
+            datapacket_construct_from_bytestring(pkt, &byteString);
             ARROW(mclmac->mac)_last_send_control++;
             ARROW(mclmac->mac)_packets_to_send_read++;
         }
