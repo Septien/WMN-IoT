@@ -62,7 +62,7 @@ void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, 
     }
     if (size < PACKET_SIZE_MAC - 3)
     {
-        for (; i <= PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 3; i++)
             WRITE_ARRAY(REFERENCE pkt->data, 0, i);
     }
 }

@@ -76,7 +76,7 @@ void test_datapacket_create(void)
         assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == READ_ARRAY(REFERENCE data, i));
     if (size < PACKET_SIZE_MAC - 3)
     {
-        for (; i <= PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 3; i++)
             assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == 0);
     }
 
@@ -162,7 +162,7 @@ void test_datapacket_get_packet_bytestring(void)
         assert(READ_ARRAY(REFERENCE byteString, i + 3) == READ_ARRAY(REFERENCE data, i));
     if (size < PACKET_SIZE_MAC - 3)
     {
-        for (; i <= PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 3; i++)
             assert(READ_ARRAY(REFERENCE byteString, i + 3) == 0);
     }
 
@@ -210,7 +210,7 @@ void test_datapacket_construct_from_bytestring(void)
     }
     if (size < PACKET_SIZE_MAC - 3)
     {
-        for (; i <= PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 3; i++)
             WRITE_ARRAY(REFERENCE byteString, 0, i);
     }
     datapacket_construct_from_bytestring(REFERENCE datapkt, &byteString, size);
@@ -223,7 +223,7 @@ void test_datapacket_construct_from_bytestring(void)
     }
     if (size < PACKET_SIZE_MAC - 3)
     {
-        for (; i <= PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 3; i++)
             assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == 0);
     }
 
