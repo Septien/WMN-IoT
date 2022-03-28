@@ -26,16 +26,16 @@
 
 typedef struct {
     int8_t      type;
+    uint8_t     size;
     uint16_t    destination_id;
-    size_t      size;
     ARRAY       data;
 }DataPacket_t;
 
 void datapacket_init(DataPacket_t DOUBLE_POINTER pkt);
 void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt);
-void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, size_t size);
+void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, uint8_t size);
 void datapacket_clear(DataPacket_t *pkt);
-void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString, size_t *size);
-void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString, size_t size);
+void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString);
+void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString);
 
 #endif  // DATAPACKET_H

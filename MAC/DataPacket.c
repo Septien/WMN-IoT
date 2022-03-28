@@ -35,7 +35,7 @@ void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt)
     return;
 }
 
-void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, size_t size)
+void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, uint8_t size)
 {
     assert(pkt != NULL);
     assert(type >= 0 && type < 3);      // Only accept type 0, 1, or 2. -1 is for when no data is stored on the packet.
@@ -47,7 +47,7 @@ void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, 
     pkt->destination_id = destination_id;
     pkt->type = type;
     // The data size should be the same always
-    pkt->size = PACKET_SIZE_MAC - 3;
+    pkt->size = size;
 #ifdef __LINUX__
     pkt->data = (uint8_t *)malloc(pkt->size * sizeof(uint8_t));
 #endif
@@ -59,11 +59,6 @@ void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, 
     {
         uint8_t e = READ_ARRAY((SINGLE_POINTER data), i);
         WRITE_ARRAY(REFERENCE pkt->data, e, i);
-    }
-    if (size < PACKET_SIZE_MAC - 3)
-    {
-        for (; i < PACKET_SIZE_MAC - 3; i++)
-            WRITE_ARRAY(REFERENCE pkt->data, 0, i);
     }
 }
 
@@ -85,7 +80,7 @@ void datapacket_clear(DataPacket_t *pkt)
 #endif
 }
 
-void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString, size_t *size)
+void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString)
 {
     assert(pkt != NULL);
 
@@ -100,29 +95,35 @@ void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString, size
 
     WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id & 0xff00) >> 8, 0);
     WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id & 0x00ff), 1);
-    WRITE_ARRAY(REFERENCE byteStringA, (uint8_t)pkt->type, 2);
-    for (uint i = 0; i < pkt->size; i++)
+    WRITE_ARRAY(REFERENCE byteStringA, pkt->type, 2);
+    WRITE_ARRAY(REFERENCE byteStringA, pkt->size, 3);
+    uint i;
+    for (i = 0; i < pkt->size; i++)
     {
         uint8_t element;
         element = READ_ARRAY(REFERENCE pkt->data, i);
-        WRITE_ARRAY(REFERENCE byteStringA, element, i + 3);
+        WRITE_ARRAY(REFERENCE byteStringA, element, i + 4);
+    }
+    if (pkt->size < PACKET_SIZE_MAC - 3)
+    {
+        for(; i < PACKET_SIZE_MAC - 3; i++)
+            WRITE_ARRAY(REFERENCE byteStringA, 0, i + 4);
     }
 
     *byteString = byteStringA;
-    *size = sizeA;
 }
 
-void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString, size_t size)
+void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
-    assert(size >= 6 && size <= 256);
 
     pkt->size = PACKET_SIZE_MAC - 3;
     pkt->destination_id = 0;
     pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 0)) << 8;
     pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 1));
     pkt->type = READ_ARRAY(SINGLE_POINTER byteString, 2);
+    pkt->size = READ_ARRAY(SINGLE_POINTER byteString, 3);
 #ifdef __LINUX__
     if (pkt->data != NULL)
         free(pkt->data);
@@ -133,9 +134,10 @@ void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString, 
         free_array(&pkt->data);
     create_array(&pkt->data, pkt->size);
 #endif
+    // Copy only the data, and discard the zeros.
     for (uint i = 0; i < pkt->size; i++)
     {
-        uint8_t element = READ_ARRAY(SINGLE_POINTER byteString, i + 3);
+        uint8_t element = READ_ARRAY(SINGLE_POINTER byteString, i + 4);
         WRITE_ARRAY(REFERENCE pkt->data, element, i);
     }
 }

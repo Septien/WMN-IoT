@@ -49,7 +49,7 @@ void test_datapacket_create(void)
     datapacket_init(&datapkt);
 
     uint16_t destination_id = rand();
-    size_t size = rand() % (PACKET_SIZE_MAC - 2);
+    uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 3;
     ARRAY data;
 #ifdef __LINUX__
@@ -63,7 +63,7 @@ void test_datapacket_create(void)
 
     datapacket_create(REFERENCE datapkt, type, destination_id, &data, size);
     assert(ARROW(datapkt)destination_id == destination_id);
-    assert(ARROW(datapkt)size == PACKET_SIZE_MAC - 3);
+    assert(ARROW(datapkt)size == size);
     assert(ARROW(datapkt)type == type);
 #ifdef __LINUX__
     assert(datapkt->data != NULL);
@@ -74,11 +74,6 @@ void test_datapacket_create(void)
     uint i = 0;
     for (i = 0; i < size; i++)
         assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == READ_ARRAY(REFERENCE data, i));
-    if (size < PACKET_SIZE_MAC - 3)
-    {
-        for (; i < PACKET_SIZE_MAC - 3; i++)
-            assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == 0);
-    }
 
 #ifdef __LINUX__
     free(data);
@@ -95,7 +90,8 @@ void test_datapacket_clear(void)
     datapacket_init(&datapkt);
 
     uint16_t destination_id = rand();
-    size_t size = rand() % (PACKET_SIZE_MAC - 2);
+    uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
+    size = (size == 0 ? 1 : size);
     int8_t type = rand() % 3;
     ARRAY data;
 #ifdef __LINUX__
@@ -135,7 +131,7 @@ void test_datapacket_get_packet_bytestring(void)
     datapacket_init(&datapkt);
 
     uint16_t destination_id = rand();
-    size_t size = rand() % (PACKET_SIZE_MAC - 2);
+    uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 3;
     ARRAY data;
 #ifdef __LINUX__
@@ -151,19 +147,18 @@ void test_datapacket_get_packet_bytestring(void)
     datapacket_create(REFERENCE datapkt, type, destination_id, &data, size);
 
     ARRAY byteString;
-    size_t bs_size;
 
-    datapacket_get_packet_bytestring(REFERENCE datapkt, &byteString, &bs_size);
-    assert(bs_size == PACKET_SIZE_MAC);
+    datapacket_get_packet_bytestring(REFERENCE datapkt, &byteString);
     assert(READ_ARRAY(REFERENCE byteString, 0) == (destination_id & 0xff00) >> 8);
     assert(READ_ARRAY(REFERENCE byteString, 1) == (destination_id & 0x00ff));
     assert(READ_ARRAY(REFERENCE byteString, 2) == type);
+    assert(READ_ARRAY(REFERENCE byteString, 3) == size);
     for (i = 0; i < size; i++)
-        assert(READ_ARRAY(REFERENCE byteString, i + 3) == READ_ARRAY(REFERENCE data, i));
+        assert(READ_ARRAY(REFERENCE byteString, i + 4) == READ_ARRAY(REFERENCE data, i));
     if (size < PACKET_SIZE_MAC - 3)
     {
         for (; i < PACKET_SIZE_MAC - 3; i++)
-            assert(READ_ARRAY(REFERENCE byteString, i + 3) == 0);
+            assert(READ_ARRAY(REFERENCE byteString, i + 4) == 0);
     }
 
 #ifdef __LINUX__
@@ -184,17 +179,17 @@ void test_datapacket_construct_from_bytestring(void)
     datapacket_init(&datapkt);
 
     uint16_t destination_id = rand();
-    size_t size = rand() % (PACKET_SIZE_MAC - 2);
+    uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 3;
     ARRAY data;
     ARRAY byteString;
 #ifdef __LINUX__
-    data = (uint8_t *)malloc(size);
-    byteString = (uint8_t *)malloc((size + 3) * sizeof(uint8_t));
+    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    byteString = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
     create_array(&data, size);
-    create_array(&byteString, (size + 3));
+    create_array(&byteString, PACKET_SIZE_MAC);
 #endif
     uint i;
     for (i = 0; i < size; i++)
@@ -203,28 +198,24 @@ void test_datapacket_construct_from_bytestring(void)
     WRITE_ARRAY(REFERENCE byteString, (destination_id & 0xff00) >> 8, 0);
     WRITE_ARRAY(REFERENCE byteString, (destination_id & 0x00ff), 1);
     WRITE_ARRAY(REFERENCE byteString, type, 2);
+    WRITE_ARRAY(REFERENCE byteString, size, 3);
     for (i = 0; i < size; i++)
     {
         uint8_t e = READ_ARRAY(REFERENCE data, i);
-        WRITE_ARRAY(REFERENCE byteString, e, i + 3);
+        WRITE_ARRAY(REFERENCE byteString, e, i + 4);
     }
     if (size < PACKET_SIZE_MAC - 3)
     {
         for (; i < PACKET_SIZE_MAC - 3; i++)
             WRITE_ARRAY(REFERENCE byteString, 0, i);
     }
-    datapacket_construct_from_bytestring(REFERENCE datapkt, &byteString, size);
+    datapacket_construct_from_bytestring(REFERENCE datapkt, &byteString);
     assert(ARROW(datapkt)destination_id == destination_id);
-    assert(ARROW(datapkt)size == PACKET_SIZE_MAC - 3);
+    assert(ARROW(datapkt)size == size);
     assert(ARROW(datapkt)type == type);
     for (i = 0; i < size; i++)
     {
-        assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == READ_ARRAY(REFERENCE byteString, i + 3));
-    }
-    if (size < PACKET_SIZE_MAC - 3)
-    {
-        for (; i < PACKET_SIZE_MAC - 3; i++)
-            assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == 0);
+        assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == READ_ARRAY(REFERENCE byteString, i + 4));
     }
 
 #ifdef __LINUX__
