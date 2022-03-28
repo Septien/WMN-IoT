@@ -141,6 +141,12 @@
 #define MAX_NUMBER_DATA_PACKETS 16
 #endif
 
+/* The maximum packet size for LoRa is 256 bytes. It may change
+according to the radio in use. */
+#ifndef PACKET_SIZE_MAC
+#define PACKET_SIZE_MAC         256
+#endif
+
 /* Clock type for RIOT. */
 #ifdef __RIOT__
 #define CLOCK                   ZTIMER_USEC
