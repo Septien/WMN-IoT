@@ -367,17 +367,18 @@ kernel_pid_t *pid
         }
     }
     /* Get the pid. */
+    uint8_t *_msg_ = (uint8_t *)_msg;
     pthread_t _pid = 0;
-    _pid |= ((pthread_t)_msg[0]) << 56;
-    _pid |= ((pthread_t)_msg[1]) << 48;
-    _pid |= ((pthread_t)_msg[2]) << 40;
-    _pid |= ((pthread_t)_msg[3]) << 32;
-    _pid |= ((pthread_t)_msg[4]) << 24;
-    _pid |= ((pthread_t)_msg[5]) << 16;
-    _pid |= ((pthread_t)_msg[6]) << 8;
-    _pid |= ((pthread_t)_msg[7]);
+    _pid |= ((pthread_t)_msg_[0]) << 56;
+    _pid |= ((pthread_t)_msg_[1]) << 48;
+    _pid |= ((pthread_t)_msg_[2]) << 40;
+    _pid |= ((pthread_t)_msg_[3]) << 32;
+    _pid |= ((pthread_t)_msg_[4]) << 24;
+    _pid |= ((pthread_t)_msg_[5]) << 16;
+    _pid |= ((pthread_t)_msg_[6]) << 8;
+    _pid |= ((pthread_t)_msg_[7]);
     /* Copy the message back to the return message. */
-    uint8_t *p = (uint8_t *)(_msg + 8);
+    uint8_t *p = (uint8_t *)(_msg_ + 8);
     memcpy(msg, p, sizeof(uint8_t) * size);
     *pid = _pid;
 
