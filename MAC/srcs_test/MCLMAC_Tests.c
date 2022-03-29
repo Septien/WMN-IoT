@@ -20,15 +20,13 @@ void test_MCLMAC_init(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
     
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 #ifdef __LINUX__
     assert(mclmac != NULL);
     assert(mclmac->mac != NULL);
 #endif
     assert(ARROW(mclmac)_nodeID == nodeid);
-    assert(ARROW(mclmac)_dataQSize == dataQsize);
     assert(ARROW(mclmac)_networkTime == 0);
     assert(ARROW(mclmac)_nSlots == MAX_NUMBER_SLOTS);
     assert(ARROW(mclmac)_nChannels == MAX_NUMBER_FREQS);
@@ -66,9 +64,8 @@ void test_MCLMAC_destroy(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     MCLMAC_destroy(&mclmac);
 #ifdef __LINUX__
@@ -86,9 +83,8 @@ void test_MCLMAC_clear(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     MCLMAC_clear(REFERENCE mclmac);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame == 0);
@@ -117,9 +113,8 @@ void test_mclmac_set_cf_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t cfchannel;
     int n = rand() % ITERATIONS;
@@ -143,9 +138,8 @@ void test_mclmac_get_cf_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t cfchannel, cfchannelS;
     int n = rand() % ITERATIONS;
@@ -170,9 +164,8 @@ void test_mclmac_set_transmit_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t channel;
     int n = rand() % ITERATIONS;
@@ -196,9 +189,8 @@ void test_mclmac_get_transmit_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t channel, channelS;
     int n = rand() % ITERATIONS;
@@ -223,9 +215,8 @@ void test_mclmac_set_reception_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t channel;
     int n = rand() % ITERATIONS;
@@ -249,9 +240,8 @@ void test_mclmac_get_reception_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t channel, channelS;
     int n = rand() % ITERATIONS;
@@ -276,9 +266,8 @@ void test_mclmac_get_frequency(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
     {
@@ -299,9 +288,8 @@ void test_mclmac_get_frequency(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t nChannels = (uint8_t) rand();
     nChannels = (nChannels == 0 ? 1 : nChannels);
@@ -345,9 +333,8 @@ void test_mclmac_get_available_channels(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t nChannels = (uint8_t) rand();
     ARRAY channels;
@@ -399,9 +386,8 @@ void test_mclmac_set_nodeid(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -424,9 +410,8 @@ void test_mclmac_get_nodeid(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -450,9 +435,8 @@ void test_mclmac_set_transmiterid(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 100;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     /**
      * Set the sender id, it should comply that id is different to the
@@ -476,9 +460,8 @@ void test_mclmac_get_transmiterid(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     /**
      * Get the sender id, it should be different to the current node's id.
@@ -502,9 +485,8 @@ void test_mclmac_set_selected_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t slot;
     int n = rand() % ITERATIONS;
@@ -528,9 +510,8 @@ void test_mclmac_get_selected_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t slot, slotR;
     int n = rand() % ITERATIONS;
@@ -555,9 +536,8 @@ void test_mclmac_set_number_of_hops(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t hops;
     int n = rand() % ITERATIONS;
@@ -581,9 +561,8 @@ void test_mclmac_get_number_of_hops(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t hops, hopsR;
     int n = rand() % ITERATIONS;
@@ -608,9 +587,8 @@ void test_mclmac_set_current_frame(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -633,9 +611,8 @@ void test_mclmac_increase_frame(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint32_t frame_number = 0;
     mclmac_set_current_frame(REFERENCE mclmac, frame_number);
@@ -660,9 +637,8 @@ void test_mclmac_set_current_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -685,9 +661,8 @@ void test_mclmac_get_current_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -711,9 +686,8 @@ void test_mclmac_increase_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     uint8_t slot = 0;
     mclmac_set_current_slot(REFERENCE mclmac, slot);
@@ -738,9 +712,8 @@ void test_mclmac_set_slots_number(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -764,9 +737,8 @@ void test_mclmac_set_cf_slots_number(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -790,9 +762,8 @@ void test_mclmac_set_current_cf_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -816,9 +787,8 @@ void test_mclmac_get_current_cf_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -843,9 +813,8 @@ void test_mclmac_increase_cf_slot(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
     
     uint8_t nCFSlot = rand();
     nCFSlot = (nCFSlot == 0 ? 1 : nCFSlot);
@@ -873,9 +842,8 @@ void test_mclmac_set_slot_duration(void)
     uint32_t slot_duration = 0;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
@@ -900,9 +868,8 @@ void test_mclmac_set_frame_duration(void)
     uint32_t frame_duration;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
@@ -926,9 +893,8 @@ void test_mclmac_set_cf_duration(void)
     uint32_t cf_duration;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
@@ -951,9 +917,8 @@ void test_mclmac_record_collision(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -979,9 +944,8 @@ void test_mclmac_record_collision(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -1004,9 +968,8 @@ void test_mclmac_get_destination_id(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -1030,9 +993,8 @@ void test_mclmac_set_network_time(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -1055,9 +1017,8 @@ void test_mclmac_get_network_time(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -1171,9 +1132,8 @@ void test_mclmac_read_queue_element(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     /**
      * read_queue_element.
@@ -1369,9 +1329,8 @@ void test_mclmac_write_queue_element(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     /**
      * This function will store the packets received from the medium
@@ -1404,11 +1363,8 @@ void test_mclmac_change_cf_channel(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
-    
-    
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
 
@@ -1430,9 +1386,8 @@ void test_mclmac_start_cf_phase(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
 
@@ -1457,9 +1412,8 @@ void test_mclmac_send_cf_message(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_set_nodeid(REFERENCE mclmac, 1);
 //    mclmac_set_destination_id(REFERENCE mclmac, 2);
@@ -1488,9 +1442,8 @@ void test_stub_mclmac_receive_cf_message(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_set_nodeid(REFERENCE mclmac, 1);
 //    mclmac_set_destination_id(REFERENCE mclmac, 2);
@@ -1518,10 +1471,9 @@ void test_mclmac_receive_cf_message(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
     size_t size = 5 * sizeof(uint16_t);
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     int ret;
 #ifdef __LINUX__

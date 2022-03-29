@@ -29,9 +29,8 @@ void test_mclmac_init_MAC_state_machine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     assert(ARROW(mclmac)macState.currentState == START);
@@ -50,9 +49,8 @@ void test_mclmac_set_MAC_state(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     state_t state = START;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
@@ -87,9 +85,8 @@ void test_mclmac_set_next_MAC_state(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     state_t state = INITIALIZATION;
     mclmac_set_next_MAC_state(REFERENCE mclmac, state);
@@ -120,9 +117,8 @@ void test_mclmac_get_MAC_state(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     state_t state = START, stateA;
     mclmac_set_MAC_state(REFERENCE mclmac, state);
@@ -162,9 +158,8 @@ void test_mclmac_update_mac_state_machine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     /**
@@ -441,9 +436,8 @@ void test_start_state_mac_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
 
@@ -478,9 +472,8 @@ void test_initialization_state_mac_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     // Pass to START state and execute
@@ -530,9 +523,8 @@ void test_synchronization_state_mac_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
 
@@ -588,9 +580,8 @@ void test_timeslot_frequency_state_mac_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
 
@@ -671,9 +662,8 @@ void test_medium_access_state_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
 

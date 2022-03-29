@@ -83,7 +83,6 @@ typedef struct MCLMAC
     // Private members
     uint16_t            _nodeID;
     uint64_t            _networkTime;
-    size_t              _dataQSize;
     uint8_t             _nSlots;
     uint8_t             _nChannels;
     uint16_t            _hopCount;
@@ -116,7 +115,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    uint16_t nodeid, size_t dataQSize
+    uint16_t nodeid
 );
 
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);

@@ -18,9 +18,8 @@ void test_mclmac_init_powermode_state_machine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
     assert(ARROW(mclmac)powerMode.currentState == STARTP);
@@ -39,9 +38,8 @@ void test_mclmac_set_powermode_state(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     PowerMode_t mode = PASSIVE;
     mclmac_set_powermode_state(REFERENCE mclmac, mode);
@@ -72,9 +70,8 @@ void test_mclmac_set_next_powermode_state(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     PowerMode_t mode = ACTIVE;
     mclmac_set_next_powermode_state(REFERENCE mclmac, mode);
@@ -101,9 +98,8 @@ void test_mclmac_get_powermode_state(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     PowerMode_t mode = PASSIVE, modeR;
     mclmac_set_powermode_state(REFERENCE mclmac, mode);
@@ -138,9 +134,8 @@ void test_mclmac_update_powermode_state_machine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
@@ -369,9 +364,8 @@ void test_startp_state_powermode_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
@@ -422,9 +416,8 @@ void test_passive_state_powermode_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
 
@@ -475,9 +468,8 @@ void test_active_state_powermode_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 10;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     mclmac_init_powermode_state_machine(REFERENCE mclmac);
@@ -667,9 +659,8 @@ void test_transmit_powermode_stmachine(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 10;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_init_mac_state_machine(REFERENCE mclmac);
     mclmac_init_powermode_state_machine(REFERENCE mclmac);

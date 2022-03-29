@@ -17,8 +17,7 @@
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_create_cf_packet(REFERENCE mclmac);
 #ifdef __LINUX__
@@ -38,10 +37,9 @@ void test_mclmac_create_control_packet(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
 
     uint8_t bytes = get_number_bytes(_nSlots * _nChannels);
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
     ARROW(ARROW(mclmac)mac)nodeID = rand();
     ARROW(mclmac)_collisionFrequency = rand();
     ARROW(mclmac)_collisionSlot = rand();
@@ -77,9 +75,8 @@ void test_mclmac_create_data_packet(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
     ARROW(mclmac)_isFragment = rand();
     ARROW(mclmac)_numberFragments = rand();
     ARROW(mclmac)_fragmentNumber = rand();
@@ -104,9 +101,8 @@ void test_mclmac_clear_cf_packet(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_set_nodeid(REFERENCE mclmac, 1);
     mclmac_set_destination_id(REFERENCE mclmac, 2);
@@ -129,9 +125,8 @@ void test_mclmac_set_packet_data(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_create_data_packet(REFERENCE mclmac);
 
@@ -189,9 +184,8 @@ void test_mclmac_delete_data_from_packet(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_create_data_packet(REFERENCE mclmac);
     uint8_t size = 249;
@@ -235,9 +229,8 @@ void test_mclmac_clear_data_from_packet(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    size_t dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     mclmac_create_data_packet(REFERENCE mclmac);
     uint8_t size = 249;
@@ -277,9 +270,8 @@ void test_stub_mclmac_receive_ctrlpkt_sync(void)
     sx127x_t radio;
 #endif
     uint16_t nodeid = 0;
-    size_t  dataQsize = 256;
 
-    MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
+    MCLMAC_init(&mclmac, &radio, nodeid);
 
     /**
      * This function will receive the packets from the network.

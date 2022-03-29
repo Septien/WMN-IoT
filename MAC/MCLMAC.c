@@ -11,7 +11,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    uint16_t nodeid, size_t dataQSize
+    uint16_t nodeid
 )
 {
 #ifdef __LINUX__
@@ -25,7 +25,6 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 
     MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
     (SINGLE_POINTER mclmac)->_nodeID = nodeid;
-    (SINGLE_POINTER mclmac)->_dataQSize = dataQSize;
     (SINGLE_POINTER mclmac)->_nChannels = MAX_NUMBER_FREQS;
     (SINGLE_POINTER mclmac)->_nSlots = MAX_NUMBER_SLOTS;
     (SINGLE_POINTER mclmac)->_hopCount = 0;
