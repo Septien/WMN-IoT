@@ -94,6 +94,9 @@ typedef struct MCLMAC
     // IPC Queue
     uint32_t            _mac_queue_id;
     char                *stack;
+    uint32_t            _routing_queue_id;
+    uint32_t            _transport_queue_id;
+    uint32_t            _app_queue_id;
 #ifdef __LINUX__
     pthread_t           _self_pid;
 #endif
@@ -243,7 +246,7 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac);
  * @param mclmac 
  * @return int32_t 
  */
-int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac);
+int32_t mclmac_write_queue_element(MCLMAC_t *mclmac);
 
 /* Private functions */
 void _select_slot_and_channel(MCLMAC_t *mclmac);

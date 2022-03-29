@@ -31,6 +31,9 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     (SINGLE_POINTER mclmac)->_hopCount = 0;
     (SINGLE_POINTER mclmac)->_networkTime = 0;
     (SINGLE_POINTER mclmac)->_mac_queue_id = 0;
+    (SINGLE_POINTER mclmac)->_routing_queue_id = 0;
+    (SINGLE_POINTER mclmac)->_transport_queue_id = 0;
+    (SINGLE_POINTER mclmac)->_app_queue_id = 0;
 
     // Initialize state machines
     mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
@@ -571,22 +574,52 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
     return 1;
 }
 
-int32_t stub_mclmac_write_queue_element(MCLMAC_t *mclmac)
+int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
     if (ARROW(mclmac->mac)_number_packets_received == 0)
         return 0;
+    // When queue is empty, no sure how useful this check is.
+    if (ARROW(mclmac->mac)_first_received == ARROW(mclmac->mac)_last_received && ARROW(mclmac->mac)_number_packets_received == 0)
+        return 0;
+    if (elements_on_queue(mclmac->_routing_queue_id) == MAX_ELEMENTS_ON_QUEUE)
+        return 0;
+    if (mclmac->_routing_queue_id == 0)
+        return 0;
 
     uint8_t first = ARROW(mclmac->mac)_first_received;
     // Get the first packet of the queue
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received [first];
-    (void) pkt;
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[first];
+    ARRAY _byteString;
+    datapacket_get_packet_bytestring(pkt, &_byteString);
+#ifdef __LINUX__
+    uint8_t *byteString = _byteString;
+#endif
+#ifdef __RIOT__
+    uint8_t bs[MAX_MESSAGE_SIZE];
+    for (uint i = 0; i < MAX_MESSAGE_SIZE; i++)
+        bs[i] = READ_ARRAY(&_byteString, i);
+    uint8_t *byteString = bs;
+#endif
+
+    // Send to routing layer
+    int ret = send_message(mclmac->_routing_queue_id, byteString, PACKET_SIZE_MAC, mclmac->_self_pid);
+    if (ret == 0)
+        return 0;
+
     // Push the packet on the inter-layer queue (just clear it for now)
-    //datapacket_clear(pkt);
+    datapacket_clear(pkt);
     first = (first + 1) % MAX_NUMBER_DATA_PACKETS;
     ARROW(mclmac->mac)_first_received = first;
     ARROW(mclmac->mac)_number_packets_received--;
+
+#ifdef __LINUX__
+    free(_byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&_byteString);
+#endif
 
     return 1;
 }

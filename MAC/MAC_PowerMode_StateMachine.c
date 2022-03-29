@@ -149,7 +149,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             /* 'Read' elements from the queue. */
             mclmac_read_queue_element(mclmac);
             /* 'Write' packets into queue. */
-            stub_mclmac_write_queue_element(mclmac);
+            mclmac_write_queue_element(mclmac);
             // Sleep for a little while
 #ifdef __LINUX__
             usleep(CF_SLOT_DURATION / 2);

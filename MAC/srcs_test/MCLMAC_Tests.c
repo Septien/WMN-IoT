@@ -49,6 +49,9 @@ void test_MCLMAC_init(void)
     assert(mclmac.stack != NULL);
 #endif
     assert(ARROW(mclmac)_mac_queue_id != 0);
+    assert(ARROW(mclmac)_routing_queue_id == 0);
+    assert(ARROW(mclmac)_transport_queue_id == 0);
+    assert(ARROW(mclmac)_app_queue_id == 0);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -1197,7 +1200,167 @@ void test_mclmac_read_queue_element(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_stub_mclmac_write_queue_element(void)
+void _write_queue(MCLMAC_t *mclmac)
+{
+    open_queue(mclmac->_mac_queue_id, mclmac->_self_pid);
+
+    /**
+     * Test case 0:
+     *  -The routing layer is not open yet. Return 0.
+     */
+    int ret = mclmac_write_queue_element(mclmac);
+    assert(ret == 0);
+
+    /* The message will be sent to the routing layer, for the moment simulate
+     that the mac queue is the routing queue. */
+    mclmac->_routing_queue_id = mclmac->_mac_queue_id;
+    /**
+     * Test case 1:
+     *  -_elements_read = 0.
+     * It should return 0.
+    */
+    ret = mclmac_write_queue_element(mclmac);
+    assert(ret == 0);
+
+    /**
+     * Test case 2:
+     *      -The queue is full, return 0.
+     */
+    uint8_t msg[MAX_MESSAGE_SIZE] = {0};
+    for (uint i = 0; i < MAX_MESSAGE_SIZE; i++)
+        msg[i] = rand();
+    for (uint i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+        send_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, mclmac->_self_pid);
+    ARROW(mclmac->mac)_number_packets_received = 1;
+    ret = mclmac_write_queue_element(mclmac);
+    assert(ret == 0);
+#ifdef __LINUX__
+    pthread_t pid;
+#endif
+#ifdef __RIOT__
+    kernel_pid_t pid;
+#endif
+    // Empty queue
+    for (uint i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    {
+        memset(msg, 0, MAX_MESSAGE_SIZE);
+        recv_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, &pid);
+    }
+    /**
+    * Test case 3:
+    *   -One element is on the array, so first = 0, last = 1, and packet_read = 1.
+    *   -It should return 1.
+    *   -first should be 1.
+    *   -last should be 1.
+    *   -packets_read should be 0.
+    *   -the packet should be cleared
+    */
+    // Fill the packet
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[0];
+    uint16_t destination_id = rand();
+    uint8_t type = rand() % 3;
+    uint8_t size = rand();
+    ARRAY data;
+#ifdef __LINUX__
+    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&data, size);
+#endif
+    for (uint i = 0; i < size; i++)
+        WRITE_ARRAY(REFERENCE data, rand(), i);
+    datapacket_create(pkt, type, destination_id, &data, size);
+
+    // Increase the number of packets store.
+    ARROW(mclmac->mac)_number_packets_received = 1;
+    ARROW(mclmac->mac)_last_received = 1;
+    ret = mclmac_write_queue_element(mclmac);
+    assert(ret == 1);
+    assert(ARROW(mclmac->mac)_number_packets_received == 0);
+    assert(ARROW(mclmac->mac)_first_received == 1);
+    assert(ARROW(mclmac->mac)_last_received == 1);
+    assert(pkt->type == -1);
+    assert(pkt->destination_id == 0);
+    assert(pkt->size == 0);
+#ifdef __LINUX__
+    assert(pkt->data == NULL);
+#endif
+#ifdef __RIOT__
+    assert(pkt->data.size == 0);
+#endif
+    // Clear queue
+    memset(msg, 0, MAX_MESSAGE_SIZE);
+    recv_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, &pid);
+
+    /**
+     * Test case 4: store MAX_NUMBER_DATA_PACKETS, then push all on queue.
+     * The following should comply:
+     *  -last_received should be 0.
+     *  -first_received should be 0.
+     *  -_number_packets_received should be 0.
+     */
+    ARROW(mclmac->mac)_number_packets_received = 0;
+    ARROW(mclmac->mac)_last_received = 0;
+    ARROW(mclmac->mac)_first_received = 0;
+    uint i;
+    for (i = 0; i < MAX_MESSAGE_SIZE; i++)
+        msg[i] = rand();
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
+        datapacket_create(pkt, type, destination_id, &data, size);
+    }
+    // Total of packets to store.
+    ARROW(mclmac->mac)_number_packets_received = MAX_NUMBER_DATA_PACKETS;
+    ARROW(mclmac->mac)_last_received = 0;
+
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        printf("i = %d\n", i);
+        ret = mclmac_write_queue_element(mclmac);
+        recv_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, &pid);
+        assert(ret == 1);
+    }
+    assert(ARROW(mclmac->mac)_number_packets_received == 0);
+    assert(ARROW(mclmac->mac)_first_received == 0);
+    assert(ARROW(mclmac->mac)_last_received == 0);
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
+        assert(pkt->type == -1);
+        assert(pkt->destination_id == 0);
+        assert(pkt->size == 0);
+#ifdef __LINUX__
+        assert(pkt->data == NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size == 0);
+#endif
+    }
+}
+#ifdef __LINUX__
+void *write_queue(void *arg)
+{
+    MCLMAC_t *mclmac;
+    mclmac = (MCLMAC_t *)arg;
+    mclmac->_self_pid = pthread_self();
+
+    _write_queue(mclmac);
+    return NULL;
+}
+#endif
+#ifdef __RIOT__
+static void *write_queue(void *arg)
+{
+    MCLMAC_t *mclmac;
+    mclmac = (MCLMAC_t *)arg;
+    mclmac->_self_pid = thread_getpid();
+
+    _write_queue(mclmac);
+    return NULL;
+}
+#endif
+void test_mclmac_write_queue_element(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
@@ -1211,64 +1374,23 @@ void test_stub_mclmac_write_queue_element(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid, dataQsize);
 
-    int ret;
     /**
-     * Test case 1:
-     *  -_elements_read = 0.
-     * It should return 0.
-    */
-    ret = stub_mclmac_write_queue_element(REFERENCE mclmac);
-    assert(ret == 0);
-
-    /**
-    * Test case 2:
-    *   -One element is on the array, so first = 0, last = 1, and packet_read = 1.
-    *   -It should return 1.
-    *   -first should be 1.
-    *   -last should be 1.
-    *   -packets_read should be 0.
-    */
-    // Fill the packet
-    DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[0];
-    (void) pkt;
-
-    // Increase the number of packets store.
-    ARROW(ARROW(mclmac)mac)_number_packets_received = 1;
-    ARROW(ARROW(mclmac)mac)_last_received = 1;
-    ret = stub_mclmac_write_queue_element(REFERENCE mclmac);
-    assert(ret == 1);
-    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
-    assert(ARROW(ARROW(mclmac)mac)_first_received == 1);
-    assert(ARROW(ARROW(mclmac)mac)_last_received == 1);
-
-    /**
-     * Test case 3: store MAX_NUMBER_DATA_PACKETS, then push all on queue.
-     * The following should comply:
-     *  -last_received should be 0.
-     *  -first_received should be 0.
-     *  -_number_packets_received should be 0.
+     * This function will store the packets received from the medium
+     * onto the IPC Queues, for upper layer processing.
+     * We assume the array _packets_received contains only packet for
+     * upper layers. Internal packets are handled else where.
      */
-    ARROW(ARROW(mclmac)mac)_number_packets_received = 0;
-    ARROW(ARROW(mclmac)mac)_last_received = 0;
-    ARROW(ARROW(mclmac)mac)_first_received = 0;
-    uint i;
-    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
-    {
-        DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
-        (void) pkt;
-    }
-    // Total of packets store.
-    ARROW(ARROW(mclmac)mac)_number_packets_received = MAX_NUMBER_DATA_PACKETS;
-    ARROW(ARROW(mclmac)mac)_last_received = 0;
-
-    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
-    {
-        ret = stub_mclmac_write_queue_element(REFERENCE mclmac);
-    }
-    assert(ret == 1);
-    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
-    assert(ARROW(ARROW(mclmac)mac)_first_received == 0);
-    assert(ARROW(ARROW(mclmac)mac)_last_received == 0);
+#ifdef __LINUX__
+    pthread_t pid;
+    pthread_create(&pid, NULL, write_queue, (void *)mclmac);
+    pthread_join(pid, NULL);
+#endif
+#ifdef __RIOT__
+    kernel_pid_t pid = thread_create(mclmac.stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1,
+                                  THREAD_CREATE_SLEEPING, write_queue, (void *)&mclmac, "Write Queue");
+    thread_wakeup(pid);
+    while (thread_getstatus(pid) == STATUS_RUNNING) ;
+#endif
 
     MCLMAC_destroy(&mclmac);
 }
@@ -1612,8 +1734,8 @@ void executeTestsMCLMAC(void)
     test_mclmac_read_queue_element();
     printf("Test passed.\n");
 
-    printf("Testing stub_mclmac_write_queue_element function.\n");
-    test_stub_mclmac_write_queue_element();
+    printf("Testing mclmac_write_queue_element function.\n");
+    test_mclmac_write_queue_element();
     printf("Test passed.\n");
 
     printf("Testing mclmac_change_cf_channel function.\n");
