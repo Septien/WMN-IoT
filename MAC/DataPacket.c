@@ -38,7 +38,7 @@ void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt)
 void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, uint8_t size)
 {
     assert(pkt != NULL);
-    assert(type >= 0 && type < 3);      // Only accept type 0, 1, or 2. -1 is for when no data is stored on the packet.
+    assert(type >= 0 && type < 4);      // Only accept type 0, 1, or 2. -1 is for when no data is stored on the packet.
     assert(size > 0);
     assert(data != NULL);
 #ifdef __LINUX__

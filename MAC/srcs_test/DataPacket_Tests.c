@@ -50,7 +50,7 @@ void test_datapacket_create(void)
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
-    int8_t type = rand() % 3;
+    int8_t type = rand() % 4;
     ARRAY data;
 #ifdef __LINUX__
     data = (uint8_t *)malloc(size * sizeof(uint8_t));
@@ -92,7 +92,7 @@ void test_datapacket_clear(void)
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     size = (size == 0 ? 1 : size);
-    int8_t type = rand() % 3;
+    int8_t type = rand() % 4;
     ARRAY data;
 #ifdef __LINUX__
     data = (uint8_t *)malloc(size * sizeof(uint8_t));
@@ -132,7 +132,7 @@ void test_datapacket_get_packet_bytestring(void)
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
-    int8_t type = rand() % 3;
+    int8_t type = rand() % 4;
     ARRAY data;
 #ifdef __LINUX__
     data = (uint8_t *)malloc(size * sizeof(uint8_t));
@@ -180,7 +180,7 @@ void test_datapacket_construct_from_bytestring(void)
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
-    int8_t type = rand() % 3;
+    int8_t type = rand() % 4;
     ARRAY data;
     ARRAY byteString;
 #ifdef __LINUX__
