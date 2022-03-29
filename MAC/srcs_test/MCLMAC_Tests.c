@@ -1316,7 +1316,6 @@ void _write_queue(MCLMAC_t *mclmac)
 
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
-        printf("i = %d\n", i);
         ret = mclmac_write_queue_element(mclmac);
         recv_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, &pid);
         assert(ret == 1);

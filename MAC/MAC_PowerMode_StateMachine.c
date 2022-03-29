@@ -146,9 +146,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 sleep = false;
             }
 
-            /* 'Read' elements from the queue. */
+            /* Read elements from the queue. */
             mclmac_read_queue_element(mclmac);
-            /* 'Write' packets into queue. */
+            /* Write packets into queue. */
             mclmac_write_queue_element(mclmac);
             // Sleep for a little while
 #ifdef __LINUX__
@@ -244,7 +244,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         // Collision detected
         if ((send && receive) || (packets > 1))
         {
-            printf("Packets: %d\n", packets);
             mclmac_set_next_powermode_state(mclmac, FINISHP);
             return E_PM_SYNCHRONIZATION_ERROR;
         }

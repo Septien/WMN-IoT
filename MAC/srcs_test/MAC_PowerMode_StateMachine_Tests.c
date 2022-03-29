@@ -432,6 +432,13 @@ void test_passive_state_powermode_stmachine(void)
     int ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
 
+#ifdef __LINUX__
+    mclmac->_self_pid = pthread_self();
+#endif
+#ifdef __RIOT__
+    mclmac._self_pid = thread_getpid();
+#endif
+    open_queue(ARROW(mclmac)_mac_queue_id, ARROW(mclmac)_self_pid);
     /**
      * We are now at the PASSIVE state. This state sets the radio on SLEEP mode, and
      * execute other pertinent functions:
@@ -453,6 +460,7 @@ void test_passive_state_powermode_stmachine(void)
     assert(ARROW(mclmac)_networkTime == time + 1);
 
     timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
+    close_queue(ARROW(mclmac)_mac_queue_id);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -506,6 +514,16 @@ void test_active_state_powermode_stmachine(void)
     // Execute the STARTP state, and update state to PASSIVE state.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+    // Add packets to the queue
+    uint8_t msg[MAX_MESSAGE_SIZE];
+    uint i;
+    for (i = 0; i < MAX_MESSAGE_SIZE; i++)
+        msg[i] = rand();
+    msg[0] = 0;
+    for (i = 0; i< MAX_ELEMENTS_ON_QUEUE; i++)
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    uint32_t nelements = elements_on_queue(ARROW(mclmac)_mac_queue_id);
+    assert(nelements == MAX_ELEMENTS_ON_QUEUE);
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
