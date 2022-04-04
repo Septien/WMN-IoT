@@ -71,26 +71,27 @@ uint16_t cfpacket_get_destinationid(CFPacket_t *pkt)
     return pkt->destinationID;
 }
 
-void cfpacket_get_packet_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t *size)
+void cfpacket_get_packet_bytestring(CFPacket_t *pkt, ARRAY* byteString)
 {
     assert(pkt != NULL);
 
-    size_t sizeA = sizeof(pkt->nodeID) + sizeof(pkt->destinationID);
 #ifdef __LINUX__
-    (*byteString) = (uint8_t *)malloc(sizeA * sizeof(uint8_t));
+    (*byteString) = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(byteString, sizeA);
+    create_array(byteString, PACKET_SIZE_MAC);
 #endif
-    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->nodeID & 0xff00) >> 8,          0);
-    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->nodeID & 0x00ff),               1);
-    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->destinationID & 0xff00) >> 8,   2);
-    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->destinationID & 0x00ff),        3);
-    
-    *size = sizeA;
+    WRITE_ARRAY(SINGLE_POINTER byteString, 0,                                    0);
+    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->nodeID & 0xff00) >> 8,          1);
+    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->nodeID & 0x00ff),               2);
+    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->destinationID & 0xff00) >> 8,   3);
+    WRITE_ARRAY(SINGLE_POINTER byteString, (pkt->destinationID & 0x00ff),        4);
+    uint n = rand();
+    for (uint i = 5; i < PACKET_SIZE_MAC; i++)
+        WRITE_ARRAY(SINGLE_POINTER byteString, n, i);
 }
 
-void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t size)
+void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
@@ -100,8 +101,9 @@ void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteStrin
 #ifdef __RIOT__
     assert(byteString->size > 0);
 #endif
-    assert(size > 0);
+    if (READ_ARRAY(SINGLE_POINTER byteString, 0) != 0)
+        return;
 
-    pkt->nodeID = (READ_ARRAY(SINGLE_POINTER byteString, 0) << 8) | (READ_ARRAY(SINGLE_POINTER byteString, 1));
-    pkt->destinationID = (READ_ARRAY(SINGLE_POINTER byteString, 2) << 8) | READ_ARRAY(SINGLE_POINTER byteString, 3);
+    pkt->nodeID = (READ_ARRAY(SINGLE_POINTER byteString, 1) << 8) | (READ_ARRAY(SINGLE_POINTER byteString, 2));
+    pkt->destinationID = (READ_ARRAY(SINGLE_POINTER byteString, 3) << 8) | READ_ARRAY(SINGLE_POINTER byteString, 4);
 }

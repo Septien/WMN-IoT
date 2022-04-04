@@ -38,7 +38,7 @@ void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt)
 void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, uint8_t size)
 {
     assert(pkt != NULL);
-    assert(type >= 0 && type < 4);      // Only accept type 0, 1, or 2. -1 is for when no data is stored on the packet.
+    assert(type >= 0 && type < 10);      // Only accept type 0, 1, or 2. -1 is for when no data is stored on the packet.
     assert(size > 0);
     assert(data != NULL);
 #ifdef __LINUX__
@@ -93,9 +93,9 @@ void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString)
     create_array(&byteStringA, sizeA);
 #endif
 
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id & 0xff00) >> 8, 0);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id & 0x00ff), 1);
-    WRITE_ARRAY(REFERENCE byteStringA, pkt->type, 2);
+    WRITE_ARRAY(REFERENCE byteStringA, pkt->type, 0);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id & 0xff00) >> 8, 1);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id & 0x00ff), 2);
     WRITE_ARRAY(REFERENCE byteStringA, pkt->size, 3);
     uint i;
     for (i = 0; i < pkt->size; i++)
@@ -120,9 +120,9 @@ void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString)
 
     pkt->size = PACKET_SIZE_MAC - 3;
     pkt->destination_id = 0;
-    pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 0)) << 8;
-    pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 1));
-    pkt->type = READ_ARRAY(SINGLE_POINTER byteString, 2);
+    pkt->type = READ_ARRAY(SINGLE_POINTER byteString, 0);
+    pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 1)) << 8;
+    pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 2));
     pkt->size = READ_ARRAY(SINGLE_POINTER byteString, 3);
 #ifdef __LINUX__
     if (pkt->data != NULL)

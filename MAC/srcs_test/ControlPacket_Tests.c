@@ -502,35 +502,36 @@ void test_controlpacket_get_packet_bytestring(void)
     ARRAY byteStr;
     controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr);
 
-    assert(READ_ARRAY(REFERENCE byteStr, 0)     == (nodeID & 0xff00) >> 8);
-    assert(READ_ARRAY(REFERENCE byteStr, 1)     == (nodeID & 0x00ff));
-    assert(READ_ARRAY(REFERENCE byteStr, 2)     == frames[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 3)     == frames[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 4)     == frames[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 5)     == frames[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 6)     == slot);
-    assert(READ_ARRAY(REFERENCE byteStr, 7)     == collisionSlots);
-    assert(READ_ARRAY(REFERENCE byteStr, 8)     == freq[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 9)     == freq[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 10)    == freq[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 11)    == freq[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 12)    == hopCount);
-    assert(READ_ARRAY(REFERENCE byteStr, 13)    == time[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 14)    == time[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 15)    == time[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 16)    == time[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 17)    == time[4]);
-    assert(READ_ARRAY(REFERENCE byteStr, 18)    == time[5]);
-    assert(READ_ARRAY(REFERENCE byteStr, 19)    == time[6]);
-    assert(READ_ARRAY(REFERENCE byteStr, 20)    == time[7]);
-    assert(READ_ARRAY(REFERENCE byteStr, 21)    == inittime[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 22)    == inittime[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 23)    == inittime[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 24)    == inittime[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 25)    == n);
+    assert(READ_ARRAY(REFERENCE byteStr, 0)     == 1);      // Control packet MAC, type one
+    assert(READ_ARRAY(REFERENCE byteStr, 1)     == (nodeID & 0xff00) >> 8);
+    assert(READ_ARRAY(REFERENCE byteStr, 2)     == (nodeID & 0x00ff));
+    assert(READ_ARRAY(REFERENCE byteStr, 3)     == frames[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 4)     == frames[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 5)     == frames[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 6)     == frames[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 7)     == slot);
+    assert(READ_ARRAY(REFERENCE byteStr, 8)     == collisionSlots);
+    assert(READ_ARRAY(REFERENCE byteStr, 9)     == freq[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 10)    == freq[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 11)    == freq[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 12)    == freq[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 13)    == hopCount);
+    assert(READ_ARRAY(REFERENCE byteStr, 14)    == time[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 15)    == time[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 16)    == time[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 17)    == time[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 18)    == time[4]);
+    assert(READ_ARRAY(REFERENCE byteStr, 19)    == time[5]);
+    assert(READ_ARRAY(REFERENCE byteStr, 20)    == time[6]);
+    assert(READ_ARRAY(REFERENCE byteStr, 21)    == time[7]);
+    assert(READ_ARRAY(REFERENCE byteStr, 22)    == inittime[0]);
+    assert(READ_ARRAY(REFERENCE byteStr, 23)    == inittime[1]);
+    assert(READ_ARRAY(REFERENCE byteStr, 24)    == inittime[2]);
+    assert(READ_ARRAY(REFERENCE byteStr, 25)    == inittime[3]);
+    assert(READ_ARRAY(REFERENCE byteStr, 26)    == n);
     for (int i = 0; i < n; i++)
     {
-        assert(READ_ARRAY(REFERENCE byteStr, i + 26) == READ_ARRAY(REFERENCE ack, i));
+        assert(READ_ARRAY(REFERENCE byteStr, i + 27) == READ_ARRAY(REFERENCE ack, i));
     }
 
 #ifdef __LINUX__
@@ -569,55 +570,51 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     for (int i = 0; i < n; i++)
         WRITE_ARRAY(REFERENCE ack, rand() % 256, i);
 
-    size_t size = sizeof(nodeID);
-    size += sizeof(currentFrame);
-    size += sizeof(currentSlot);
-    size += sizeof(collisionSlots);
-    size += sizeof(collisionFrequency);
-    size += sizeof(hopCount);
-    size += sizeof(netTime);
-    size += sizeof(initTime);
-    size += (size_t)n;
-    size += 1;
     ARRAY byteStr;
 #ifdef __LINUX__
-     byteStr = (uint8_t *)malloc(size * sizeof(uint8_t));
+     byteStr = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(&byteStr, size);
+    create_array(&byteStr, PACKET_SIZE_MAC);
 #endif
 
-    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0xff00) >> 8,                  0);
-    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0x00ff),                       1);
-    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0xff000000) >> 24,       2);
-    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x00ff0000) >> 16,       3);
-    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x0000ff00) >> 8,        4);
-    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x000000ff),             5);
-    WRITE_ARRAY(REFERENCE byteStr, currentSlot,                             6);
-    WRITE_ARRAY(REFERENCE byteStr, collisionSlots,                          7);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0xff000000) >> 24, 8);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x00ff0000) >> 16, 9);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x0000ff00) >> 8,  10);
-    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x000000ff),       11);
-    WRITE_ARRAY(REFERENCE byteStr, hopCount,                                12);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0xff00000000000000) >> 56,    13);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00ff000000000000) >> 48,    14);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000ff0000000000) >> 40,    15);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000ff00000000) >> 32,    16);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00000000ff000000) >> 24,    17);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000000000ff0000) >> 16,    18);
-    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000000000ff00) >> 8,     19);
-    WRITE_ARRAY(REFERENCE byteStr,  netTime & 0x00000000000000ff,           20);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0xff000000) >> 24,           21);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           22);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            23);
-    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 24);
-    WRITE_ARRAY(REFERENCE byteStr, n,                                       25);
-    for (int i = 0; i < n; i++)
+    WRITE_ARRAY(REFERENCE byteStr, 1,                                       0);
+    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0xff00) >> 8,                  1);
+    WRITE_ARRAY(REFERENCE byteStr, (nodeID & 0x00ff),                       2);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0xff000000) >> 24,       3);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x00ff0000) >> 16,       4);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x0000ff00) >> 8,        5);
+    WRITE_ARRAY(REFERENCE byteStr, (currentFrame & 0x000000ff),             6);
+    WRITE_ARRAY(REFERENCE byteStr, currentSlot,                             7);
+    WRITE_ARRAY(REFERENCE byteStr, collisionSlots,                          8);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0xff000000) >> 24, 9);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x00ff0000) >> 16, 10);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x0000ff00) >> 8,  11);
+    WRITE_ARRAY(REFERENCE byteStr, (collisionFrequency & 0x000000ff),       12);
+    WRITE_ARRAY(REFERENCE byteStr, hopCount,                                13);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0xff00000000000000) >> 56,    14);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00ff000000000000) >> 48,    15);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000ff0000000000) >> 40,    16);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000ff00000000) >> 32,    17);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00000000ff000000) >> 24,    18);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000000000ff0000) >> 16,    19);
+    WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000000000ff00) >> 8,     20);
+    WRITE_ARRAY(REFERENCE byteStr,  netTime & 0x00000000000000ff,           21);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0xff000000) >> 24,           22);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           23);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            24);
+    WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 25);
+    WRITE_ARRAY(REFERENCE byteStr, n,                                       26);
+    int i;
+    for (i = 0; i < n; i++)
     {
         uint8_t e = READ_ARRAY(REFERENCE ack, i);
-        WRITE_ARRAY(REFERENCE byteStr, e, i + 26);
+        WRITE_ARRAY(REFERENCE byteStr, e, i + 27);
     }
+    i += 27;
+    uint m = rand();
+    for (; i < PACKET_SIZE_MAC; i++)
+        WRITE_ARRAY(REFERENCE byteStr, m, i);
     
     controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr);
 

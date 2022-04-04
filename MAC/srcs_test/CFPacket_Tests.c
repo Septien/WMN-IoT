@@ -137,20 +137,18 @@ void test_cfpacket_get_packet_bytestring(void)
     uint16_t destinationID = (uint16_t)rand();
     cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
 
-    size_t size = sizeof(nodeID) + sizeof(destinationID);
     ARRAY byteString;
-    size_t size2;
 
-    cfpacket_get_packet_bytestring(REFERENCE cfpkt, &byteString, &size2);
+    cfpacket_get_packet_bytestring(REFERENCE cfpkt, &byteString);
 #ifdef __LINUX__
     assert(byteString != NULL);
 #endif
 
-    assert(READ_ARRAY(REFERENCE byteString, 0) == ((nodeID & 0xff00) >> 8));
-    assert(READ_ARRAY(REFERENCE byteString, 1) == (nodeID & 0x00ff));
-    assert(READ_ARRAY(REFERENCE byteString, 2) == (destinationID & 0xff00) >> 8);
-    assert(READ_ARRAY(REFERENCE byteString, 3) == (destinationID & 0x00ff));
-    assert(size2 == size);
+    assert(READ_ARRAY(REFERENCE byteString, 0) == 0);   // Type 0 packet, cf
+    assert(READ_ARRAY(REFERENCE byteString, 1) == ((nodeID & 0xff00) >> 8));
+    assert(READ_ARRAY(REFERENCE byteString, 2) == (nodeID & 0x00ff));
+    assert(READ_ARRAY(REFERENCE byteString, 3) == (destinationID & 0xff00) >> 8);
+    assert(READ_ARRAY(REFERENCE byteString, 4) == (destinationID & 0x00ff));
 
 #ifdef __LINUX__
     free(byteString);
@@ -167,23 +165,25 @@ void test_cfpacket_construct_packet_from_bytestring(void)
     CFPacket_t SINGLE_POINTER cfpkt;
     cfpacket_init(&cfpkt);
 
-    size_t size = 2 * sizeof(uint16_t);
-
     ARRAY byteString;
 #ifdef __LINUX__
-    byteString = (uint8_t *)malloc(size * sizeof(uint8_t));
+    byteString = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(&byteString, size);
+    create_array(&byteString, PACKET_SIZE_MAC);
 #endif
     uint16_t nodeid = (uint16_t) rand();
     uint16_t destinationid = (uint16_t) rand();
-    WRITE_ARRAY(REFERENCE byteString, (nodeid & 0xff00) >> 8,              0);
-    WRITE_ARRAY(REFERENCE byteString, (nodeid & 0x00ff),                   1);
-    WRITE_ARRAY(REFERENCE byteString, (destinationid & 0xff00) >> 8,       2);
-    WRITE_ARRAY(REFERENCE byteString, (destinationid & 0x00ff),            3);
+    WRITE_ARRAY(REFERENCE byteString, 0,                                   0);
+    WRITE_ARRAY(REFERENCE byteString, (nodeid & 0xff00) >> 8,              1);
+    WRITE_ARRAY(REFERENCE byteString, (nodeid & 0x00ff),                   2);
+    WRITE_ARRAY(REFERENCE byteString, (destinationid & 0xff00) >> 8,       3);
+    WRITE_ARRAY(REFERENCE byteString, (destinationid & 0x00ff),            4);
+    int n = rand();
+    for (int i = 5; i < PACKET_SIZE_MAC; i++)
+        WRITE_ARRAY(REFERENCE byteString, n, i);
 
-    cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString, size);
+    cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString);
     assert(ARROW(cfpkt)nodeID        == nodeid);
     assert(ARROW(cfpkt)destinationID == destinationid);
 

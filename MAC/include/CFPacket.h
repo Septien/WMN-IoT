@@ -18,6 +18,7 @@
 #include "memory.h"
 #endif
 #include "memory_macros.h"
+#include "config_mac.h"
 
 typedef struct CFPacket
 {
@@ -33,7 +34,7 @@ void cfpacket_set_nodeid(CFPacket_t *pkt, uint16_t nodeID);
 uint16_t cfpacket_get_nodeid(CFPacket_t *pkt);
 void cfpacket_set_destinationid(CFPacket_t *pkt, uint16_t destinationID);
 uint16_t cfpacket_get_destinationid(CFPacket_t *pkt);
-void cfpacket_get_packet_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t *size);
-void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString, size_t size);
+void cfpacket_get_packet_bytestring(CFPacket_t *pkt, ARRAY* byteString);
+void cfpacket_construct_packet_from_bytestring(CFPacket_t *pkt, ARRAY* byteString);
 
 #endif // CFPKT_H

@@ -538,11 +538,11 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         create_array(&byteString, size);
 #endif
         // Copy the message to the byte string
-        // Store the  destination id
-        WRITE_ARRAY(REFERENCE byteString, msg[1], 0);
-        WRITE_ARRAY(REFERENCE byteString, msg[2], 1);
         // Store the type
-        WRITE_ARRAY(REFERENCE byteString, msg[0], 2);
+        WRITE_ARRAY(REFERENCE byteString, msg[0], 0);
+        // Store the  destination id
+        WRITE_ARRAY(REFERENCE byteString, msg[1], 1);
+        WRITE_ARRAY(REFERENCE byteString, msg[2], 2);
         for (uint i = 3; i < size; i++)
         {
             uint8_t e = msg[i];
