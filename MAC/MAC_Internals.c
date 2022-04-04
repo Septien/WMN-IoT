@@ -28,6 +28,9 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     (SINGLE_POINTER mac)->_max_data_packets = MAX_NUMBER_DATA_PACKETS;
     (SINGLE_POINTER mac)->_max_cf_messages = MAX_NUMBER_CF_PACKETS;
 
+    // Initialize the Control packet
+    controlpacket_init(&(SINGLE_POINTER mac)->ctrlpkt);
+
     // Initialize the data packets queues.
     for (int i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {

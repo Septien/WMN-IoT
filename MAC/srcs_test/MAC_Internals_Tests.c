@@ -19,10 +19,9 @@ void test_MAC_internals_init(void)
 
     MAC_internals_init(&mac, &radio);
 
-    // Create these packets until necessary
 #ifdef __LINUX__
     assert(mac != NULL);
-    assert(mac->ctrlpkt == NULL);
+    assert(mac->ctrlpkt != NULL);
 #endif
     assert(ARROW(mac)selectedSlot == 0);
     assert(ARROW(mac)transmitChannel == 0);
