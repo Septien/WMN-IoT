@@ -52,8 +52,6 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame,
                           uint32_t collisionFrequency, uint8_t hopCount, uint64_t netTime, uint32_t initTime, ARRAY* ack, int n)
 {
     assert(pkt != NULL);
-    assert(ack != NULL);
-    assert(n > 0);
 
     pkt->nodeID = nodeID;
     pkt->currentFrame = frame;
@@ -63,6 +61,7 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame,
     pkt->hopCount = hopCount;
     pkt->networkTime = netTime;
     pkt->initTime = initTime;
+    pkt->ackSize = n;
     // Fill ack array; release in case it contains data.
 #ifdef __LINUX__
     if (pkt->ack != NULL)
@@ -70,11 +69,15 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame,
         free(pkt->ack);
         pkt->ack = NULL;
     }
+    if (ack == NULL)
+        return;
     pkt->ack = (uint8_t *)malloc(n * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
     if (pkt->ack.size != 0)
         free_array(&pkt->ack);
+    if (ack == NULL)
+        return;
     create_array(&pkt->ack, n);
 #endif
     for (int i = 0; i < n; i++)
@@ -245,20 +248,11 @@ void controlpacket_get_ACK(ControlPacket_t *pkt, ARRAY* ack, int n)
     }
 }
 
-void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, size_t *size, int n)
+void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr)
 {
     assert(pkt != NULL);
 
-    size_t size1 = 0;
-    size1 += sizeof(pkt->nodeID),
-    size1 += sizeof(pkt->currentFrame);
-    size1 += sizeof(pkt->currentSlot);
-    size1 += sizeof(pkt->collisionSlot);
-    size1 += sizeof(pkt->collisionFrequency);
-    size1 += sizeof(pkt->hopCount);
-    size1 += sizeof(pkt->networkTime);
-    size1 += sizeof(pkt->initTime);
-    size1 += (size_t)n;
+    size_t size1 = PACKET_SIZE_MAC;
 
 #ifdef __LINUX__
     *byteStr = (uint8_t *)malloc(size1 * sizeof(uint8_t));
@@ -293,31 +287,26 @@ void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, s
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x00ff0000) >> 16,             22);
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x0000ff00) >> 8,              23);
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x000000ff),                   24);
-    for (int i = 0; i < n; i++)
+    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ackSize,                                   25);
+    uint i = 0;
+    if (pkt->ackSize != 0)
     {
-        uint8_t e = READ_ARRAY(REFERENCE pkt->ack, i);
-        WRITE_ARRAY(REFERENCE (*byteStr), e, 25 + i);
+        for (i = 0; i < pkt->ackSize; i++)
+        {
+            uint8_t e = READ_ARRAY(REFERENCE pkt->ack, i);
+            WRITE_ARRAY(REFERENCE (*byteStr), e, 26 + i);
+        }
     }
-
-    *size = size1;
+    // Fill the rest of the string with zeros.
+    i += 26;
+    for (; i < PACKET_SIZE_MAC; i++)
+        WRITE_ARRAY(SINGLE_POINTER byteStr, 0, i);
 }
 
-void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString, int n)
+void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString)
 {
     assert(pkt != NULL);
     assert(byteString != NULL);
-    assert(n > 0);
-#ifdef __LINUX__
-    assert(*byteString != NULL);
-    if (pkt->ack != NULL)
-        free(pkt->ack);
-    pkt->ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    if (pkt->ack.size > 0)
-        free_array(&pkt->ack);
-    create_array(&pkt->ack, n);
-#endif
     
     // Fill the content of the packet
     pkt->nodeID = 0;
@@ -350,9 +339,25 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            22) << 16;
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            23) << 8;
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            24);
-    for (int i = 0; i < n; i++)
+    pkt->ackSize = 0;
+    pkt->ackSize            = READ_ARRAY(SINGLE_POINTER byteString,             25);
+    if (pkt->ackSize > 0)
     {
-        uint8_t e = READ_ARRAY(SINGLE_POINTER byteString, i + 25);
-        WRITE_ARRAY(REFERENCE pkt->ack, e, i);
+#ifdef __LINUX__
+        assert(*byteString != NULL);
+        if (pkt->ack != NULL)
+            free(pkt->ack);
+        pkt->ack = (uint8_t *)malloc(pkt->ackSize * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+        if (pkt->ack.size > 0)
+            free_array(&pkt->ack);
+        create_array(&pkt->ack, pkt->ackSize);
+#endif
+        for (int i = 0; i < pkt->ackSize; i++)
+        {
+            uint8_t e = READ_ARRAY(SINGLE_POINTER byteString, i + 26);
+            WRITE_ARRAY(REFERENCE pkt->ack, e, i);
+        }
     }
 }

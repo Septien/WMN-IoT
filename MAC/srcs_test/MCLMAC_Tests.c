@@ -92,7 +92,6 @@ void test_MCLMAC_clear(void)
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == 0);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)cf_slots_number == 0);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)slots_number == 0);
-    assert(ARROW(mclmac)_dataQSize == 0);
     assert(ARROW(mclmac)powerMode.currentState == STARTP);
     assert(ARROW(mclmac)macState.currentState == START);
     assert(ARROW(mclmac)_hopCount == 0);

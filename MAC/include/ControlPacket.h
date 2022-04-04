@@ -31,6 +31,7 @@ typedef struct
     uint8_t     hopCount;
     uint64_t    networkTime;
     uint32_t    initTime;
+    uint8_t     ackSize;
     ARRAY       ack;
 } ControlPacket_t;
 
@@ -56,8 +57,8 @@ void controlpacket_set_init_time(ControlPacket_t *pkt, uint32_t time);
 uint32_t controlpacket_get_init_time(ControlPacket_t *pkt);
 void controlpacket_set_ACK(ControlPacket_t *pkt, ARRAY* ack, int n);
 void controlpacket_get_ACK(ControlPacket_t *pkt, ARRAY* ack, int n);
-void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr, size_t *size, int n);
-void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString, int n);
+void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr);
+void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY* byteString);
 
 uint8_t get_number_bytes(uint8_t n);
 #endif // CTRLPKT_H

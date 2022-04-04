@@ -80,7 +80,6 @@ void MCLMAC_clear(MCLMAC_t *mclmac)
     assert(mclmac != NULL);
     
     MAC_internals_clear(REFERENCE mclmac->mac);
-    mclmac->_dataQSize = 0;
     mclmac->macState.currentState = START;
     mclmac->powerMode.currentState = STARTP;
     mclmac->_networkTime = 0;

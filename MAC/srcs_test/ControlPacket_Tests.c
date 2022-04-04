@@ -25,6 +25,7 @@ void test_controlpacket_init(void)
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
     assert(pkt.initTime == 0);
+    assert(pkt.ackSize == 0);
     assert(pkt.ack.size == 0);
 #endif
 
@@ -90,6 +91,7 @@ void test_controlpacket_create(void)
     assert(ARROW(pkt)hopCount == hopCount);
     assert(ARROW(pkt)networkTime == netTime);
     assert(ARROW(pkt)initTime == initTime);
+    assert(ARROW(pkt)ackSize == n);
     for (int i = 0; i < n; i++)
         assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
 
@@ -475,9 +477,6 @@ void test_controlpacket_get_packet_bytestring(void)
     for (int i = 0; i < n; i++)
         WRITE_ARRAY(REFERENCE ack, rand(), i);
     
-    size_t sizeA = sizeof(nodeID) + sizeof(frame) + sizeof(slot) + sizeof(collisionSlots);
-    sizeA += sizeof(collisionFrequency) + sizeof(hopCount) + sizeof(netTime) + sizeof(initTime) + (size_t)n;
-
     controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, &ack, n);
 
     frames[0] = (frame & 0xff000000) >> 24;
@@ -501,10 +500,8 @@ void test_controlpacket_get_packet_bytestring(void)
     inittime[2] = (initTime & 0x0000ff00) >> 8;
     inittime[3] = (initTime & 0x000000ff);
     ARRAY byteStr;
-    size_t size;
-    controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr, &size, n);
+    controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr);
 
-    assert(size == sizeA);
     assert(READ_ARRAY(REFERENCE byteStr, 0)     == (nodeID & 0xff00) >> 8);
     assert(READ_ARRAY(REFERENCE byteStr, 1)     == (nodeID & 0x00ff));
     assert(READ_ARRAY(REFERENCE byteStr, 2)     == frames[0]);
@@ -530,9 +527,10 @@ void test_controlpacket_get_packet_bytestring(void)
     assert(READ_ARRAY(REFERENCE byteStr, 22)    == inittime[1]);
     assert(READ_ARRAY(REFERENCE byteStr, 23)    == inittime[2]);
     assert(READ_ARRAY(REFERENCE byteStr, 24)    == inittime[3]);
-    for (int i = 25; i < 25 + n; i++)
+    assert(READ_ARRAY(REFERENCE byteStr, 25)    == n);
+    for (int i = 0; i < n; i++)
     {
-        assert(READ_ARRAY(REFERENCE byteStr, i) == READ_ARRAY(REFERENCE ack, i - 25));
+        assert(READ_ARRAY(REFERENCE byteStr, i + 26) == READ_ARRAY(REFERENCE ack, i));
     }
 
 #ifdef __LINUX__
@@ -609,18 +607,19 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x00000000ff000000) >> 24,    17);
     WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x0000000000ff0000) >> 16,    18);
     WRITE_ARRAY(REFERENCE byteStr, (netTime & 0x000000000000ff00) >> 8,     19);
-    WRITE_ARRAY(REFERENCE byteStr,  netTime & 0x00000000000000ff,            20);
+    WRITE_ARRAY(REFERENCE byteStr,  netTime & 0x00000000000000ff,           20);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0xff000000) >> 24,           21);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           22);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            23);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 24);
+    WRITE_ARRAY(REFERENCE byteStr, n,                                       25);
     for (int i = 0; i < n; i++)
     {
         uint8_t e = READ_ARRAY(REFERENCE ack, i);
-        WRITE_ARRAY(REFERENCE byteStr, e, i + 25);
+        WRITE_ARRAY(REFERENCE byteStr, e, i + 26);
     }
     
-    controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr, n);
+    controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr);
 
     assert(ARROW(pkt)nodeID             == nodeID);
     assert(ARROW(pkt)currentFrame       == currentFrame);
@@ -630,6 +629,7 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     assert(ARROW(pkt)hopCount           == hopCount);
     assert(ARROW(pkt)networkTime        == netTime);
     assert(ARROW(pkt)initTime           == initTime);
+    assert(ARROW(pkt)ackSize            == n);
     for (int i = 0; i < n; i++)
         assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
 
