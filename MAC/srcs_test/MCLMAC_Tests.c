@@ -1040,15 +1040,18 @@ void _read_queue(MCLMAC_t *mclmac)
     *       -nelements should be 0.
     *       -_packets_read should be MAX_NUMBER_DATA_PACKETS
     * */
-    ARROW(mclmac->mac)_packets_to_send_read = MAX_NUMBER_DATA_PACKETS;
+    ARROW(mclmac->mac)_packets_to_send_message = MAX_NUMBER_DATA_PACKETS;
+    ARROW(mclmac->mac)_packets_to_send_control = MAX_NUMBER_DATA_PACKETS;
     int nelements = mclmac_read_queue_element(mclmac);
     assert(nelements == 0);
-    assert(ARROW(mclmac->mac)_packets_to_send_read == MAX_NUMBER_DATA_PACKETS);
+    assert(ARROW(mclmac->mac)_packets_to_send_message == MAX_NUMBER_DATA_PACKETS);
+    assert(ARROW(mclmac->mac)_packets_to_send_control == MAX_NUMBER_DATA_PACKETS);
     /** Test case 2:
      * The queue is empty. It should not increase the number of elements on the queue,
      * and the function should return 0.
     */
-    ARROW(mclmac->mac)_packets_to_send_read = 0;
+    ARROW(mclmac->mac)_packets_to_send_message = 0;
+    ARROW(mclmac->mac)_packets_to_send_control = 0;
     nelements = mclmac_read_queue_element(mclmac);
     assert(nelements == 0);
     /** Test case 3:
@@ -1062,7 +1065,7 @@ void _read_queue(MCLMAC_t *mclmac)
     size_t size = MAX_MESSAGE_SIZE;
     uint8_t message[size];
     // Store the type of message
-    message[0] = 0;
+    message[0] = 7;
     for (uint i = 1; i < size; i++)
         message[i] = rand();
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
@@ -1070,7 +1073,7 @@ void _read_queue(MCLMAC_t *mclmac)
     assert(nelements == 1);
     assert(ARROW(mclmac->mac)_first_send_message == 0);
     assert(ARROW(mclmac->mac)_last_send_message == 1);
-    assert(ARROW(mclmac->mac)_packets_to_send_read == 1);
+    assert(ARROW(mclmac->mac)_packets_to_send_message == 1);
     DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[0];
     uint16_t destination_id = (((uint16_t)message[1]) << 8) | (message[2]);
     assert(pkt->destination_id == destination_id);
@@ -1086,7 +1089,7 @@ void _read_queue(MCLMAC_t *mclmac)
     assert(nelements == 1);
     assert(ARROW(mclmac->mac)_first_send_control == 0);
     assert(ARROW(mclmac->mac)_last_send_control == 1);
-    assert(ARROW(mclmac->mac)_packets_to_send_read == 2);
+    assert(ARROW(mclmac->mac)_packets_to_send_control == 1);
     pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
     assert(pkt->destination_id == destination_id);
     assert(pkt->size == message[3]);
@@ -1094,7 +1097,7 @@ void _read_queue(MCLMAC_t *mclmac)
         assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
     
     // Invalid packet type
-    message[0] = rand() + 3;
+    message[0] = rand() + 7;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
     assert(nelements == 0);
@@ -1523,6 +1526,7 @@ void test_mclmac_receive_cf_message(void)
     MCLMAC_destroy(&mclmac);
 }
 #endif
+
 void executeTestsMCLMAC(void)
 {
     srand(time(NULL));

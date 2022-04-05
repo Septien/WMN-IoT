@@ -508,9 +508,12 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
 int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    assert(ARROW(mclmac->mac)_packets_to_send_read <= MAX_NUMBER_DATA_PACKETS);
+    assert(ARROW(mclmac->mac)_packets_to_send_message <= MAX_NUMBER_DATA_PACKETS);
+    assert(ARROW(mclmac->mac)_packets_to_send_control <= MAX_NUMBER_DATA_PACKETS);
 
-    if (ARROW(mclmac->mac)_packets_to_send_read == MAX_NUMBER_DATA_PACKETS)
+    if (ARROW(mclmac->mac)_packets_to_send_message == MAX_NUMBER_DATA_PACKETS)
+        return 0;
+    if (ARROW(mclmac->mac)_packets_to_send_control == MAX_NUMBER_DATA_PACKETS)
         return 0;
 
     if (elements_on_queue(mclmac->_mac_queue_id) == 0)
@@ -548,21 +551,21 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
             uint8_t e = msg[i];
             WRITE_ARRAY(REFERENCE byteString, e, i);
         }
-        if (msg[0] == 0)
+        if (msg[0] >= 7 && msg[0] < 10)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_message;
             DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[last];
             datapacket_construct_from_bytestring(pkt, &byteString);
             ARROW(mclmac->mac)_last_send_message++;
-            ARROW(mclmac->mac)_packets_to_send_read++;
+            ARROW(mclmac->mac)_packets_to_send_message++;
         }
-        else if (msg[0] == 1)
+        else if (msg[0] >= 1 && msg[0] < 7)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_control;
             DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[last];
             datapacket_construct_from_bytestring(pkt, &byteString);
             ARROW(mclmac->mac)_last_send_control++;
-            ARROW(mclmac->mac)_packets_to_send_read++;
+            ARROW(mclmac->mac)_packets_to_send_control++;
         }
         // Invalid type, return 0
         else

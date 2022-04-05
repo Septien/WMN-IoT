@@ -72,10 +72,11 @@ typedef struct MAC_Internals
     uint8_t         _max_cf_messages;
     /* Packets to send. */
     uint16_t        _destination_id;
-    uint8_t         _packets_to_send_read;
+    uint8_t         _packets_to_send_message;
     uint8_t         _first_send_message;
     uint8_t         _last_send_message;
     DataPacket_t    _message_packets_to_send[MAX_NUMBER_DATA_PACKETS];
+    uint8_t         _packets_to_send_control;
     uint8_t         _first_send_control;
     uint8_t         _last_send_control;
     DataPacket_t    _control_packets_to_send[MAX_NUMBER_DATA_PACKETS];

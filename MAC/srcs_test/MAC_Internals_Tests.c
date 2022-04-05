@@ -33,7 +33,8 @@ void test_MAC_internals_init(void)
     assert(ARROW(mac)_cf_message_received == false);
     assert(ARROW(mac)_max_cf_messages == MAX_NUMBER_CF_PACKETS);
     assert(ARROW(mac)_max_data_packets == MAX_NUMBER_DATA_PACKETS);
-    assert(ARROW(mac)_packets_to_send_read == 0);
+    assert(ARROW(mac)_packets_to_send_message == 0);
+    assert(ARROW(mac)_packets_to_send_control == 0);
     assert(ARROW(mac)_last_send_control == 0);
     assert(ARROW(mac)_number_packets_received == 0);
 

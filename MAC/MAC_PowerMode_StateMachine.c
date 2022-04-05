@@ -122,7 +122,8 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_set_current_frame(mclmac, mclmac->_wakeup_frame + 1);
         mclmac_set_current_slot(mclmac, 0);
         mclmac_set_current_cf_slot(mclmac, 0);
-        ARROW(mclmac->mac)_packets_to_send_read = 0;
+        ARROW(mclmac->mac)_packets_to_send_message = 0;
+        ARROW(mclmac->mac)_packets_to_send_control = 0;
         ARROW(mclmac->mac)_number_packets_received = 0;
         
         ARROW(mclmac->mac)cfChannel = CF_FREQUENCY;
@@ -206,7 +207,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             uint8_t current_cf_slot = mclmac_get_current_cf_slot(mclmac);
             if (is_current && selected_freq == mclmac_get_frequency(mclmac, current_cf_slot))
             {
-                if (ARROW(mclmac->mac)_packets_to_send_read > 0)
+                if (ARROW(mclmac->mac)_packets_to_send_message > 0 || ARROW(mclmac->mac)_packets_to_send_control > 0)
                 {
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
