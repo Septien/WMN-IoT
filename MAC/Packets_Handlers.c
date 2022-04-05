@@ -54,7 +54,7 @@ void mclmac_create_control_packet(MCLMAC_t *mclmac)
     uint32_t initTime = mclmac->_initTime;
 
     controlpacket_create(pkt, nodeID, currentFrame, currentSlot, collisionSlot, collisionFrequency,
-                        hopCount, networkTime, initTime, NULL, 0);
+                        hopCount, networkTime, initTime);
 }
 
 void stub_mclmac_send_control_packet(MCLMAC_t *mclmac)

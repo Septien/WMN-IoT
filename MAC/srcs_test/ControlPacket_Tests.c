@@ -15,7 +15,6 @@ void test_controlpacket_init(void)
     controlpacket_init(&pkt);
 #ifdef __LINUX__
     assert(pkt != NULL);
-    assert(pkt->ack == NULL);
 #endif
 #ifdef __RIOT__
     assert(pkt.nodeID == 0);
@@ -25,8 +24,6 @@ void test_controlpacket_init(void)
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
     assert(pkt.initTime == 0);
-    assert(pkt.ackSize == 0);
-    assert(pkt.ack.size == 0);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -50,7 +47,6 @@ void test_controlpacket_destroy(void)
     assert(pkt.hopCount == 0);
     assert(pkt.networkTime == 0);
     assert(pkt.initTime == 0);
-    assert(pkt.ack.size == 0);
 #endif
 }
 
@@ -67,18 +63,8 @@ void test_controlpacket_create(void)
     uint16_t hopCount = 3;
     uint64_t netTime = rand();
     uint32_t initTime = rand();
-    int n = rand() % 200;
-    ARRAY ack;
-#ifdef __LINUX__
-    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&ack, n);
-#endif
-    for (int i = 0; i < n; i++)
-        WRITE_ARRAY(REFERENCE ack, rand(), i);
 
-    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, &ack, n);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime);
 
 #ifdef __LINUX__
     assert(pkt != NULL);
@@ -91,9 +77,6 @@ void test_controlpacket_create(void)
     assert(ARROW(pkt)hopCount == hopCount);
     assert(ARROW(pkt)networkTime == netTime);
     assert(ARROW(pkt)initTime == initTime);
-    assert(ARROW(pkt)ackSize == n);
-    for (int i = 0; i < n; i++)
-        assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
 
     controlpacket_destroy(&pkt);
 }
@@ -111,18 +94,8 @@ uint16_t nodeID = 1;
     uint16_t hopCount = 3;
     uint64_t netTime = rand();
     uint32_t initTime = rand();
-    int n = rand() % 200;
-    ARRAY ack;
-#ifdef __LINUX__
-    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&ack, n);
-#endif
-    for (int i = 0; i < n; i++)
-        WRITE_ARRAY(REFERENCE ack, rand(), i);
 
-    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, &ack, n);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime);
     
     controlpacket_clear(REFERENCE pkt);
 
@@ -132,9 +105,6 @@ uint16_t nodeID = 1;
     assert(ARROW(pkt)hopCount == 0);
     assert(ARROW(pkt)networkTime == 0);
     assert(ARROW(pkt)initTime == 0);
-#ifdef __RIOT__
-    assert(ARROW(pkt)ack.size == 0);
-#endif
     
     controlpacket_destroy(&pkt);
 }
@@ -381,74 +351,6 @@ void test_controlpacket_get_init_time(void)
     controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_ACK(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    ARRAY ack;
-    int n = rand() % 200;
-#ifdef __LINUX__
-    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(REFERENCE ack, n);
-#endif
-    for (int i = 0; i < n; i++)
-        WRITE_ARRAY(REFERENCE ack, rand(), i);
-
-    controlpacket_set_ACK(REFERENCE pkt, &ack, n);
-
-    for (int i = 0; i < n; i++)
-    {
-        assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
-    }
-
-#ifdef __LINUX__
-    free(ack);
-#endif
-#ifdef __RIOT__
-    free_array(&ack);
-#endif
-    controlpacket_destroy(&pkt);
-}
-
-void test_controlpacket_get_ACK(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    ARRAY ack;
-    ARRAY ack2;
-    int n = rand() % 200;
-#ifdef __LINUX__
-    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-    ack2 = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&ack, n);
-    create_array(&ack2, n);
-#endif
-    for (int i = 0; i < n; i++)
-        WRITE_ARRAY(REFERENCE ack, rand(), i);
-
-    controlpacket_set_ACK(REFERENCE pkt, &ack, n);
-
-    controlpacket_get_ACK(REFERENCE pkt, &ack2, n);
-    for (int i = 0; i < n; i++)
-        assert(READ_ARRAY(REFERENCE ack, i) == READ_ARRAY(REFERENCE ack2, i));
-
-#ifdef __LINUX__
-    free(ack);
-    free(ack2);
-#endif
-#ifdef __RIOT__
-    free_array(&ack);
-    free_array(&ack2);
-#endif
-    controlpacket_destroy(&pkt);
-}
-
 void test_controlpacket_get_packet_bytestring(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
@@ -467,18 +369,8 @@ void test_controlpacket_get_packet_bytestring(void)
     uint8_t time[8];
     uint32_t initTime = rand();
     uint8_t inittime[4];
-    ARRAY ack;
-    int n = rand() % 200;
-#ifdef __LINUX__
-    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(REFERENCE ack, n);
-#endif
-    for (int i = 0; i < n; i++)
-        WRITE_ARRAY(REFERENCE ack, rand(), i);
     
-    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, &ack, n);
+    controlpacket_create(REFERENCE pkt, nodeID, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime);
 
     frames[0] = (frame & 0xff000000) >> 24;
     frames[1] = (frame & 0x00ff0000) >> 16;
@@ -532,19 +424,12 @@ void test_controlpacket_get_packet_bytestring(void)
     assert(READ_ARRAY(REFERENCE byteStr, 24)    == inittime[1]);
     assert(READ_ARRAY(REFERENCE byteStr, 25)    == inittime[2]);
     assert(READ_ARRAY(REFERENCE byteStr, 26)    == inittime[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 27)    == n);
-    for (int i = 0; i < n; i++)
-    {
-        assert(READ_ARRAY(REFERENCE byteStr, i + 28) == READ_ARRAY(REFERENCE ack, i));
-    }
 
 #ifdef __LINUX__
     free(byteStr);
-    free(ack);
 #endif
 #ifdef __RIOT__
     free_array(&byteStr);
-    free_array(&ack);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -563,16 +448,6 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     uint16_t hopCount = 3;
     uint64_t netTime = (uint64_t)rand();
     uint32_t initTime = rand();
-    uint8_t n = rand() % 200;
-    ARRAY ack;
-#ifdef __LINUX__
-    ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&ack, n);
-#endif
-    for (int i = 0; i < n; i++)
-        WRITE_ARRAY(REFERENCE ack, rand() % 256, i);
 
     ARRAY byteStr;
 #ifdef __LINUX__
@@ -609,14 +484,7 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,           24);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,            25);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                 26);
-    WRITE_ARRAY(REFERENCE byteStr, n,                                       27);
-    int i;
-    for (i = 0; i < n; i++)
-    {
-        uint8_t e = READ_ARRAY(REFERENCE ack, i);
-        WRITE_ARRAY(REFERENCE byteStr, e, i + 28);
-    }
-    i += 28;
+    int i = 27;
     uint m = rand();
     for (; i < PACKET_SIZE_MAC; i++)
         WRITE_ARRAY(REFERENCE byteStr, m, i);
@@ -631,17 +499,12 @@ void test_controlpacket_construct_packet_from_bytestring(void)
     assert(ARROW(pkt)hopCount           == hopCount);
     assert(ARROW(pkt)networkTime        == netTime);
     assert(ARROW(pkt)initTime           == initTime);
-    assert(ARROW(pkt)ackSize            == n);
-    for (int i = 0; i < n; i++)
-        assert(READ_ARRAY(REFERENCE ARROW(pkt)ack, i) == READ_ARRAY(REFERENCE ack, i));
 
 #ifdef __LINUX__
     free(byteStr);
-    free(ack);
 #endif
 #ifdef __RIOT__
     free_array(&byteStr);
-    free_array(&ack);
 #endif
 
     controlpacket_destroy(&pkt);
@@ -729,14 +592,6 @@ void executeTestsCP(void)
 
     printf("Testing controlpacket_get_init_time function.\n");
     test_controlpacket_get_init_time();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_ACK function.\n");
-    test_controlpacket_set_ACK();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_ACK function.\n");
-    test_controlpacket_get_ACK();
     printf("Test passed.\n");
 
     printf("Testing controlpacket_get_packet_bytestring function.\n");

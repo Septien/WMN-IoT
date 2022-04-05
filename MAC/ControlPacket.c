@@ -30,13 +30,11 @@ void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
     assert(pkt != NULL);
 #ifdef __LINUX__
     assert(*pkt != NULL);
-    free((*pkt)->ack);
     free(*pkt);
 
     *pkt = NULL;
 #endif
 #ifdef __RIOT__
-    free_array(&pkt->ack);
     pkt->nodeID = 0;
     pkt->currentFrame = 0;
     pkt->currentSlot = 0;
@@ -49,7 +47,7 @@ void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
 
 // Fill the packet with the given parameters
 void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame, uint8_t slot,uint8_t collisionSlots, 
-                          uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime, ARRAY* ack, int n)
+                          uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime)
 {
     assert(pkt != NULL);
 
@@ -61,33 +59,6 @@ void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame,
     pkt->hopCount = hopCount;
     pkt->networkTime = netTime;
     pkt->initTime = initTime;
-    if (n > 0)
-    {
-        pkt->ackSize = n;
-        // Fill ack array; release in case it contains data.
-#ifdef __LINUX__
-        if (pkt->ack != NULL)
-        {
-            free(pkt->ack);
-            pkt->ack = NULL;
-        }
-        if (ack == NULL)
-            return;
-        pkt->ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-        if (pkt->ack.size != 0)
-            free_array(&pkt->ack);
-        if (ack == NULL)
-            return;
-        create_array(&pkt->ack, n);
-#endif
-        for (int i = 0; i < n; i++)
-        {
-            uint8_t e = READ_ARRAY(REFERENCE (*ack), i);
-            WRITE_ARRAY(REFERENCE pkt->ack, e, i);
-        }
-    }
 }
 
 // Set all values of the packet to zero, and free the arrays
@@ -211,46 +182,6 @@ uint32_t controlpacket_get_init_time(ControlPacket_t *pkt)
     return pkt->initTime;
 }
 
-void controlpacket_set_ACK(ControlPacket_t *pkt, ARRAY* ack, int n)
-{
-    assert(pkt != NULL);
-    assert(n > 0);
-
-#ifdef __LINUX__
-    if (pkt->ack != NULL)
-        free(pkt->ack);
-    pkt->ack = (uint8_t *)malloc(n * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    if (pkt->ack.size != 0)
-        free_array(&pkt->ack);
-    create_array(&pkt->ack, n);
-#endif
-
-    for (int i = 0; i < n; i++)
-    {
-        uint8_t e = READ_ARRAY(REFERENCE (*ack), i);
-        WRITE_ARRAY(REFERENCE pkt->ack, e, i);
-    }
-}
-
-void controlpacket_get_ACK(ControlPacket_t *pkt, ARRAY* ack, int n)
-{
-    assert(pkt != NULL);
-    assert(n > 0);
-#ifdef __LINUX__
-    assert(pkt->ack != NULL);
-#endif
-#ifdef __RIOT__
-    assert(pkt->ack.size > 0);
-#endif
-    for (int i = 0; i < n; i++)
-    {
-        uint8_t e = READ_ARRAY(REFERENCE pkt->ack, i);
-        WRITE_ARRAY(REFERENCE (*ack), e, i);
-    }
-}
-
 void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr)
 {
     assert(pkt != NULL);
@@ -292,18 +223,8 @@ void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr)
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x00ff0000) >> 16,             24);
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x0000ff00) >> 8,              25);
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x000000ff),                   26);
-    WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->ackSize,                                   27);
-    uint i = 0;
-    if (pkt->ackSize != 0)
-    {
-        for (i = 0; i < pkt->ackSize; i++)
-        {
-            uint8_t e = READ_ARRAY(REFERENCE pkt->ack, i);
-            WRITE_ARRAY(REFERENCE (*byteStr), e, 28 + i);
-        }
-    }
     // Fill the rest of the string with a random value.
-    i += 28;
+    uint i = 27;
     uint n = rand();
     for (; i < PACKET_SIZE_MAC; i++)
         WRITE_ARRAY(SINGLE_POINTER byteStr, n, i);
@@ -350,25 +271,4 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            24) << 16;
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            25) << 8;
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,            26);
-    pkt->ackSize = 0;
-    pkt->ackSize            = READ_ARRAY(SINGLE_POINTER byteString,             27);
-    if (pkt->ackSize > 0)
-    {
-#ifdef __LINUX__
-        assert(*byteString != NULL);
-        if (pkt->ack != NULL)
-            free(pkt->ack);
-        pkt->ack = (uint8_t *)malloc(pkt->ackSize * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-        if (pkt->ack.size > 0)
-            free_array(&pkt->ack);
-        create_array(&pkt->ack, pkt->ackSize);
-#endif
-        for (int i = 0; i < pkt->ackSize; i++)
-        {
-            uint8_t e = READ_ARRAY(SINGLE_POINTER byteString, i + 28);
-            WRITE_ARRAY(REFERENCE pkt->ack, e, i);
-        }
-    }
 }
