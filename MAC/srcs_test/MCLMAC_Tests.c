@@ -933,55 +933,6 @@ void test_mclmac_record_collision(void)
     MCLMAC_destroy(&mclmac);
 }
 
-/*void test_mclmac_set_destination_id(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint16_t destinationID = (uint16_t) rand();
-        mclmac_set_destination_id(REFERENCE mclmac, destinationID);
-        assert(ARROW(ARROW(mclmac)mac)destinationID == destinationID);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_get_destination_id(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint16_t destinationid = (uint16_t) rand();
-        mclmac_set_destination_id(REFERENCE mclmac, destinationid);
-        uint16_t destinationidR = mclmac_get_destination_id(REFERENCE mclmac);
-        assert(destinationid == destinationidR);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}*/
-
 void test_mclmac_set_network_time(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1026,6 +977,33 @@ void test_mclmac_get_network_time(void)
         mclmac_set_network_time(REFERENCE mclmac, netTime);
         uint32_t netTimeA = mclmac_get_network_time(REFERENCE mclmac);
         assert(netTimeA == netTime);
+    }
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_mclmac_available_data_packets(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+
+    MCLMAC_init(&mclmac, &radio, nodeid);
+
+    int n = rand() % ITERATIONS;
+    for (int i = 0; i < n; i++)
+    {
+        uint8_t message_packets = rand() % MAX_NUMBER_DATA_PACKETS;
+        uint8_t control_packets = rand() % MAX_NUMBER_DATA_PACKETS;
+        ARROW(ARROW(mclmac)mac)_packets_to_send_message = message_packets;
+        ARROW(ARROW(mclmac)mac)_packets_to_send_control = control_packets;
+        uint16_t total_packets = mclmac_available_data_packets(REFERENCE mclmac);
+        assert(total_packets == message_packets + control_packets);
     }
 
     MCLMAC_destroy(&mclmac);
@@ -1527,6 +1505,44 @@ void test_mclmac_receive_cf_message(void)
 }
 #endif
 
+void test_stub_mclmac_start_split_phase(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+
+    MCLMAC_init(&mclmac, &radio, nodeid);
+
+    /**
+     * We are now at either the TRANSMIT or RECEIVE state of the power mode, 
+     * states at which the split phase is executed. It will send/receive
+     * any packet to/from other nodes.
+     * For this phase to execute, it should comply the following:
+     *  -The frequency is already known.
+     *  -Set the radio to TX or RX, depending on the state.
+     *  -Initialize and clear the control packet.
+     *  -The function can only be called from within the TRANSMIT or RECEIVE states,
+     */
+    int32_t ret = stub_mclmac_start_split_phase(REFERENCE mclmac, STARTP);
+    assert(ret == -1);
+    ret = stub_mclmac_start_split_phase(REFERENCE mclmac, PASSIVE);
+    assert(ret == -1);
+    ret = stub_mclmac_start_split_phase(REFERENCE mclmac, ACTIVE);
+    assert(ret == -1);
+    ret = stub_mclmac_start_split_phase(REFERENCE mclmac, FINISHP);
+    assert(ret == -1);
+
+    ret = stub_mclmac_start_split_phase(REFERENCE mclmac, TRANSMIT);
+    assert(ret == 1);
+    ret = stub_mclmac_start_split_phase(REFERENCE mclmac, RECEIVE);
+    assert(ret == 1);
+}
+
 void executeTestsMCLMAC(void)
 {
     srand(time(NULL));
@@ -1668,20 +1684,16 @@ void executeTestsMCLMAC(void)
     test_mclmac_record_collision();
     printf("Test passed.\n");
 
-    /*printf("Testing mclmac_set_destination_id function.\n");
-    test_mclmac_set_destination_id();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_get_destination_id function.\n");
-    test_mclmac_get_destination_id();
-    printf("Test passed.\n");*/
-
     printf("Testing mclmac_set_network_time function.\n");
     test_mclmac_set_network_time();
     printf("Test passed.\n");
 
     printf("Testing mclmac_get_network_time function.\n");
     test_mclmac_get_network_time();
+    printf("Test passed.\n");
+
+    printf("Testing the mclmac_available_data_packets function.\n");
+    test_mclmac_available_data_packets();
     printf("Test passed.\n");
 
     printf("Testing mclmac_read_queue_element function.\n");
@@ -1707,6 +1719,10 @@ void executeTestsMCLMAC(void)
     /*printf("Testing mclmac_receive_cf_message function.\n");
     test_mclmac_receive_cf_message();
     printf("Test passed.\n");*/
+
+    printf("Testing the stub_mclmac_start_split_phase function.\n");
+    test_stub_mclmac_start_split_phase();
+    printf("Test passed.\n");
 
     end_queues();
     return;

@@ -5,127 +5,6 @@
 
 #include "MCLMAC.h"
 
-/*void mclmac_create_cf_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-    assert(ARROW(mclmac->mac)nodeID > 0);
-
-#ifdef __LINUX__
-    if (mclmac->mac->cfpkt != NULL)
-        cfpacket_destroy(&mclmac->mac->cfpkt);
-#endif
-#ifdef __RIOT__
-    cfpacket_destroy(&mclmac->mac.cfpkt);
-#endif
-
-    cfpacket_init(&ARROW(mclmac->mac)cfpkt);
-    cfpacket_create(REFERENCE ARROW(mclmac->mac)cfpkt, ARROW(mclmac->mac)nodeID, ARROW(mclmac->mac)destinationID);
-}
-
-void mclmac_create_control_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-
-    if (mclmac->mac->ctrlpkt != NULL)
-        controlpacket_destroy(&mclmac->mac->ctrlpkt);
-#endif
-#ifdef __RIOT__
-    controlpacket_destroy(&mclmac->mac.ctrlpkt);
-#endif
-
-    controlpacket_init(&ARROW(mclmac->mac)ctrlpkt, mclmac->_nSlots, mclmac->_nChannels);
-    controlpacket_create(REFERENCE ARROW(mclmac->mac)ctrlpkt, ARROW(mclmac->mac)nodeID, &mclmac->_occupiedSlots, mclmac->_collisionSlot, 
-                    mclmac->_collisionFrequency, ARROW(mclmac->mac)hopCount, mclmac->_networkTime, mclmac->_ack);
-}
-
-void mclmac_create_data_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-
-    if (mclmac->mac->datapkt != NULL)
-        datapacket_destroy(&mclmac->mac->datapkt);
-#endif
-#ifdef __RIOT__
-    datapacket_destroy(&mclmac->mac.datapkt);
-#endif
-
-    datapacket_init(&ARROW(mclmac->mac)datapkt);
-    datapacket_create(REFERENCE ARROW(mclmac->mac)datapkt, mclmac->_isFragment, mclmac->_numberFragments, mclmac->_fragmentNumber, NULL, 0);
-}
-
-void mclmac_clear_cf_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->cfpkt != NULL);
-#endif
-
-    cfpacket_clear(REFERENCE ARROW(mclmac->mac)cfpkt);
-}*/
-
-/*void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->datapkt != NULL);
-    assert(mclmac->mac->datapkt->data == NULL);
-#endif
-#ifdef __RIOT__
-    assert(mclmac->mac.datapkt.data.size == 0);
-#endif
-    assert(size > 0);
-    
-    datapacket_set_data(REFERENCE ARROW(mclmac->mac)datapkt, data, size);
-}
-
-void mclmac_delete_data_from_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->datapkt != NULL);
-#endif
-
-    datapacket_delete_data(REFERENCE ARROW(mclmac->mac)datapkt);
-}
-
-void mclmac_clear_data_from_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->datapkt != NULL);
-#endif
-
-    datapacket_clear_data(REFERENCE ARROW(mclmac->mac)datapkt);
-}*/
-
-/**
- * @brief For the SYNCHRONIZATION state. It will receive all the incoming 
- *      control packets from the network, one at the time, and store the received
- *      data on the ctrlpkt. With that data, the node will fill its information
- *      about the network, so it can join it.
- *      For simulate the reception of packets, this function will create 
- *      an byte string that will contain the associated data, and create 
- *      the packet with it. The following static variables are necessary:
- *          -A variable containing the network time, which is the total number
- *          of slots that has passed.
- *          -The number of hops, which will vary a little in each call.
- *          -The current slot and current frame, which will be random at the beginning.
- *          -We also need to record the slot and frequency at which the packet is received.
- *      The rest of the fields will be randomly generated.
- * @param mclmac 
- * @param ctrlpkt 
- */
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
     assert(mclmac != NULL);
@@ -136,7 +15,7 @@ bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
     static uint8_t hopCount = 100;
     static uint32_t network_time = 220;
     static uint32_t init_time = 10;
-    
+
     controlpacket_set_current_frame(ctrlpkt, frame);
     controlpacket_set_current_slot(ctrlpkt, slot);
     controlpacket_set_hop_count(ctrlpkt, hopCount);
@@ -153,6 +32,117 @@ bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
 
     if ((rand() % 1024) > 128)
         return false;
-    
+
     return true;
+}
+
+void mclmac_create_control_packet(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
+    controlpacket_clear(pkt);
+
+    // Get the relevant data.
+    uint16_t nodeID = mclmac->_nodeID;
+    uint32_t currentFrame = ARROW(ARROW(mclmac->mac)frame)current_frame;
+    uint8_t currentSlot = ARROW(ARROW(mclmac->mac)frame)current_slot;
+    uint8_t collisionSlot = ARROW(mclmac->mac)_collisionSlot;
+    uint32_t collisionFrequency = ARROW(mclmac->mac)_collisionFrequency;
+    uint16_t hopCount = mclmac->_hopCount;
+    uint64_t networkTime = mclmac->_networkTime;
+    uint32_t initTime = mclmac->_initTime;
+
+    controlpacket_create(pkt, nodeID, currentFrame, currentSlot, collisionSlot, collisionFrequency,
+                        hopCount, networkTime, initTime, NULL, 0);
+}
+
+void stub_mclmac_send_control_packet(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->mac != NULL);
+    assert(mclmac->mac->ctrlpkt != NULL);
+#endif
+
+    ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
+    ARRAY byteStr;
+
+    controlpacket_get_packet_bytestring(pkt, &byteStr);
+
+    // Send byte string
+
+    controlpacket_clear(pkt);
+
+#ifdef __LINUX__
+    free(byteStr);
+#endif
+#ifdef __RIOT__
+    free_array(&byteStr);
+#endif
+}
+
+void stub_mclmac_send_data_packet(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    if (ARROW(mclmac->mac)_packets_to_send_message == 0)
+        return;
+    if (ARROW(mclmac->mac)_first_send_message > MAX_NUMBER_DATA_PACKETS)
+        return;
+
+    // Get the packet pointed to by _first_send_message
+    uint8_t first_send = ARROW(mclmac->mac)_first_send_message;
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[first_send];
+
+    // Get the byte string
+    ARRAY byteString;
+    datapacket_get_packet_bytestring(pkt, &byteString);
+
+    // copy byte string to radio.
+    // Send byte string.
+
+    ARROW(mclmac->mac)_first_send_message = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
+    ARROW(mclmac->mac)_packets_to_send_message--;
+
+    datapacket_clear(pkt);
+
+#ifdef __LINUX__
+    free(byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&byteString);
+#endif
+}
+
+void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+    if (ARROW(mclmac->mac)_packets_to_send_control == 0)
+        return;
+    if (ARROW(mclmac->mac)_first_send_control > MAX_NUMBER_DATA_PACKETS)
+        return;
+
+    // Get the first control packet
+    uint8_t first_send = ARROW(mclmac->mac)_first_send_control;
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[first_send];
+
+    // Get the byte string
+    ARRAY byteString;
+    datapacket_get_packet_bytestring(pkt, &byteString);
+
+    // copy the packet to the radio
+    // Send the packet
+
+    ARROW(mclmac->mac)_first_send_control = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
+    ARROW(mclmac->mac)_packets_to_send_control--;
+
+    datapacket_clear(pkt);
+
+#ifdef __LINUX__
+    free(byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&byteString);
+#endif
 }

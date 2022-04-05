@@ -103,7 +103,6 @@ typedef struct MCLMAC
     kernel_pid_t        _self_pid;
 #endif
 #ifdef TESTING
-    // Temporal variable for testing
     uint8_t             _state;
 #endif
 }MCLMAC_t;
@@ -194,28 +193,38 @@ uint32_t cf_duration
 #endif
 );
 void mclmac_record_collision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency);
-void mclmac_set_destination_id(MCLMAC_t *mclmac, uint16_t id);
-uint16_t mclmac_get_destination_id(MCLMAC_t *mclmac);
 void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time);
 uint32_t mclmac_get_network_time(MCLMAC_t *mclmac);
+uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac);
 
-// Packet functions
-void mclmac_create_cf_packet(MCLMAC_t *mclmac);
+/* Packet functions */
 void mclmac_create_control_packet(MCLMAC_t *mclmac);
-void mclmac_create_data_packet(MCLMAC_t *mclmac);
-void mclmac_clear_cf_packet(MCLMAC_t *mclmac);
-void mclmac_set_packet_data(MCLMAC_t *mclmac, ARRAY* data, uint8_t size);
-void mclmac_delete_data_from_packet(MCLMAC_t *mclmac);
-void mclmac_clear_data_from_packet(MCLMAC_t *mclmac);
-
-void mclmac_copy_data(MCLMAC_t *mclmac, const ARRAY* data);
-void mclmac_send_control_packet(MCLMAC_t *mclmac);
 void stub_mclmac_send_cf_message(MCLMAC_t *mclmac);
 bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac);
-void mclmac_send_data_packet(MCLMAC_t *mclmac);
-void mclmac_receive_control_message(MCLMAC_t *mclmac);
+void stub_mclmac_send_control_packet(MCLMAC_t *mclmac);
+void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);
+
+/**
+ * @brief For the SYNCHRONIZATION state. It will receive all the incoming 
+ *      control packets from the network, one at the time, and store the received
+ *      data on the ctrlpkt. With that data, the node will fill its information
+ *      about the network, so it can join it.
+ *      For simulate the reception of packets, this function will create 
+ *      an byte string that will contain the associated data, and create 
+ *      the packet with it. The following static variables are necessary:
+ *          -A variable containing the network time, which is the total number
+ *          of slots that has passed.
+ *          -The number of hops, which will vary a little in each call.
+ *          -The current slot and current frame, which will be random at the beginning.
+ *          -We also need to record the slot and frequency at which the packet is received.
+ *      The rest of the fields will be randomly generated.
+ * @param mclmac 
+ * @param ctrlpkt 
+ */
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt);
-bool mclmac_receive_data_message(MCLMAC_t *mclmac);
+void stub_mclmac_send_data_packet(MCLMAC_t *mclmac);
+bool stub_mclmac_receive_data_message(MCLMAC_t *mclmac);
+void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac);
 
 // Channel selection
 void mclmac_change_transmit_channel(MCLMAC_t *mclmac);
@@ -223,7 +232,7 @@ void mclmac_change_receive_channel(MCLMAC_t *mclmac);
 void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac);
 
 // Radio modes
-void mclmac_start_split_phase(MCLMAC_t *mclmac);
+int32_t stub_mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state);
 void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 

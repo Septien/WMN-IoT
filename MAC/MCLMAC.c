@@ -467,23 +467,6 @@ void mclmac_record_collision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t c
     ARROW(mclmac->mac)_collisionFrequency = collisionFrequency;
 }
 
-/*void mclmac_set_destination_id(MCLMAC_t *mclmac, uint16_t id)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-
-    ARROW(mclmac->mac)destinationID = id;
-}
-
-uint16_t mclmac_get_destination_id(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-
-    return ARROW(mclmac->mac)destinationID;
-}*/
-
 void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time)
 {
     assert(mclmac != NULL);
@@ -496,6 +479,16 @@ uint32_t mclmac_get_network_time(MCLMAC_t *mclmac)
     assert(mclmac != NULL);
 
     return mclmac->_networkTime;
+}
+
+uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+    uint8_t message_packets = ARROW(mclmac->mac)_packets_to_send_message;
+    uint8_t control_packets = ARROW(mclmac->mac)_packets_to_send_control;
+
+    return (uint16_t)(message_packets + control_packets);
 }
 
 void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
@@ -801,4 +794,17 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
     }
 
     return ARROW(mclmac->mac)_cf_message_received;
+}
+
+int32_t stub_mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
+{
+    assert(mclmac != NULL);
+    
+    if (state != TRANSMIT && state != RECEIVE)
+        return -1;
+    
+    return 1;
+
+    // Set the frequency on the radio.
+    // Set the radio on stand by.
 }
