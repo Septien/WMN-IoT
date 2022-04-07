@@ -54,6 +54,22 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
 void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
 {
     assert(mac != NULL);
+    
+    for (int i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        // As these packets are not pointers, just release the array's associated memory.
+        DataPacket_t *pkt = &(SINGLE_POINTER mac)->_message_packets_to_send[i];
+        datapacket_clear(pkt);
+        pkt = &(SINGLE_POINTER mac)->_control_packets_to_send[i];
+        datapacket_clear(pkt);
+        pkt = &(SINGLE_POINTER mac)->_packets_received[i];
+        datapacket_clear(pkt);
+    }
+    for (int i = 0; i < MAX_NUMBER_CF_PACKETS; i++)
+    {
+        CFPacket_t *pkt = &(SINGLE_POINTER mac)->_cf_messages[i];
+        cfpacket_clear(pkt);
+    }
 #ifdef __LINUX__
     assert(*mac != NULL);
 
