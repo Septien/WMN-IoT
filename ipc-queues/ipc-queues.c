@@ -285,30 +285,31 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
     out_msg[7] = (pid & 0x00000000000000ff);
     // Copy the original message to the out_msg
     memcpy(out_msg + 8, _msg, sizeof(char) * size);
-    int ret = mq_send(recv_q->queue, out_msg, size + sizeof(pthread_t), priority);
-    int err = errno;
-    if (ret == -1)
-    {
-        switch (err)
+    int ret = 0;
+    do {
+        ret = mq_send(recv_q->queue, out_msg, size + sizeof(pthread_t), priority);
+        int err = errno;
+        if (ret == -1)
         {
-        case EAGAIN:
-            usleep(50U);
-            mq_send(recv_q->queue, out_msg, size + sizeof(pthread_t), priority);
-            break;
-        case EBADF:
-            printf("Invalid descriptor or no opened.\n");
-            break;
-        case EINTR:
-            printf("Call interrupted by signal handler.\n");
-            break;
-        case EMSGSIZE:
-            printf("msg_len was greater then mq_msgsize attribute of the queue.\n");
-            break;
-        default:
-            printf("Non detected.\n");
-            break;
+            if (err == EAGAIN || err == EINTR)
+                continue;
+            switch (err)
+            {
+            case EBADF:
+                ret = 0;
+                printf("Invalid descriptor or no opened.\n");
+                break;
+            case EMSGSIZE:
+                ret = 0;
+                printf("msg_len was greater then mq_msgsize attribute of the queue.\n");
+                break;
+            default:
+                ret = 0;
+                printf("Non detected.\n");
+                break;
+            }
         }
-    }
+    } while (ret == -1);
     free(out_msg);
 #endif
 #ifdef __RIOT__
