@@ -27,6 +27,12 @@
 #define TIMEOUTS        4
 #endif
 
+/* When unable to set a timer, return a number different from any
+timeout number identifier. */
+#ifndef TIMEOUT_SET_ERROR
+#define TIMEOUT_SET_ERROR TIMEOUTS + 1
+#endif
+
 #ifdef __LINUX__
 #define TIMEOUT_SIGNAL (SIGRTMIN+0)
 #endif

@@ -142,15 +142,14 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             {
                 finish = true;
                 found = false;
-                timeout_unset(timer);
             }
             else if (packet)
             {
                 finish = true;
                 found = true;
-                timeout_unset(timer);
             }
         }
+        timeout_unset(timer);
         if (!found)
             return E_MAC_EXECUTION_FAILED;
         mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
@@ -190,7 +189,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         /* Arm the timers. */
         slot_timer = timeout_set(TIME(time_remaining));
         frame_timer = timeout_set(TIME(time_remaining));
-        if (slot_timer == 2 || frame_timer == 2)
+        if (slot_timer == TIMEOUT_SET_ERROR || frame_timer == TIMEOUT_SET_ERROR)
         {
             perror("Unable to create timers. Returning\n");
             return E_MAC_EXECUTION_FAILED;
@@ -253,7 +252,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
     case TIMESLOT_AND_CHANNEL_SELECTION: ;
         /* Set the frame timer. */
         frame_timer = timeout_set(TIME(FRAME_DURATION));
-        if (frame_timer == 2)
+        if (frame_timer == TIMEOUT_SET_ERROR)
         {
             perror("Unable to create frame timer.\n");
             return E_MAC_EXECUTION_FAILED;
