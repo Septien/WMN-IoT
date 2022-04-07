@@ -552,7 +552,7 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
             ARROW(mclmac->mac)_last_send_message++;
             ARROW(mclmac->mac)_packets_to_send_message++;
         }
-        else if (msg[0] >= 1 && msg[0] < 7)
+        else if (msg[0] >= 2 && msg[0] < 7)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_control;
             DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[last];

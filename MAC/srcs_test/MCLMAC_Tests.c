@@ -1061,7 +1061,7 @@ void _read_queue(MCLMAC_t *mclmac)
     for (uint i = 0; i < pkt->size; i++)
         assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
     // Type 1, a control packet
-    message[0] = 1;
+    message[0] = 2;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
     assert(nelements == 1);
@@ -1075,7 +1075,7 @@ void _read_queue(MCLMAC_t *mclmac)
         assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
     
     // Invalid packet type
-    message[0] = rand() + 7;
+    message[0] = rand() + 10;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
     assert(nelements == 0);
