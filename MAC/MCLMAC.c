@@ -563,6 +563,12 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         // Invalid type, return 0
         else
             return 0;
+#ifdef __LINUX__
+        free(byteString);
+#endif
+#ifdef __RIOT__
+        free_array(&byteString);
+#endif
     }
 
     return 1;
