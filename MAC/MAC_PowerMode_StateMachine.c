@@ -131,7 +131,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
         // Arm the slot timer for the first time.
-        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)slot_duration));
+        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)slot_duration);
         break;
 
     case PASSIVE: ;
@@ -163,7 +163,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         /* Increase by one the network time. */
         mclmac->_networkTime++;
         /* Set once again the slot timer before leaving the state. */
-        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)slot_duration));
+        ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)slot_duration);
         mclmac_set_next_powermode_state(mclmac, ACTIVE);
         break;
 
@@ -181,7 +181,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             is_current = true;
 
         /* Arm the cf timer. */
-        ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)cf_duration));
+        ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
         /* Iterate over all cf slots. */
         while (!ended)
         {
@@ -199,7 +199,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 // Otherwise, re-arm the timeout
                 else
                 {
-                    ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(TIME(ARROW(ARROW(mclmac->mac)frame)cf_duration));
+                    ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
                 }
             }
             /* If the current slot is the selected slot, and the current cf slot corresponds to the 
