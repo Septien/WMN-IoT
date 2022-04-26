@@ -146,7 +146,8 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 timeout_unset(ARROW(ARROW(mclmac->mac)frame)slot_timer);
                 sleep = false;
             }
-            if (elements_on_queue(mclmac->_mac_queue_id) == 0 && ARROW(mclmac->mac)_number_packets_received == 0)
+            uint16_t packes_received = ARROW(mclmac->mac)_number_packets_received;
+            if (elements_on_queue(mclmac->_mac_queue_id) == 0 &&  packets_received == 0)
                 continue;   // Jump right back to check timer.
 
             /* Read packets from upper layers. */
@@ -201,7 +202,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             uint8_t current_cf_slot = mclmac_get_current_cf_slot(mclmac);
             if (is_current && selected_freq == mclmac_get_frequency(mclmac, current_cf_slot))
             {
-                if (ARROW(mclmac->mac)_packets_to_send_message > 0 || ARROW(mclmac->mac)_packets_to_send_control > 0)
+                uint8_t packets_to_send_message = ARROW(mclmac->mac)_packets_to_send_message;
+                uint8_t packets_to_send_control = ARROW(mclmac->mac)_packets_to_send_control
+                if ( packets_to_send_message > 0 || packets_to_send_control > 0)
                 {
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
@@ -255,6 +258,48 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if (!send && !receive)
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
 
+        break;
+
+    case TRANSMIT:  ;
+        stub_mclmac_start_split_phase(mclmac, TRANSMIT);
+
+        /* Create and send control packet. */
+        mclmac_create_control_packet(mclmac);
+        stub_mclmac_send_control_packet(mclmac);
+
+        /* Send packets.*/
+        bool end = false;
+        while (!end)
+        {
+            // Check if timeout passed
+            if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1)
+            {
+                timeout_unset(ARROW(ARROW(mclmac->mac)frame)slot_timer);
+                end = true;
+                continue;       // Do not send any more packets
+            }
+            // Send control packets first
+            if (ARROW(mclmac->mac)_packets_to_send_control > 0)
+                stub_mclmac_send_layers_control_packet(mclmac);
+
+            // Send data packets only after the control ones were sent
+            if (ARROW(mclmac->mac)_packets_to_send_message > 0 && ARROW(mclmac->mac)_packets_to_send_control == 0)
+                stub_mclmac_send_data_packet(mclmac);
+
+            if (mclmac_available_data_packets(mclmac) == 0)
+                end = true;
+        }
+
+         // Increase current slot
+        mclmac_increase_slot(mclmac);
+        if (mclmac_get_current_slot(mclmac) == ARROW(ARROW(mclmac->mac)frame)slots_number)
+        {
+            // Increase frame number and set current slot to 0, in case the frame is completed.
+            mclmac_increase_frame(mclmac);
+            mclmac_set_slots_number(mclmac, 0);
+        }
+
+        mclmac_set_next_powermode_state(mclmac, PASSIVE);
         break;
 
     default: ;

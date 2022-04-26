@@ -749,17 +749,17 @@ void test_transmit_powermode_stmachine(void)
     uint i;
     for (i = 0; i < MAX_MESSAGE_SIZE; i++)
         msg[i] = rand();
-    msg[0] = 2;
+    /*msg[0] = 2;
     for (i = 0; i < MAX_ELEMENTS_ON_QUEUE / 2; i++)
-        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);*/
     msg[0] = 7;
-    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE / 2; i++)
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
         send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
-    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE / 2);
-    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE / 2);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE);
+    //assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE / 2);
     /* Transit to state ACTIVE, and simulate that a packet should be sent. */
     ARROW(mclmac)_state = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
@@ -789,9 +789,17 @@ void test_transmit_powermode_stmachine(void)
      * of received packets. This layer won't retransmit any packet in case of packet loss, it will
      * report the loss to upper layers, which will decide what to do about it.
     */
-   /* No tests so far, but still comply with TDD. */
-   assert(1 == 0);
-   (void) ret;
+    uint8_t current_slot = ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    // All packets were send
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_send_control == ARROW(ARROW(mclmac)mac)_last_send_control);
+    assert(ARROW(ARROW(mclmac)mac)_first_send_message == ARROW(ARROW(mclmac)mac)_last_send_message);
+    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot == current_slot + 1U);
+    assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
     MCLMAC_destroy(&mclmac);
 }
