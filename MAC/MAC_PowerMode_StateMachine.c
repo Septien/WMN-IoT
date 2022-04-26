@@ -146,7 +146,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 timeout_unset(ARROW(ARROW(mclmac->mac)frame)slot_timer);
                 sleep = false;
             }
-            uint16_t packes_received = ARROW(mclmac->mac)_number_packets_received;
+            uint16_t packets_received = ARROW(mclmac->mac)_number_packets_received;
             if (elements_on_queue(mclmac->_mac_queue_id) == 0 &&  packets_received == 0)
                 continue;   // Jump right back to check timer.
 
@@ -203,7 +203,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             if (is_current && selected_freq == mclmac_get_frequency(mclmac, current_cf_slot))
             {
                 uint8_t packets_to_send_message = ARROW(mclmac->mac)_packets_to_send_message;
-                uint8_t packets_to_send_control = ARROW(mclmac->mac)_packets_to_send_control
+                uint8_t packets_to_send_control = ARROW(mclmac->mac)_packets_to_send_control;
                 if ( packets_to_send_message > 0 || packets_to_send_control > 0)
                 {
                     /* Create the cf packet and send it. */
