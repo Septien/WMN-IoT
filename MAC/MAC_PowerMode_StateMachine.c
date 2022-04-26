@@ -146,20 +146,14 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 timeout_unset(ARROW(ARROW(mclmac->mac)frame)slot_timer);
                 sleep = false;
             }
+            if (elements_on_queue(mclmac->_mac_queue_id) == 0 && ARROW(mclmac->mac)_number_packets_received == 0)
+                continue;   // Jump right back to check timer.
 
-            /* Read elements from the queue. */
+            /* Read packets from upper layers. */
             mclmac_read_queue_element(mclmac);
-            /* Write packets into queue. */
+            /* Write packets to upper layers. */
             mclmac_write_queue_element(mclmac);
-            // Sleep for a little while
-#ifdef __LINUX__
-            usleep(CF_SLOT_DURATION / 2);
-#endif
-#ifdef __RIOT__
-            ztimer_sleep(CLOCK, CF_SLOT_DURATION / 2);
-#endif
         }
-
         /* Increase by one the network time. */
         mclmac->_networkTime++;
         /* Set once again the slot timer before leaving the state. */

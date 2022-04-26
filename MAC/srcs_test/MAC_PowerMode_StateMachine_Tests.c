@@ -396,7 +396,8 @@ void test_startp_state_powermode_stmachine(void)
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame == ARROW(mclmac)_wakeup_frame + 1);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot == 0);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == 0);
-    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_read == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == 0);
     assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
     assert(ARROW(ARROW(mclmac)mac)cfChannel == CF_FREQUENCY);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
@@ -432,6 +433,14 @@ void test_passive_state_powermode_stmachine(void)
     mclmac._self_pid = thread_getpid();
 #endif
     open_queue(ARROW(mclmac)_mac_queue_id, ARROW(mclmac)_self_pid);
+
+    uint8_t msg[MAX_MESSAGE_SIZE];
+    uint i;
+    for (i = 0; i < MAX_MESSAGE_SIZE; i++)
+        msg[i] = rand();
+    msg[0] = 2;
+    send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    ARROW(ARROW(mclmac)mac)_number_packets_received = 0;
     /**
      * We are now at the PASSIVE state. This state sets the radio on SLEEP mode, and
      * execute other pertinent functions:
@@ -446,15 +455,54 @@ void test_passive_state_powermode_stmachine(void)
      *  -It should return:
      *      *E_PM_EXECUTION_SUCCESS.
      */
+    // For control packets
     uint32_t time = ARROW(mclmac)_networkTime;
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == ACTIVE);
     assert(ARROW(mclmac)_networkTime == time + 1);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control > 0);
+    assert(elements_on_queue(ARROW(mclmac)_mac_queue_id) == 0);
 
+    // For message packets
+    msg[0] = 7;
+    send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    ARROW(mclmac)powerMode.nextState = PASSIVE;
+    time = ARROW(mclmac)_networkTime;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)powerMode.nextState == ACTIVE);
+    assert(ARROW(mclmac)_networkTime == time + 1);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message > 0);
+    assert(elements_on_queue(ARROW(mclmac)_mac_queue_id) == 0);
+    timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
+    ARROW(ARROW(mclmac)mac)_packets_to_send_message = 0;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_control = 0;
+    ARROW(ARROW(mclmac)mac)_last_send_message = 0;
+    ARROW(ARROW(mclmac)mac)_last_send_control = 0;
+    DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_message_packets_to_send[0];
+    datapacket_clear(pkt);
+    pkt = &ARROW(ARROW(mclmac)mac)_control_packets_to_send[0];
+    datapacket_clear(pkt);
+
+    msg[0] = 2;
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer = timeout_set(TIME(SLOT_DURATION));
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(elements_on_queue(ARROW(mclmac)_mac_queue_id) == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE);
+    timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
+
+    msg[0] = 7;
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer = timeout_set(TIME(SLOT_DURATION));
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(elements_on_queue(ARROW(mclmac)_mac_queue_id) == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE);
     timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
     close_queue(ARROW(mclmac)_mac_queue_id);
-
     MCLMAC_destroy(&mclmac);
 }
 
@@ -511,11 +559,10 @@ void test_active_state_powermode_stmachine(void)
     uint i;
     for (i = 0; i < MAX_MESSAGE_SIZE; i++)
         msg[i] = rand();
-    msg[0] = 0;
-    for (i = 0; i< MAX_ELEMENTS_ON_QUEUE; i++)
-        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
-    uint32_t nelements = elements_on_queue(ARROW(mclmac)_mac_queue_id);
-    assert(nelements == MAX_ELEMENTS_ON_QUEUE);
+    msg[0] = 2;
+    send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    msg[0] = 7;
+    send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
@@ -607,7 +654,8 @@ void test_active_state_powermode_stmachine(void)
                 -The current cf slot should be equal to the total number of frequencies.
     */
     ARROW(mclmac)_state = 3;
-    ARROW(ARROW(mclmac)mac)_packets_to_send_read = 0;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_message = 0;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_control = 0;
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
@@ -622,7 +670,7 @@ void test_active_state_powermode_stmachine(void)
                 -The current cf slot should be equal to the total number of frequencies.
     */
     ARROW(mclmac)_state = 4;
-    ARROW(ARROW(mclmac)mac)_packets_to_send_read = 1;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_message = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_SYNCHRONIZATION_ERROR);
@@ -692,21 +740,31 @@ void test_transmit_powermode_stmachine(void)
         }
     }
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-
     /* Execute the PowerMode State machine. */
     // Execute the STARTP state, and update state to PASSIVE state.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+    // Add packets to the queue
+    uint8_t msg[MAX_MESSAGE_SIZE];
+    uint i;
+    for (i = 0; i < MAX_MESSAGE_SIZE; i++)
+        msg[i] = rand();
+    msg[0] = 2;
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE / 2; i++)
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
+    msg[0] = 7;
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE / 2; i++)
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
-
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE / 2);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE / 2);
     /* Transit to state ACTIVE, and simulate that a packet should be sent. */
     ARROW(mclmac)_state = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
-    (void) ret;
 
     /**  We are now at the TRANSMIT state, where we are at our own slot, and a packet should
      * sent. A CF packet was already sent to the corresponding channel, now we should execute the
@@ -731,9 +789,9 @@ void test_transmit_powermode_stmachine(void)
      * of received packets. This layer won't retransmit any packet in case of packet loss, it will
      * report the loss to upper layers, which will decide what to do about it.
     */
-    /** Test case 1:
-        * We have only one packet to send on the queue.
-    */
+   /* No tests so far, but still comply with TDD. */
+   assert(1 == 0);
+   (void) ret;
 
     MCLMAC_destroy(&mclmac);
 }
@@ -763,16 +821,20 @@ void executetests_mac_powermode_statemachine(void)
     test_mclmac_update_powermode_state_machine();
     printf("Test passed.\n");
 
-    printf("Testing the PowerMode STARTP state.\n");
+    printf("Testing the PowerMode's STARTP state.\n");
     test_startp_state_powermode_stmachine();
     printf("Test passed.\n");
 
-    printf("Testing the PowerMode PASSIVE state.\n");
+    printf("Testing the PowerMode's PASSIVE state.\n");
     test_passive_state_powermode_stmachine();
     printf("Test passed.\n");
 
-    printf("Testing the PowerMode ACTIVE state.\n");
+    printf("Testing the PowerMode's ACTIVE state.\n");
     test_active_state_powermode_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the PowerMode's TRANSMIT state.\n");
+    test_transmit_powermode_stmachine();
     printf("Test passed.\n");
 
     end_queues();
