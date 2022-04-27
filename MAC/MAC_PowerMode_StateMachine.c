@@ -243,7 +243,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if ((send && receive) || (packets > 1))
         {
             mclmac_set_next_powermode_state(mclmac, FINISHP);
-            return E_PM_SYNCHRONIZATION_ERROR;
+            return E_PM_COLLISION_ERROR;
         }
         
         // Packets to send
@@ -300,6 +300,41 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         }
 
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
+        break;
+
+    case RECEIVE: ;
+        stub_mclmac_start_split_phase(mclmac, RECEIVE);
+
+        stub_mclmac_receive_control_packet(mclmac);
+
+        ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
+        uint32_t frequency = controlpacket_get_collision_frequency(pkt);
+        uint8_t slot = controlpacket_get_collision_slot(pkt);
+        uint8_t c_slot = controlpacket_get_current_slot(pkt);
+        uint32_t frame = controlpacket_get_current_frame(pkt);
+        uint64_t time = controlpacket_get_network_time(pkt);
+        if (frequency == ARROW(mclmac->mac)transmitChannel && slot == ARROW(mclmac->mac)selectedSlot)
+        {
+            mclmac_set_next_powermode_state(mclmac, FINISHP);
+            return E_PM_COLLISION_ERROR;
+        }
+        uint8_t own_slot = mclmac_get_current_slot(mclmac);
+        uint32_t own_frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
+        if (c_slot != own_slot  || frame != own_frame || time != mclmac->_networkTime)
+        {
+            mclmac_set_next_powermode_state(mclmac, FINISHP);
+            return E_PM_SYNCHRONIZATION_ERROR;
+        }
+
+        uint packets_received = 0;
+        while (packets_received > MAX_ELEMENTS_ON_QUEUE)
+        {
+            stub_mclmac_receive_data_packet(mclmac);
+            packets_received = ARROW(mclmac->mac)_number_packets_received;
+        }
+
+        mclmac_set_next_powermode_state(mclmac, PASSIVE);
+
         break;
 
     default: ;

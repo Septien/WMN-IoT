@@ -43,7 +43,7 @@ enum MAC_STATEMACHINE_ERRORS{E_MAC_TRANSITION_SUCCESS, E_MAC_TRANSITION_ERROR, E
 enum MAC_EXECUTION_ERRORS{E_MAC_EXECUTION_SUCCESS, E_MAC_EXECUTION_FAILED};
 
 enum POWERMODE_ERRORS {E_PM_TRANSITION_SUCCESS, E_PM_TRANSITION_ERROR, E_PM_NO_TRANSITION, E_PM_INVALID_STATE};
-enum PM_EXECUTION_ERRORS {E_PM_EXECUTION_SUCCESS, E_PM_EXECUTION_FAILED, E_PM_SYNCHRONIZATION_ERROR};
+enum PM_EXECUTION_ERRORS {E_PM_EXECUTION_SUCCESS, E_PM_EXECUTION_FAILED, E_PM_COLLISION_ERROR, E_PM_SYNCHRONIZATION_ERROR};
 
 typedef struct State
 {
@@ -104,6 +104,8 @@ typedef struct MCLMAC
 #endif
 #ifdef TESTING
     uint8_t             _state;
+    uint8_t             _trues;
+    uint8_t             _trues5;
 #endif
 }MCLMAC_t;
 
@@ -223,7 +225,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);
  */
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt);
 void stub_mclmac_send_data_packet(MCLMAC_t *mclmac);
-bool stub_mclmac_receive_data_message(MCLMAC_t *mclmac);
+void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac);
 void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac);
 
 // Channel selection

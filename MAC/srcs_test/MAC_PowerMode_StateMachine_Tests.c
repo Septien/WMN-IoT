@@ -621,6 +621,8 @@ void test_active_state_powermode_stmachine(void)
             -The current cf slot should be equal to the number of frequencies.
             -The time passed should be approximately 20% of the total slot time.
     */
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
     // set state to 1, to indicate first test case.
     ARROW(mclmac)_state = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
@@ -673,7 +675,7 @@ void test_active_state_powermode_stmachine(void)
     ARROW(ARROW(mclmac)mac)_packets_to_send_message = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(ret == E_PM_SYNCHRONIZATION_ERROR);
+    assert(ret == E_PM_COLLISION_ERROR);
     assert(ARROW(mclmac)powerMode.nextState == FINISHP);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
@@ -688,7 +690,7 @@ void test_active_state_powermode_stmachine(void)
     ARROW(mclmac)_state = 5;
     mclmac_set_current_slot(REFERENCE mclmac, 1U);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(ret == E_PM_SYNCHRONIZATION_ERROR);
+    assert(ret == E_PM_COLLISION_ERROR);
     assert(ARROW(mclmac)powerMode.nextState == FINISHP);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
@@ -804,6 +806,172 @@ void test_transmit_powermode_stmachine(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_receive_state_powermode_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 10;
+
+    MCLMAC_init(&mclmac, &radio, nodeid);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+
+    /* Execute the MAC state machine, as we require a time slot selected. */
+    /*Execute START state */
+    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute INITIALIZATION state, the first time will fail. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
+    so we will modify it for testing. */
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+
+    /* Execute the TIMESLOT_AND_CHANNEL_SELECTION state, assuring a free slot */
+    uint8_t slot = 0x7f;
+    int n = MAX_NUMBER_FREQS;
+    int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            ARROW(mclmac)_occupied_frequencies_slots[i][j] = slot;
+        }
+    }
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    /* Execute the PowerMode State machine. */
+    // Execute the STARTP state, and update state to PASSIVE state.
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+
+    // Execute the PASSIVE state and update state machine.
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+
+    /* Transit to state ACTIVE, and simulate that we should receive a packet. */
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state = 2;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
+    
+    /** We are now at the RECEIVE state, where we should receive incoming packets from 
+     * the medium and store it on the array _packets_received. We shall check only for the packet
+     * types 0 or 1 (MAC control packets), that we should immediatly discard. Any other packets
+     * shall be stored on the array for subsequent retransmission to upper layers. This state also
+     * handle errors such as synchronization and collision notifications received from other nodes.
+    */
+    ARROW(mclmac)_state = 1;
+    assert(ARROW(mclmac)powerMode.nextState == RECEIVE);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    ControlPacket_t *ctrlpkt = REFERENCE ARROW(ARROW(mclmac)mac)ctrlpkt_recv;
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot == 0);
+    assert(ctrlpkt->collisionFrequency == 0);
+    assert(ctrlpkt->hopCount == ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime == ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
+
+    /**
+     * Check the case when a collision is indicated in the node's selected slot and 
+     * frequency. This happens when the received collisionSlot and collisionFrequency
+     * correspond to the node's frequency and slot.
+     * The control packet should hold such information, and the function should
+     * return E_PM_COLLISION_ERROR. The next state should be FNISHP.
+     */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 3;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_COLLISION_ERROR);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ctrlpkt->collisionSlot == ARROW(ARROW(mclmac)mac)selectedSlot);
+    assert(ctrlpkt->collisionFrequency == ARROW(ARROW(mclmac)mac)transmitChannel);
+
+    /* Current slot is different from packet's current slot.
+    * Return E_PM_SYNCHRONIZATION_ERROR. Next state is FINISHP.
+    */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 4;
+    ARROW(mclmac)powerMode.nextState = RECEIVE;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_SYNCHRONIZATION_ERROR);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ctrlpkt->currentSlot != ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+
+    /* Current frame is different from the node's current frame.
+    * Return E_PM_SYNCHRONIZATION_ERROR. Next state is FINISHP.
+    */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 5;
+    ARROW(mclmac)powerMode.nextState = RECEIVE;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_SYNCHRONIZATION_ERROR);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+
+    /* Network time is different from node's network time.
+    * Return E_PM_SYNCHRONIZATION_ERROR. Next state is FINISHP.
+    */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 6;
+    ARROW(mclmac)powerMode.nextState = RECEIVE;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_SYNCHRONIZATION_ERROR);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ctrlpkt->networkTime != ARROW(mclmac)_networkTime);
+
+    /* Receive MAX_ELEMENTS_ON_QUEUE packets, and store them on the 
+    * array _packets_received. Verify all fields are different from zero.
+    * Verify number_packets_received is equal to MAX_ELEMENTS_ON_QUEUE.
+    * The next state should be PASSIVE. It should return E_PM_EXECUTION_SUCCESS.
+    */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 1;
+    ARROW(mclmac)powerMode.nextState = RECEIVE;
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
+    assert(ARROW(mclmac)powerMode.currentState == RECEIVE);
+    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
+    for (uint i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    {
+        DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
+        assert(pkt->destination_id == ARROW(mclmac)_nodeID);
+        assert(pkt->type > 1);
+        assert(pkt->size  > 0);
+#ifdef __LINUX__
+        assert(pkt->data != NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size > 0);
+#endif
+
+    }
+    assert(1 == 0);
+
+    MCLMAC_destroy(&mclmac);
+}
+
 void executetests_mac_powermode_statemachine(void)
 {
     timeout_init();
@@ -843,6 +1011,10 @@ void executetests_mac_powermode_statemachine(void)
 
     printf("Testing the PowerMode's TRANSMIT state.\n");
     test_transmit_powermode_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the PowerMode's RECEIVE state.\n");
+    test_receive_state_powermode_stmachine();
     printf("Test passed.\n");
 
     end_queues();

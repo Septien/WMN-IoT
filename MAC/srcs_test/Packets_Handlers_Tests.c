@@ -124,6 +124,128 @@ void test_stub_mclmac_send_control_packet(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_stub_mclmac_receive_control_packet(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 1;
+
+    MCLMAC_init(&mclmac, &radio, nodeid);
+    ARROW(mclmac)_hopCount = rand();
+    ARROW(mclmac)_networkTime = rand();
+    ARROW(mclmac)_initTime = rand();
+    mclmac_set_current_frame(REFERENCE mclmac, rand());
+    mclmac_set_current_slot(REFERENCE mclmac, rand());
+
+    /**
+     * Receive a control packet from the medium.
+     * Three cases:
+     *      -The control packet's nodeid is the same as the transmitter_id, and has the
+     *      correct values on the fields.
+     *      -The control packet is destined for the current node, but the
+     *      fields are different from those of the current field.
+     *      -The collision frequency and slot is different to zero, and are equal to the
+     *      node's ones. This is a case of collision.
+     *      -The following variables are the same as the node's ones: currentSlot, 
+     *       currentFrame, networkTime. This is a case of synchronization error.
+     *      -The packet is not destined for the current node.
+     */
+
+    ARROW(mclmac)_state = 1;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    ControlPacket_t *ctrlpkt = REFERENCE ARROW(ARROW(mclmac)mac)ctrlpkt_recv;
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot == 0);
+    assert(ctrlpkt->collisionFrequency == 0);
+    assert(ctrlpkt->hopCount == ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime == ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
+
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 2;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot != ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot != 0);
+    assert(ctrlpkt->collisionFrequency != 0);
+    assert(ctrlpkt->hopCount != ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime != ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime != ARROW(mclmac)_initTime);
+
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 3;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot == ARROW(ARROW(mclmac)mac)selectedSlot);
+    assert(ctrlpkt->collisionFrequency == ARROW(ARROW(mclmac)mac)transmitChannel);
+    assert(ctrlpkt->hopCount == ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime == ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
+
+    /* current slot is differet */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 4;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot != ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot == ARROW(ARROW(mclmac)mac)selectedSlot);
+    assert(ctrlpkt->collisionFrequency == ARROW(ARROW(mclmac)mac)transmitChannel);
+    assert(ctrlpkt->hopCount == ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime == ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
+
+    /* current frame is differen */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 5;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot == ARROW(ARROW(mclmac)mac)selectedSlot);
+    assert(ctrlpkt->collisionFrequency == ARROW(ARROW(mclmac)mac)transmitChannel);
+    assert(ctrlpkt->hopCount == ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime == ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
+
+    /* network time */
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 6;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot == ARROW(ARROW(mclmac)mac)selectedSlot);
+    assert(ctrlpkt->collisionFrequency == ARROW(ARROW(mclmac)mac)transmitChannel);
+    assert(ctrlpkt->hopCount == ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime != ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
+
+    controlpacket_clear(ctrlpkt);
+    ARROW(mclmac)_state = 0;
+    stub_mclmac_receive_control_packet(REFERENCE mclmac);
+    assert(ctrlpkt->nodeID != ARROW(ARROW(mclmac)mac)transmiterID);
+    assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
+    assert(ctrlpkt->currentSlot != ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ctrlpkt->collisionSlot != 0);
+    assert(ctrlpkt->collisionFrequency != 0);
+    assert(ctrlpkt->hopCount != ARROW(mclmac)_hopCount);
+    assert(ctrlpkt->networkTime != ARROW(mclmac)_networkTime);
+    assert(ctrlpkt->initTime != ARROW(mclmac)_initTime);
+
+    MCLMAC_destroy(&mclmac);
+}
+
 void test_stub_mclmac_send_data_packet(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -188,6 +310,44 @@ void test_stub_mclmac_send_data_packet(void)
     }
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == 0);
     assert(ARROW(ARROW(mclmac)mac)_last_send_message == last_send);
+
+    MCLMAC_destroy(&mclmac);
+}
+
+void test_stub_mclmac_receive_data_packet(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 0;
+
+    MCLMAC_init(&mclmac, &radio, nodeid);
+
+    /**
+     * Fill the array _packets_received with random data, 
+     * assuring that the destination_id corresponds with the node's id.
+     */
+    stub_mclmac_receive_data_packet(REFERENCE mclmac);
+    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
+    assert(ARROW(ARROW(mclmac)mac)_first_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_received == MAX_ELEMENTS_ON_QUEUE);
+    for (int i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    {
+        DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
+        assert(pkt->type > 0);
+        assert(pkt->destination_id == ARROW(mclmac)_nodeID);
+        assert(pkt->size > 0);
+#ifdef __LINUX__
+        assert(pkt->data != NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size > 0);
+#endif
+    }
 
     MCLMAC_destroy(&mclmac);
 }
@@ -370,8 +530,16 @@ void executetests_packets_handlers(void)
     test_stub_mclmac_send_control_packet();
     printf("Test passed.\n");
 
+    printf("Testing the stub_mclmac_receive_control_packet function.\n");
+    test_stub_mclmac_receive_control_packet();
+    printf("Test passed.\n");
+
     printf("Testing the stub_mclmac_send_data_packet function.\n");
     test_stub_mclmac_send_data_packet();
+    printf("Test passed.\n");
+
+    printf("Testing the stub_mclmac_receive_data_packet function.\n");
+    test_stub_mclmac_receive_data_packet();
     printf("Test passed.\n");
 
     printf("Testing the stub_mclmac_send_layers_control_packet function.\n");

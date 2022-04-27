@@ -256,7 +256,7 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     pkt->collisionFrequency |= READ_ARRAY(SINGLE_POINTER byteString,            12);
     pkt->hopCount = 0;
     pkt->hopCount           |= READ_ARRAY(SINGLE_POINTER byteString,            13) << 8; 
-    pkt->hopCount           |= READ_ARRAY(SINGLE_POINTER byteString,            14); 
+    pkt->hopCount           |= READ_ARRAY(SINGLE_POINTER byteString,            14);
     pkt->networkTime = 0;
     pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 15) << 52;
     pkt->networkTime        |= (uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 16) << 48;

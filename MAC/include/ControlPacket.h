@@ -28,7 +28,7 @@ typedef struct
     uint8_t     currentSlot;
     uint8_t     collisionSlot;
     uint32_t    collisionFrequency;
-    uint16_t     hopCount;
+    uint16_t    hopCount;
     uint64_t    networkTime;
     uint32_t    initTime;
 } ControlPacket_t;
