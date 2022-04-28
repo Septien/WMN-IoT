@@ -331,11 +331,13 @@ void test_stub_mclmac_receive_data_packet(void)
      * Fill the array _packets_received with random data, 
      * assuring that the destination_id corresponds with the node's id.
      */
-    stub_mclmac_receive_data_packet(REFERENCE mclmac);
+    int i;
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+        stub_mclmac_receive_data_packet(REFERENCE mclmac);
     assert(ARROW(ARROW(mclmac)mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
     assert(ARROW(ARROW(mclmac)mac)_first_received == 0);
     assert(ARROW(ARROW(mclmac)mac)_last_received == MAX_ELEMENTS_ON_QUEUE);
-    for (int i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
     {
         DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
         assert(pkt->type > 0);

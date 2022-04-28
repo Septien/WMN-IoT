@@ -326,9 +326,14 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             return E_PM_SYNCHRONIZATION_ERROR;
         }
 
-        uint packets_received = 0;
-        while (packets_received > MAX_ELEMENTS_ON_QUEUE)
+        uint packets_received = ARROW(mclmac->mac)_number_packets_received;
+        while (packets_received < MAX_ELEMENTS_ON_QUEUE)
         {
+            /* Terminate the cycle if the timer expired, but do not remove the timer, so the PASSIVE 
+            state can transit to the ACTIVE state. */
+            if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1)
+                break;
+
             stub_mclmac_receive_data_packet(mclmac);
             packets_received = ARROW(mclmac->mac)_number_packets_received;
         }

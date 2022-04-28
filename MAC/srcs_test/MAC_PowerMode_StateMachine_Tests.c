@@ -958,7 +958,7 @@ void test_receive_state_powermode_stmachine(void)
         DataPacket_t *pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
         assert(pkt->destination_id == ARROW(mclmac)_nodeID);
         assert(pkt->type > 1);
-        assert(pkt->size  > 0);
+        assert(pkt->size > 0);
 #ifdef __LINUX__
         assert(pkt->data != NULL);
 #endif
@@ -967,7 +967,6 @@ void test_receive_state_powermode_stmachine(void)
 #endif
 
     }
-    assert(1 == 0);
 
     MCLMAC_destroy(&mclmac);
 }

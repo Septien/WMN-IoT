@@ -389,13 +389,11 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
     {
         WRITE_ARRAY(REFERENCE byteString, rand(), i);
     }
-    for (int i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
-    {
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
-        datapacket_construct_from_bytestring(pkt, &byteString);
-        ARROW(mclmac->mac)_last_received++;
-        ARROW(mclmac->mac)_number_packets_received++;
-    }
+    uint pos = ARROW(mclmac->mac)_last_received;
+    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[pos];
+    datapacket_construct_from_bytestring(pkt, &byteString);
+    ARROW(mclmac->mac)_last_received++;
+    ARROW(mclmac->mac)_number_packets_received++;
 }
 
 void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac)
