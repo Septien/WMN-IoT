@@ -24,7 +24,7 @@
 #endif
 
 #ifndef TIMEOUTS
-#define TIMEOUTS        4
+#define TIMEOUTS        20
 #endif
 
 /* When unable to set a timer, return a number different from any
