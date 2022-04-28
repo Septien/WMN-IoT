@@ -60,6 +60,10 @@
 #include <ztimer.h>
 #endif
 
+#ifndef DETECTION_TIME
+#define DETECTION_TIME          1000000
+#endif
+
 #ifndef MAX_NUMBER_FREQS
 #define MAX_NUMBER_FREQS        8
 #endif

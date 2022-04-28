@@ -133,7 +133,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
 #ifdef __RIOT__
         uint32_t timer = 0;
 #endif
-        timer = timeout_set(TIME(1000000));
+        timer = timeout_set(TIME(DETECTION_TIME));
         while (!finish)
         {
             bool packet = stub_mclmac_cf_packet_detected(mclmac);
