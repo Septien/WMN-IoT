@@ -243,7 +243,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if ((send && receive) || (packets > 1))
         {
             mclmac_set_next_powermode_state(mclmac, FINISHP);
-            return E_PM_COLLISION_ERROR;
+            return E_PM_COLLISION_DETECTED;
         }
         
         // Packets to send

@@ -675,7 +675,7 @@ void test_active_state_powermode_stmachine(void)
     ARROW(ARROW(mclmac)mac)_packets_to_send_message = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(ret == E_PM_COLLISION_ERROR);
+    assert(ret == E_PM_COLLISION_DETECTED);
     assert(ARROW(mclmac)powerMode.nextState == FINISHP);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
@@ -690,7 +690,7 @@ void test_active_state_powermode_stmachine(void)
     ARROW(mclmac)_state = 5;
     mclmac_set_current_slot(REFERENCE mclmac, 1U);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
-    assert(ret == E_PM_COLLISION_ERROR);
+    assert(ret == E_PM_COLLISION_DETECTED);
     assert(ARROW(mclmac)powerMode.nextState == FINISHP);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
