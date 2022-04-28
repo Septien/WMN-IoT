@@ -501,9 +501,9 @@ void test_initialization_state_mac_stmachine(void)
     // Assert the frequency is cf.
     // Assert radio is in standby
     // Make it fail by expiring the initialization timeout 
-    assert(ret == E_MAC_EXECUTION_FAILED);
+    assert(ret == E_MAC_NO_NODES_FOUND);
     assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
     // Make it success
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);

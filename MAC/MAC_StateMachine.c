@@ -150,9 +150,9 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             }
         }
         timeout_unset(timer);
-        if (!found)
-            return E_MAC_EXECUTION_FAILED;
         mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+        if (!found)
+            return E_MAC_NO_NODES_FOUND;    // Assume there are no nodes on the network.
         break;
 
     case SYNCHRONIZATION:   ;
