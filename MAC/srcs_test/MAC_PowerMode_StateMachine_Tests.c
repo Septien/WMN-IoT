@@ -399,6 +399,12 @@ void test_startp_state_powermode_stmachine(void)
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == 0);
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == 0);
     assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_send_control == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_send_control == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_received == 0);
     assert(ARROW(ARROW(mclmac)mac)cfChannel == CF_FREQUENCY);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 
@@ -971,6 +977,122 @@ void test_receive_state_powermode_stmachine(void)
     MCLMAC_destroy(&mclmac);
 }
 
+void test_finishp_state_powermode_stmachine(void)
+{
+    MCLMAC_t SINGLE_POINTER mclmac;
+#ifdef __LINUX__
+    uint8_t radio;
+#endif
+#ifdef __RIOT__
+    sx127x_t radio;
+#endif
+    uint16_t nodeid = 10;
+
+    MCLMAC_init(&mclmac, &radio, nodeid);
+
+    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_powermode_state_machine(REFERENCE mclmac);
+
+    ControlPacket_t *ctrlpkt = REFERENCE ARROW(ARROW(mclmac)mac)ctrlpkt;
+    controlpacket_create(ctrlpkt, rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand());
+    ctrlpkt = REFERENCE ARROW(ARROW(mclmac)mac)ctrlpkt_recv;
+    controlpacket_create(ctrlpkt, rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand());
+
+    CFPacket_t *cfpkt = &ARROW(ARROW(mclmac)mac)_cf_messages[0];
+    cfpacket_create(cfpkt, rand(), rand());
+    cfpkt = &ARROW(ARROW(mclmac)mac)_cf_messages[1];
+    cfpacket_create(cfpkt, rand(), rand());
+    ARROW(ARROW(mclmac)mac)_destination_id = rand();
+    ARROW(ARROW(mclmac)mac)_packets_to_send_message = 0;
+    ARROW(ARROW(mclmac)mac)_first_send_message = 0;
+    ARROW(ARROW(mclmac)mac)_last_send_message = MAX_NUMBER_DATA_PACKETS - 1;
+    ARROW(ARROW(mclmac)mac)_packets_to_send_control = 0;
+    ARROW(ARROW(mclmac)mac)_first_send_control = 0;
+    ARROW(ARROW(mclmac)mac)_last_send_control = MAX_NUMBER_DATA_PACKETS - 1;
+    ARROW(ARROW(mclmac)mac)_number_packets_received = 0;
+    ARROW(ARROW(mclmac)mac)_first_received = 0;
+    ARROW(ARROW(mclmac)mac)_last_received = MAX_NUMBER_DATA_PACKETS - 1;
+    ARRAY data;
+#ifdef __LINUX__
+    data = (uint8_t *)malloc((PACKET_SIZE_MAC - 3)* sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&data, PACKET_SIZE_MAC - 3);
+#endif
+    uint i;
+    for (i = 0; i < PACKET_SIZE_MAC; i++)
+        WRITE_ARRAY(REFERENCE data, rand(), i);
+    DataPacket_t *pkt;
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        pkt = &ARROW(ARROW(mclmac)mac)_message_packets_to_send[i];
+        datapacket_create(pkt, rand() % 10, rand(), &data, PACKET_SIZE_MAC - 3);
+        ARROW(ARROW(mclmac)mac)_packets_to_send_message++;
+        pkt = &ARROW(ARROW(mclmac)mac)_control_packets_to_send[i];
+        datapacket_create(pkt, rand() % 10, rand(), &data, PACKET_SIZE_MAC - 3);
+        ARROW(ARROW(mclmac)mac)_packets_to_send_control++;
+        pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
+        datapacket_create(pkt, rand() % 10, rand(), &data, PACKET_SIZE_MAC - 3);
+        ARROW(ARROW(mclmac)mac)_number_packets_received++;
+    }
+
+    ARROW(mclmac)powerMode.currentState = FINISHP;
+    ARROW(mclmac)powerMode.nextState = FINISHP;
+    int ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(ARROW(mclmac)mac)_destination_id == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_send_message == 0);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_send_control == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_send_control == 0);
+    assert(ARROW(ARROW(mclmac)mac)_number_packets_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_first_received == 0);
+    assert(ARROW(ARROW(mclmac)mac)_last_received == 0);
+    for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        pkt = &ARROW(ARROW(mclmac)mac)_message_packets_to_send[i];
+        assert(pkt->type == -1);
+        assert(pkt->destination_id == 0);
+        assert(pkt->size == 0);
+#ifdef __LINUX__
+        assert(pkt->data == NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size == 0);
+#endif
+        pkt = &ARROW(ARROW(mclmac)mac)_control_packets_to_send[i];
+        assert(pkt->type == -1);
+        assert(pkt->destination_id == 0);
+        assert(pkt->size == 0);
+#ifdef __LINUX__
+        assert(pkt->data == NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size == 0);
+#endif
+        pkt = &ARROW(ARROW(mclmac)mac)_packets_received[i];
+        assert(pkt->type == -1);
+        assert(pkt->destination_id == 0);
+        assert(pkt->size == 0);
+#ifdef __LINUX__
+        assert(pkt->data == NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size == 0);
+#endif
+    }
+
+#ifdef __LINUX__
+    free(data);
+#endif
+#ifdef __RIOT__
+    free_array(&data);
+#endif
+    MCLMAC_destroy(&mclmac);
+}
+
 void executetests_mac_powermode_statemachine(void)
 {
     timeout_init();
@@ -1014,6 +1136,10 @@ void executetests_mac_powermode_statemachine(void)
 
     printf("Testing the PowerMode's RECEIVE state.\n");
     test_receive_state_powermode_stmachine();
+    printf("Test passed.\n");
+
+    printf("Testing the PowerMode's FINISHP state.\n");
+    test_finishp_state_powermode_stmachine();
     printf("Test passed.\n");
 
     end_queues();

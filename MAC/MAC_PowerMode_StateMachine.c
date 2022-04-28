@@ -125,6 +125,12 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         ARROW(mclmac->mac)_packets_to_send_message = 0;
         ARROW(mclmac->mac)_packets_to_send_control = 0;
         ARROW(mclmac->mac)_number_packets_received = 0;
+        ARROW(mclmac->mac)_first_send_message = 0;
+        ARROW(mclmac->mac)_last_send_message = 0;
+        ARROW(mclmac->mac)_first_send_control = 0;
+        ARROW(mclmac->mac)_last_send_control = 0;
+        ARROW(mclmac->mac)_first_received = 0;
+        ARROW(mclmac->mac)_last_received = 0;
         
         ARROW(mclmac->mac)cfChannel = CF_FREQUENCY;
 
@@ -340,6 +346,28 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
 
+        break;
+
+    case FINISHP:
+        ARROW(mclmac->mac)_destination_id = 0;
+        ARROW(mclmac->mac)_packets_to_send_message = 0;
+        ARROW(mclmac->mac)_first_send_message = 0;
+        ARROW(mclmac->mac)_last_send_message = 0;
+        ARROW(mclmac->mac)_packets_to_send_control = 0;
+        ARROW(mclmac->mac)_first_send_control = 0;
+        ARROW(mclmac->mac)_last_send_control = 0;
+        ARROW(mclmac->mac)_number_packets_received = 0;
+        ARROW(mclmac->mac)_first_received = 0;
+        ARROW(mclmac->mac)_last_received = 0;
+        for (uint i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+        {
+            DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[i];
+            datapacket_clear(pkt);
+            pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
+            datapacket_clear(pkt);
+            pkt = &ARROW(mclmac->mac)_packets_received[i];
+            datapacket_clear(pkt);
+        }
         break;
 
     default: ;
