@@ -70,7 +70,6 @@ typedef struct MAC_Internals
     bool            _cf_message_received;
     /* On position 0, store the cf message to send, on pisition 1, the cf messages to receive. */
     CFPacket_t      _cf_messages[MAX_NUMBER_CF_PACKETS];
-    uint8_t         _max_cf_messages;
     /* Packets to send. */
     uint16_t        _destination_id;
     uint8_t         _packets_to_send_message;

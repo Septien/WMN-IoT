@@ -25,7 +25,6 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     memset(REFERENCE (SINGLE_POINTER mac)->frame, 0, sizeof(Frame_t));
 
     (SINGLE_POINTER mac)->radio = radio;
-    (SINGLE_POINTER mac)->_max_cf_messages = MAX_NUMBER_CF_PACKETS;
 
     // Initialize the Control packet
     controlpacket_init(&(SINGLE_POINTER mac)->ctrlpkt);
