@@ -61,12 +61,12 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    if (mclmac->_state == 1 || mclmac->_state == 3)
+    if (mclmac->_state_cf == 1 || mclmac->_state_cf == 3)
     {
         ARROW(mclmac->mac)_cf_message_received = false;
         return false;
     }
-    if (mclmac->_state == 2)
+    if (mclmac->_state_cf == 2)
     {
         if (mclmac->_trues == 1)
         {
@@ -90,7 +90,7 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
         }
     }
 
-    if (mclmac->_state == 4)
+    if (mclmac->_state_cf == 4)
     {
         if (mclmac_get_current_cf_slot(mclmac) == 0)
         {
@@ -114,7 +114,7 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
         }
     }
 
-    if (mclmac->_state == 5)
+    if (mclmac->_state_cf == 5)
     {
         if (mclmac->_trues5 > 2)
         {
@@ -201,7 +201,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
     uint8_t bytes = 1;
     // Store type
     WRITE_ARRAY(REFERENCE byteString, bytes,    0);
-    if (mclmac->_state == 1 || mclmac->_state == 3 || mclmac->_state == 4 || mclmac->_state == 5 || mclmac->_state == 6)
+    if (mclmac->_state_ctrl == 1 || mclmac->_state_ctrl == 3 || mclmac->_state_ctrl == 4 || mclmac->_state_ctrl == 5 || mclmac->_state_ctrl == 6)
     {
         // Store node id
         bytes = (ARROW(mclmac->mac)transmiterID & 0xff00) >> 8;
@@ -262,7 +262,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
         WRITE_ARRAY(REFERENCE byteString, bytes,    25);
         bytes = (init_time & 0x000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    26);
-        if (mclmac->_state == 3)
+        if (mclmac->_state_ctrl == 3)
         {
             // Store collision slot, 0
             bytes = ARROW(mclmac->mac)_collisionSlot;
@@ -278,11 +278,11 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
             bytes = (freq & 0x000000ff);
             WRITE_ARRAY(REFERENCE byteString, bytes,    12);
         }
-        else if (mclmac->_state == 4)
+        else if (mclmac->_state_ctrl == 4)
         {
             WRITE_ARRAY(REFERENCE byteString, slot + 1, 7);
         }
-        else if (mclmac->_state == 5)
+        else if (mclmac->_state_ctrl == 5)
         {
             uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame + 1;
             bytes = (frame & 0xff000000) >> 24;
@@ -294,7 +294,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
             bytes = (frame & 0x000000ff);
             WRITE_ARRAY(REFERENCE byteString, bytes,    6);
         }
-        else if (mclmac->_state == 6)
+        else if (mclmac->_state_ctrl == 6)
         {
             uint64_t time = mclmac->_networkTime + 1;
             bytes = (time & 0xff00000000000000) >> 56;
@@ -316,7 +316,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
         }
     }
 
-    else if (mclmac->_state == 2)
+    else if (mclmac->_state_ctrl == 2)
     {
         // Store node id
         bytes = (ARROW(mclmac->mac)transmiterID & 0xff00) >> 8;

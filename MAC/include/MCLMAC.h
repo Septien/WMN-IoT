@@ -103,7 +103,8 @@ typedef struct MCLMAC
     kernel_pid_t        _self_pid;
 #endif
 #ifdef TESTING
-    uint8_t             _state;
+    uint8_t             _state_cf;
+    uint8_t             _state_ctrl;
     uint8_t             _trues;
     uint8_t             _trues5;
 #endif

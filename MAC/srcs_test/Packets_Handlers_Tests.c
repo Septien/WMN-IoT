@@ -156,7 +156,7 @@ void test_stub_mclmac_receive_control_packet(void)
      *      -The packet is not destined for the current node.
      */
 
-    ARROW(mclmac)_state = 1;
+    ARROW(mclmac)_state_ctrl = 1;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     ControlPacket_t *ctrlpkt = REFERENCE ARROW(ARROW(mclmac)mac)ctrlpkt_recv;
     assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
@@ -169,7 +169,7 @@ void test_stub_mclmac_receive_control_packet(void)
     assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
 
     controlpacket_clear(ctrlpkt);
-    ARROW(mclmac)_state = 2;
+    ARROW(mclmac)_state_ctrl = 2;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
     assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
@@ -181,7 +181,7 @@ void test_stub_mclmac_receive_control_packet(void)
     assert(ctrlpkt->initTime != ARROW(mclmac)_initTime);
 
     controlpacket_clear(ctrlpkt);
-    ARROW(mclmac)_state = 3;
+    ARROW(mclmac)_state_ctrl = 3;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
@@ -194,7 +194,7 @@ void test_stub_mclmac_receive_control_packet(void)
 
     /* current slot is differet */
     controlpacket_clear(ctrlpkt);
-    ARROW(mclmac)_state = 4;
+    ARROW(mclmac)_state_ctrl = 4;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
@@ -207,7 +207,7 @@ void test_stub_mclmac_receive_control_packet(void)
 
     /* current frame is differen */
     controlpacket_clear(ctrlpkt);
-    ARROW(mclmac)_state = 5;
+    ARROW(mclmac)_state_ctrl = 5;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
     assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
@@ -220,7 +220,7 @@ void test_stub_mclmac_receive_control_packet(void)
 
     /* network time */
     controlpacket_clear(ctrlpkt);
-    ARROW(mclmac)_state = 6;
+    ARROW(mclmac)_state_ctrl = 6;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     assert(ctrlpkt->nodeID == ARROW(ARROW(mclmac)mac)transmiterID);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
@@ -232,7 +232,7 @@ void test_stub_mclmac_receive_control_packet(void)
     assert(ctrlpkt->initTime == ARROW(mclmac)_initTime);
 
     controlpacket_clear(ctrlpkt);
-    ARROW(mclmac)_state = 0;
+    ARROW(mclmac)_state_ctrl = 0;
     stub_mclmac_receive_control_packet(REFERENCE mclmac);
     assert(ctrlpkt->nodeID != ARROW(ARROW(mclmac)mac)transmiterID);
     assert(ctrlpkt->currentFrame != ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
