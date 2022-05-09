@@ -53,6 +53,11 @@ void init_queues(void)
 #ifdef __RIOT__
     Queues.free_stack = stack;
     Queues.free_queue = queue;
+    // Initialize the message storage
+    memset(Queues.msg_storage, 0, MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
+    Queues.start_storage = 0;
+    Queues.end_storage = 0;
+    Queues.stored_elements = 0;
 #endif
 }
 
@@ -83,6 +88,11 @@ void end_queues(void)
 #ifdef __RIOT__
         q->stack = NULL;
         q->queue = NULL;
+        // Clear storage memory and set pointers to NULL
+        memset(Queues.msg_storage, 0, MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
+        Queues.start_storage = 0;
+        Queues.end_storage = 0;
+        Queues.stored_elements = 0;
 #endif
         Queues.queues_ids[i].queue_id = 0;
         Queues.queues_ids[i].pid = 0;
@@ -313,9 +323,16 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
     free(out_msg);
 #endif
 #ifdef __RIOT__
+    if (Queues.stored_elements == MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE)
+        return 0;
     msg_t _msg;
-    _msg.content.ptr = (void *)msg;
+    uint last = Queues.end_storage;
+    uint8_t *storage = Queues.msg_storage[last];
+    memcpy(storage, msg, MAX_MESSAGE_SIZE);
+    _msg.content.ptr = (void *)storage;
     _msg.type = (uint16_t) size;
+    Queues.end_storage = (last++ >= MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE ? 0 : last);
+    Queues.stored_elements++;
     msg_send(&_msg, pid);
 #endif
     return 1;
@@ -386,6 +403,8 @@ kernel_pid_t *pid
     free(_msg);
 #endif
 #ifdef __RIOT__
+    if (Queues.stored_elements == 0)
+        return 0;
     msg_t _msg;
     msg_receive(&_msg);
     // Invalid message, discard
@@ -394,8 +413,14 @@ kernel_pid_t *pid
         msg = NULL;
         return 0;
     }
+    // Copy the message to the output array
     memcpy(msg, _msg.content.ptr, sizeof(uint8_t) * size);
     *pid = _msg.sender_pid;
+    // Clear memory and update pointers and data
+    uint first = Queues.start_storage;
+    memset(Queues.msg_storage[first], 0, MAX_MESSAGE_SIZE);
+    Queues.start_storage = (first + 1) % (MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE);
+    Queues.stored_elements--;
 #endif
 
     return 1;

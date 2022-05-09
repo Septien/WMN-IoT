@@ -69,6 +69,11 @@ typedef struct ipc_queues
 #ifdef __RIOT__
     char            *free_stack;
     msg_t           *free_queue;
+    // Copy the message to sent to this array
+    uint8_t         msg_storage[MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE][MAX_MESSAGE_SIZE];
+    uint            start_storage;
+    uint            end_storage;
+    uint            stored_elements;
 #endif
 }IPC_Queues_t;
 

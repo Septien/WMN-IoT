@@ -757,17 +757,17 @@ void test_transmit_powermode_stmachine(void)
     uint i;
     for (i = 0; i < MAX_MESSAGE_SIZE; i++)
         msg[i] = rand();
-    /*msg[0] = 2;
+    msg[0] = 2;
     for (i = 0; i < MAX_ELEMENTS_ON_QUEUE / 2; i++)
-        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);*/
+        send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     msg[0] = 7;
-    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE / 2; i++)
         send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
-    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE);
-    //assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE / 2);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE / 2);
+    assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE / 2);
     /* Transit to state ACTIVE, and simulate that a packet should be sent. */
     ARROW(mclmac)_state_cf = 1;
     mclmac_set_current_slot(REFERENCE mclmac, 0);

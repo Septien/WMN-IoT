@@ -65,6 +65,12 @@ void test_init_queues(void)
 #ifdef __RIOT__
     assert(Queues->free_stack != NULL);
     assert(Queues->free_queue != NULL);
+    for (uint i = 0; i < MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE; i++)
+        for (uint j = 0; j < MAX_MESSAGE_SIZE; j++)
+            assert(Queues->msg_storage[i][j] == 0);
+    assert(Queues->start_storage == 0);
+    assert(Queues->end_storage == 0);
+    assert(Queues->stored_elements == 0);
 #endif
     end_queues();
 }
@@ -74,6 +80,9 @@ void test_end_queues(void)
     init_queues();
     IPC_Queues_t *Queues = get_queues_pointer();
 
+#ifdef __RIOT__
+    memset(Queues->msg_storage, rand(), MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
+#endif
     /**
      * end_queue will finish the API by doing the following:
      *      -Sets the last_queue_id to 0.
@@ -109,6 +118,12 @@ void test_end_queues(void)
 #ifdef __RIOT__
     assert(Queues->free_stack == NULL);
     assert(Queues->free_queue == NULL);
+    for (uint i = 0; i < MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE; i++)
+        for (uint j = 0; j < MAX_MESSAGE_SIZE; j++)
+            assert(Queues->msg_storage[i][j] == 0);
+    assert(Queues->start_storage == 0);
+    assert(Queues->end_storage == 0);
+    assert(Queues->stored_elements == 0);
 #endif
 }
 
@@ -349,6 +364,7 @@ static void *recv(void *arg)
         printf("%d ", msg.type);
         count++;
     }
+    printf("\n");
     assert(count > 0);
 
     return NULL;
@@ -419,16 +435,34 @@ void test_send_message(void)
     pthread_join(pid, NULL);
 #endif
 #ifdef __RIOT__
+    IPC_Queues_t *Queues = get_queues_pointer();
     kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
     THREAD_CREATE_SLEEPING, recv, (void *)&qid, "Name");
     thread_wakeup(pid);
+
+    Queues->stored_elements = MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE;
+    ret = send_message(qid, msg, msg_size, pid);
+    assert(ret == 0);
+    Queues->stored_elements = 0;
+    uint stored_elements = Queues->stored_elements;
+    uint prev = Queues->end_storage;
     for (int i = 0; i < n; i++)
     {
         ret = send_message(qid, msg, msg_size, pid);
+        uint8_t *storage = Queues->msg_storage[prev];
         assert(ret == 1);
+        assert(Queues->end_storage == (prev + 1));
+        assert(Queues->stored_elements == (stored_elements + 1));
+        for (int j = 0; j < MAX_MESSAGE_SIZE; j++)
+        {
+            assert(msg[j] == storage[j]);
+        }
+        prev++;
+        stored_elements++;
     }
     thread_wakeup(pid);
     //while (thread_getstatus(pid) != STATUS_STOPPED) ;
+    memset(Queues->msg_storage, 0, MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
 #endif
 
     end_queues();
@@ -474,19 +508,40 @@ static void *recv_recv(void *arg)
     open_queue(*qid, pid);
     int count = 0;
     thread_sleep();
+    IPC_Queues_t *Queues = get_queues_pointer();
+    uint index = Queues->start_storage;
+    uint stored_elements = Queues->stored_elements;
     while (msg_avail())
     {
         size_t msg_size = MAX_MESSAGE_SIZE;
         uint8_t msg[msg_size];
+        uint8_t *storage = Queues->msg_storage[index];
+        uint8_t last_msg[msg_size];
+        memcpy(last_msg, storage, msg_size);
         int ret = recv_message(*qid, msg, msg_size, &s_pid);
         assert(s_pid > 0);
         assert(ret == 1);
-        for (uint i = 0; i < msg_size; i++)
+        assert(Queues->stored_elements == stored_elements - 1);
+        assert(Queues->start_storage == (index + 1) % (MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE));
+        uint i;
+        for (i = 0; i < msg_size; i++)
+            assert(msg[i] == last_msg[i]);
+        for (i = 0; i < msg_size; i++)
+            assert(Queues->msg_storage[index][i] == 0);
+        for (i = 0; i < msg_size; i++)
             assert(msg[i] == 10);
         count++;
+        index = (index + 1) % (MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE);
+        stored_elements--;
     }
     assert(count > 0);
-
+    // In case there are no elements on the queue
+    size_t msg_size = MAX_MESSAGE_SIZE;
+    uint8_t msg[msg_size];
+    int ret = recv_message(*qid, msg, msg_size, &s_pid);
+    assert(ret == 0);
+    assert(msg == NULL);
+    assert(1 == 0);
     return NULL;
 }
 #endif
@@ -779,7 +834,7 @@ static void *open_q(void *arg)
     elements = elements_on_queue(*qid);
     assert(elements == 1);
 
-    uint n = rand() % QUEUE_SIZE;
+    uint n = QUEUE_SIZE;
     for (uint i = 0; i < n - 1; i++)
         send_message(*qid, (void *)_msg, size, pid);
     elements = elements_on_queue(*qid);
