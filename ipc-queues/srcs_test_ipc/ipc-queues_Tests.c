@@ -540,8 +540,6 @@ static void *recv_recv(void *arg)
     uint8_t msg[msg_size];
     int ret = recv_message(*qid, msg, msg_size, &s_pid);
     assert(ret == 0);
-    assert(msg == NULL);
-    assert(1 == 0);
     return NULL;
 }
 #endif
