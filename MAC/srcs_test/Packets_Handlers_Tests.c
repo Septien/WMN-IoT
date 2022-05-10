@@ -33,11 +33,17 @@ void test_stub_mclmac_receive_ctrlpkt_sync(void)
     ControlPacket_t SINGLE_POINTER ctrlpkt;
 
     controlpacket_init(&ctrlpkt);
+    ARROW(mclmac)_initTime = rand() % 100;
+    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
+    ARROW(mclmac)_hopCount = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     stub_mclmac_receive_ctrlpkt_sync(REFERENCE mclmac, REFERENCE ctrlpkt);
-    assert(ARROW(ctrlpkt)networkTime > 0);
-    assert(ARROW(ctrlpkt)hopCount > 0);
-    assert(ARROW(ctrlpkt)currentSlot < MAX_NUMBER_SLOTS);
-    assert(ARROW(ctrlpkt)initTime > 0);
+    assert(ARROW(ctrlpkt)networkTime == ARROW(mclmac)_networkTime);
+    assert(ARROW(ctrlpkt)hopCount == ARROW(mclmac)_hopCount);
+    assert(ARROW(ctrlpkt)initTime == ARROW(mclmac)_initTime);
+    assert(ARROW(ctrlpkt)currentSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ARROW(ctrlpkt)currentFrame == ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame);
 
     controlpacket_destroy(&ctrlpkt);
     MCLMAC_destroy(&mclmac);

@@ -10,11 +10,11 @@ bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
     assert(mclmac != NULL);
     assert(ctrlpkt != NULL);
 
-    static uint32_t frame = 0;
-    static uint8_t slot = 0;
-    static uint8_t hopCount = 100;
-    static uint32_t network_time = 220;
-    static uint32_t init_time = 10;
+    uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
+    uint8_t slot = ARROW(ARROW(mclmac->mac)frame)current_slot;
+    uint8_t hopCount = mclmac->_hopCount;
+    uint32_t network_time = mclmac->_networkTime;
+    uint32_t init_time = mclmac->_initTime;
 
     controlpacket_set_current_frame(ctrlpkt, frame);
     controlpacket_set_current_slot(ctrlpkt, slot);
@@ -22,15 +22,7 @@ bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt
     controlpacket_set_network_time(ctrlpkt, network_time);
     controlpacket_set_init_time(ctrlpkt, init_time);
 
-    slot++;
-    network_time++;
-    if ((slot % MAX_NUMBER_SLOTS) == 0)
-    {
-        slot = 0;
-        frame++;
-    }
-
-    if ((rand() % 1024) > 128)
+    if (rand() > 128)
         return false;
 
     return true;

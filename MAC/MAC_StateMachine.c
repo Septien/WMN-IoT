@@ -108,7 +108,8 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
     switch (mclmac->macState.currentState)
     {
     case START: ;
-        mclmac->_wakeup_frame = MAX_NUMBER_FREQS + (rand() % MAX_NUMBER_SLOTS);
+        uint32_t wakeup_frame = rand() % MAX_NUMBER_SLOTS;
+        mclmac->_wakeup_frame = (wakeup_frame == 0 ? 1 : wakeup_frame);
         // Get the current thread's pid
 #ifdef __LINUX__
         mclmac->_self_pid = pthread_self();
@@ -195,7 +196,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             return E_MAC_EXECUTION_FAILED;
         }
         /* Begin to receive the packets. */
-        while (current_frame != mclmac->_wakeup_frame - 1U)
+        while (current_frame < mclmac->_wakeup_frame - 1U)
         {
             /* Listen for the first incoming control packet and get the data. */
             // If a packet is received, update values
@@ -216,13 +217,6 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 mclmac->_occupied_frequencies_slots[frequency][(uint)(current_slot / 8)] |= bit;
             }
 
-            // Sleep for a while
-#ifdef __LINUX__
-            usleep(SLOT_DURATION / 2);
-#endif
-#ifdef __RIOT__
-            ztimer_sleep(CLOCK, SLOT_DURATION / 2);
-#endif
             /* Check if slot timer expired, if so, increase slot number */
             if (timeout_passed(slot_timer) == 1)
             {
@@ -294,13 +288,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
 
         /* Wait until the current frame ends. */
-        while (timeout_passed(frame_timer) != 1)
-#ifdef __LINUX__
-            usleep(SLOT_DURATION / 2);
-#endif
-#ifdef __RIOT__
-            ztimer_sleep(CLOCK, SLOT_DURATION / 2);
-#endif
+        while (timeout_passed(frame_timer) != 1) ;
 
         timeout_unset(frame_timer);
 

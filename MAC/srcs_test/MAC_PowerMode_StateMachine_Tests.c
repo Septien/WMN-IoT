@@ -535,9 +535,13 @@ void test_active_state_powermode_stmachine(void)
 
     /* Execute INITIALIZATION state, the first time will fail. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
+    ARROW(mclmac)_initTime = rand() % 100;
+    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
+    ARROW(mclmac)_hopCount = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
@@ -572,7 +576,6 @@ void test_active_state_powermode_stmachine(void)
     // Execute the PASSIVE state and update state machine.
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     ret = mclmac_update_powermode_state_machine(REFERENCE mclmac);
-
     /**
      * We are now at the ACTIVE state. This state will determine whether the node should 
      * transmit or receive a packet, or if there is a collision.
@@ -728,9 +731,13 @@ void test_transmit_powermode_stmachine(void)
 
     /* Execute INITIALIZATION state, the first time will fail. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
+    ARROW(mclmac)_initTime = rand() % 100;
+    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
+    ARROW(mclmac)_hopCount = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
@@ -835,9 +842,13 @@ void test_receive_state_powermode_stmachine(void)
 
     /* Execute INITIALIZATION state, the first time will fail. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
+    ARROW(mclmac)_initTime = rand() % 100;
+    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
+    ARROW(mclmac)_hopCount = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);

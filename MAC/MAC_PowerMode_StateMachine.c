@@ -237,12 +237,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     receive = true;
                 }
             }
-#ifdef __LINUX__
-            usleep(CF_SLOT_DURATION / 2);
-#endif
-#ifdef __RIOT__
-            ztimer_sleep(CLOCK, CF_SLOT_DURATION / 2);
-#endif
         }
 
         // Collision detected

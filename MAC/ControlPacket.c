@@ -156,7 +156,6 @@ uint16_t controlpacket_get_hop_count(ControlPacket_t *pkt)
 void controlpacket_set_network_time(ControlPacket_t *pkt, uint64_t time)
 {
     assert(pkt != NULL);
-    assert(time > 0);
 
     pkt->networkTime = time;
 }
