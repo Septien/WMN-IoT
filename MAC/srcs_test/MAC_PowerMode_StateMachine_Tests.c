@@ -676,8 +676,8 @@ void test_active_state_powermode_stmachine(void)
     /*  Test case 4:
             -A packet was received and it should send a packet.
             It should return:
-                -E_PM_SYNCHRONIZATION_ERROR.
-                -The next state should be FINISHP.
+                -E_PM_COLLISION_DETECTED.
+                -The next state should be PASSIVE.
                 -The current cf slot should be equal to the total number of frequencies.
     */
     ARROW(mclmac)_state_cf = 4;
@@ -685,24 +685,41 @@ void test_active_state_powermode_stmachine(void)
     mclmac_set_current_slot(REFERENCE mclmac, 0);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_COLLISION_DETECTED);
-    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
 
     /*  Test case 5:
             -Two packets should be received, and no packets to sent.
             It should return:
-                -E_PM_SYNCHRONIZATION_ERROR.
-                -The next state should be FINISHP.
+                -E_PM_COLLISION_DETECTED.
+                -The next state should be PASSIVE.
                 -The current cf slot should be equal to the total number of frequencies.
     */
     ARROW(mclmac)_state_cf = 5;
     mclmac_set_current_slot(REFERENCE mclmac, 1U);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_COLLISION_DETECTED);
-    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+
+    /* Test case 6:
+            -A collision was detected previously, that is, _collisionDetedted = true.
+            It should as well be _destination_id = 0.
+            It should return:
+                -E_PM_EXECUTION_SUCCESS.
+                -The next state should be TRANSMIT.
+    */
+    ARROW(mclmac)_state_cf = 0;
+    ARROW(ARROW(mclmac)mac)_collisionDetected = true;
+    ARROW(ARROW(mclmac)mac)_destination_id = 0;
+    mclmac_set_current_slot(REFERENCE mclmac, 0);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 0);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
+    assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
 
     MCLMAC_destroy(&mclmac);
 
@@ -804,7 +821,6 @@ void test_transmit_powermode_stmachine(void)
      * of received packets. This layer won't retransmit any packet in case of packet loss, it will
      * report the loss to upper layers, which will decide what to do about it.
     */
-    uint8_t current_slot = ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot;
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
     // All packets were send
@@ -812,7 +828,6 @@ void test_transmit_powermode_stmachine(void)
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == 0);
     assert(ARROW(ARROW(mclmac)mac)_first_send_control == ARROW(ARROW(mclmac)mac)_last_send_control);
     assert(ARROW(ARROW(mclmac)mac)_first_send_message == ARROW(ARROW(mclmac)mac)_last_send_message);
-    assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot == current_slot + 1U);
     assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
 

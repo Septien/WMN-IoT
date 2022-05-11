@@ -297,8 +297,57 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
 
     case MEDIUM_ACCESS: ;
         mclmac_init_powermode_state_machine(mclmac);
-        int ret = mclmac_execute_powermode_state(mclmac);
-        (void) ret;
+
+        // Execute the STARTP state
+        while (1)
+        {
+            int ret = mclmac_execute_powermode_state(mclmac);
+            if (ret == E_PM_EXECUTION_FAILED)
+            {
+                mclmac->powerMode.currentState = STARTP;
+                continue;
+            }
+            else
+                break;
+        }
+        // Update powermode state
+        mclmac_update_powermode_state_machine(mclmac);
+
+        // Execute the PowerMode state machine
+        bool execute = true;
+        while (execute)
+        {
+            int ret = mclmac_execute_powermode_state(mclmac);
+            switch (ret)
+            {
+            case E_PM_EXECUTION_SUCCESS:
+                mclmac_update_powermode_state_machine(mclmac);
+                break;
+            case E_PM_COLLISION_ERROR:
+                mclmac_set_next_powermode_state(mclmac, FINISHP);
+                mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+                execute = false;
+                break;
+            case E_PM_SYNCHRONIZATION_ERROR:
+                mclmac_set_next_powermode_state(mclmac, FINISHP);
+                mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+                execute = false;
+                break;
+            case E_PM_COLLISION_DETECTED:
+                ARROW(mclmac->mac)_collisionDetected = true;
+                ARROW(mclmac->mac)_collisionSlot = mclmac_get_current_slot(mclmac);
+                ARROW(mclmac->mac)_collisionFrequency = mclmac_get_reception_channel(mclmac);
+                ARROW(mclmac->mac)_destination_id = 0;      // Set to broadcast
+                break;
+            default:
+                break;
+            }
+        }
+
+        // Always execute the FINISHP state at the end of the MEDIUM_ACCESS state
+        mclmac_update_powermode_state_machine(mclmac);
+        mclmac_execute_powermode_state(mclmac);
+
         break;
 
     default:

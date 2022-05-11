@@ -153,13 +153,22 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 sleep = false;
             }
             uint16_t packets_received = ARROW(mclmac->mac)_number_packets_received;
-            if (elements_on_queue(mclmac->_mac_queue_id) == 0 &&  packets_received == 0)
+            uint32_t packets_on_queue = elements_on_queue(mclmac->_mac_queue_id);
+            if ((packets_on_queue == 0) && (packets_received == 0))
                 continue;   // Jump right back to check timer.
 
             /* Read packets from upper layers. */
             mclmac_read_queue_element(mclmac);
             /* Write packets to upper layers. */
             mclmac_write_queue_element(mclmac);
+        }
+        // Increase current slot
+        mclmac_increase_slot(mclmac);
+        if (mclmac_get_current_slot(mclmac) == ARROW(ARROW(mclmac->mac)frame)slots_number)
+        {
+            // Increase frame number and set current slot to 0.
+            mclmac_increase_frame(mclmac);
+            mclmac_set_current_slot(mclmac, 0);
         }
         /* Increase by one the network time. */
         mclmac->_networkTime++;
@@ -210,11 +219,12 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             {
                 uint8_t packets_to_send_message = ARROW(mclmac->mac)_packets_to_send_message;
                 uint8_t packets_to_send_control = ARROW(mclmac->mac)_packets_to_send_control;
-                if ( packets_to_send_message > 0 || packets_to_send_control > 0)
+                bool collision_detected = ARROW(mclmac->mac)_collisionDetected;
+                if ( packets_to_send_message > 0 || packets_to_send_control > 0 || collision_detected == true)
                 {
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
-                    uint8_t nodeid = mclmac_get_nodeid(mclmac);
+                    uint16_t nodeid = mclmac_get_nodeid(mclmac);
                     cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_id);
                     stub_mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
@@ -232,7 +242,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     uint16_t transmiterid = cfpacket_get_nodeid(pkt);
                     mclmac_set_transmiterid(mclmac, transmiterid);
                     uint32_t channel = mclmac_get_frequency(mclmac, current_cf_slot);
-                    mclmac_set_transmit_channel(mclmac, channel);
+                    mclmac_set_reception_channel(mclmac, channel);
                     packets++;
                     receive = true;
                 }
@@ -242,7 +252,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         // Collision detected
         if ((send && receive) || (packets > 1))
         {
-            mclmac_set_next_powermode_state(mclmac, FINISHP);
+            mclmac_set_next_powermode_state(mclmac, PASSIVE);
             return E_PM_COLLISION_DETECTED;
         }
         
@@ -267,6 +277,14 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         mclmac_create_control_packet(mclmac);
         stub_mclmac_send_control_packet(mclmac);
 
+        // Nodes already notify, unset flag and break
+        if (ARROW(mclmac->mac)_collisionDetected == true)
+        {
+            ARROW(mclmac->mac)_collisionDetected = false;
+            mclmac_set_next_powermode_state(mclmac, PASSIVE);
+            break;
+        }
+
         /* Send packets.*/
         bool end = false;
         while (!end)
@@ -290,19 +308,10 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 end = true;
         }
 
-         // Increase current slot
-        mclmac_increase_slot(mclmac);
-        if (mclmac_get_current_slot(mclmac) == ARROW(ARROW(mclmac->mac)frame)slots_number)
-        {
-            // Increase frame number and set current slot to 0, in case the frame is completed.
-            mclmac_increase_frame(mclmac);
-            mclmac_set_slots_number(mclmac, 0);
-        }
-
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
         break;
 
-    case RECEIVE: ;
+    case RECEIVE:   ;
         stub_mclmac_start_split_phase(mclmac, RECEIVE);
 
         stub_mclmac_receive_control_packet(mclmac);
@@ -342,7 +351,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 
         break;
 
-    case FINISHP:
+    case FINISHP:   ;
         ARROW(mclmac->mac)_destination_id = 0;
         ARROW(mclmac->mac)_packets_to_send_message = 0;
         ARROW(mclmac->mac)_first_send_message = 0;

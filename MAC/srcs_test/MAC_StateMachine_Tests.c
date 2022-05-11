@@ -732,6 +732,92 @@ void test_medium_access_state_stmachine(void)
      *          **At the RECEIVE state: Synchronization error. It should return synchronization
      *            error; set the next state to INITIALIZATION and end the cycle.
      */
+    // Collision error.
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state_cf = 2;
+    ARROW(mclmac)_state_ctrl = 3;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+
+    // Synchronization error, slot different
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state_cf = 2;
+    ARROW(mclmac)_state_ctrl = 4;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+
+    // Synchronization error, frame different
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state_cf = 2;
+    ARROW(mclmac)_state_ctrl = 5;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    
+    // Synchronization error, network time different
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state_cf = 2;
+    ARROW(mclmac)_state_ctrl = 6;
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
+    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+
+    // Collision detected, two packets are received
+    /*printf("Collision detected.\n");
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state_cf = 5;
+    ARROW(mclmac)_state_ctrl = 0;    
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(ARROW(mclmac)mac)_collisionDetected == true);
+    assert(ARROW(ARROW(mclmac)mac)_collisionSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
+    assert(ARROW(ARROW(mclmac)mac)_collisionFrequency == ARROW(ARROW(mclmac)mac)receiveChannel);
+    assert(ARROW(ARROW(mclmac)mac)_destination_id == 0);*/
+
+    printf("Collision detected.\n");
+    ARROW(mclmac)_trues = 0;
+    ARROW(mclmac)_trues5 = 0;
+    ARROW(mclmac)_state_cf = 2;
+    ARROW(mclmac)_state_ctrl = 0;    
+    mclmac_set_current_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(ARROW(mclmac)mac)_destination_id == 0);
 
     MCLMAC_destroy(&mclmac);
 }
