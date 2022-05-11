@@ -120,6 +120,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         // Open a new queue using the default values (defined on config_ipc.h)
         open_queue(mclmac->_mac_queue_id, mclmac->_self_pid);
         mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+        mclmac->_is_first_node = false;
         break;
     
     case INITIALIZATION: ;  // <-- weird C syntax: https://stackoverflow.com/questions/18496282/why-do-i-get-a-label-can-only-be-part-of-a-statement-and-a-declaration-is-not-a
@@ -150,13 +151,28 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 found = true;
             }
         }
+        if (!found)
+        {
+            mclmac->_is_first_node = true;
+        }
         timeout_unset(timer);
         mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
-        if (!found)
-            return E_MAC_NO_NODES_FOUND;    // Assume there are no nodes on the network.
         break;
 
     case SYNCHRONIZATION:   ;
+        // Handle the network's first node
+        if (mclmac->_is_first_node == true)
+        {
+#ifdef __LINUX__
+            mclmac->_initTime =  (uint32_t) time(NULL);
+#endif
+#ifdef __RIOT__
+            mclmac->_initTime = ztimer_now(CLOCK);
+#endif
+            mclmac->_hopCount = 0;
+            mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+            return E_MAC_EXECUTION_SUCCESS;
+        }
         /* Set hopCount to inf, and network time to zero. */
         mclmac->_hopCount = 0xffff;         // The greatest possible number for uint16_t
         mclmac->_networkTime = 0;
@@ -244,6 +260,14 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         break;
     
     case TIMESLOT_AND_CHANNEL_SELECTION: ;
+        if (mclmac->_is_first_node == true)
+        {
+            // Set the first slot and the first frequency
+            mclmac_set_transmit_channel(mclmac, mclmac->_frequencies[0]);
+            mclmac_set_selected_slot(mclmac, 0);
+            mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+            return E_MAC_EXECUTION_SUCCESS;
+        }
         /* Set the frame timer. */
         frame_timer = timeout_set(TIME(FRAME_DURATION));
         if (frame_timer == TIMEOUT_SET_ERROR)

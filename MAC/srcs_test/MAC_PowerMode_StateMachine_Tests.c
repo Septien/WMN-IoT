@@ -534,6 +534,7 @@ void test_active_state_powermode_stmachine(void)
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
     /* Execute INITIALIZATION state, the first time will fail. */
+    ARROW(mclmac)_init_state = 1;
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
@@ -747,6 +748,7 @@ void test_transmit_powermode_stmachine(void)
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
     /* Execute INITIALIZATION state, the first time will fail. */
+    ARROW(mclmac)_init_state = 1;
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
@@ -856,6 +858,7 @@ void test_receive_state_powermode_stmachine(void)
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 
     /* Execute INITIALIZATION state, the first time will fail. */
+    ARROW(mclmac)_init_state = 1;
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
 

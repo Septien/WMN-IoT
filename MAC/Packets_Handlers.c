@@ -5,6 +5,55 @@
 
 #include "MCLMAC.h"
 
+/**
+ * @brief Check the presence of a valid cf packet. Use for the INITIALIZATION state.
+ * 
+ * @param mclmac 
+ */
+bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+#ifdef __LINUX__
+    int timeout = 0;
+#endif
+#ifdef __RIOT__
+    uint32_t timeout = 0;
+#endif
+    /* For making the function fail. */
+    if (mclmac->_init_state == 0)
+    {
+        /* Sleep for 1.1 second or more and pretend a valid packet is found. */
+        timeout = timeout_set(TIME(1100000));
+        while(timeout_passed(timeout) != 1) ;
+        timeout_unset(timeout);
+        return false;
+    }
+    else if (mclmac->_init_state == 1)
+    {
+        /* Sleep for less than 1 second, and pretend a valid packet is found. */
+        timeout = timeout_set(TIME(900000));
+        while(timeout_passed(timeout) != 1) ;
+        timeout_unset(timeout);
+        return true;
+    }
+    return false;
+}
+
+void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __LINUX__
+    assert(mclmac->mac != NULL);
+#endif
+    
+    // Change radio to standby
+    // Get packet data string.
+    // Copy data to buffer.
+    // Change radio to tx and transmit.
+
+}
+
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
     assert(mclmac != NULL);

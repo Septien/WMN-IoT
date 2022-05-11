@@ -40,7 +40,7 @@ typedef enum STATE {START, INITIALIZATION, SYNCHRONIZATION, TIMESLOT_AND_CHANNEL
 typedef enum POWERMODE {STARTP, PASSIVE, ACTIVE, TRANSMIT, RECEIVE, NONEP, FINISHP, IDLEP} PowerMode_t;
 
 enum MAC_STATEMACHINE_ERRORS{E_MAC_TRANSITION_SUCCESS, E_MAC_TRANSITION_ERROR, E_MAC_NO_TRANSITION, E_MAC_INVALID_STATE};
-enum MAC_EXECUTION_ERRORS{E_MAC_EXECUTION_SUCCESS, E_MAC_EXECUTION_FAILED, E_MAC_NO_NODES_FOUND};
+enum MAC_EXECUTION_ERRORS{E_MAC_EXECUTION_SUCCESS, E_MAC_EXECUTION_FAILED};
 
 enum POWERMODE_ERRORS {E_PM_TRANSITION_SUCCESS, E_PM_TRANSITION_ERROR, E_PM_NO_TRANSITION, E_PM_INVALID_STATE};
 enum PM_EXECUTION_ERRORS {E_PM_EXECUTION_SUCCESS, E_PM_EXECUTION_FAILED, E_PM_COLLISION_DETECTED, E_PM_COLLISION_ERROR, E_PM_SYNCHRONIZATION_ERROR};
@@ -81,6 +81,7 @@ typedef struct MCLMAC
     RadioPowerMode_t    powerMode;
 
     // Private members
+    bool                _is_first_node;
     uint16_t            _nodeID;
     uint64_t            _networkTime;
     uint8_t             _nSlots;
@@ -103,6 +104,7 @@ typedef struct MCLMAC
     kernel_pid_t        _self_pid;
 #endif
 #ifdef TESTING
+    uint8_t             _init_state;
     uint8_t             _state_cf;
     uint8_t             _state_ctrl;
     uint8_t             _trues;

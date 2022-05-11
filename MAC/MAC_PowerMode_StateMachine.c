@@ -220,7 +220,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 uint8_t packets_to_send_message = ARROW(mclmac->mac)_packets_to_send_message;
                 uint8_t packets_to_send_control = ARROW(mclmac->mac)_packets_to_send_control;
                 bool collision_detected = ARROW(mclmac->mac)_collisionDetected;
-                if ( packets_to_send_message > 0 || packets_to_send_control > 0 || collision_detected == true)
+                if (packets_to_send_message > 0 || packets_to_send_control > 0 || collision_detected == true)
                 {
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
@@ -230,6 +230,18 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     cfpacket_clear(cfpkt);
                     send = true;
                     is_current = false; // Indicate to send no more cf packets
+                }
+                if (mclmac->_is_first_node == true)
+                {
+                    printf("First node.\n");
+                    /* Create the cf packet and send it. */
+                    CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
+                    uint16_t nodeid = mclmac_get_nodeid(mclmac);
+                    cfpacket_create(cfpkt, nodeid, 0);
+                    stub_mclmac_send_cf_message(mclmac);
+                    cfpacket_clear(cfpkt);
+                    send = true;
+                    is_current = false;
                 }
             }
             /* Hear for any incoming CF packets on the medium. */
@@ -246,6 +258,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     packets++;
                     receive = true;
                 }
+                // Tell it no longer is the only one
+                if (mclmac->_is_first_node == true)
+                    mclmac->_is_first_node = false;
             }
         }
 
@@ -273,6 +288,8 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     case TRANSMIT:  ;
         stub_mclmac_start_split_phase(mclmac, TRANSMIT);
 
+        if (mclmac->_is_first_node)
+            printf("First node transmit.\n");
         /* Create and send control packet. */
         mclmac_create_control_packet(mclmac);
         stub_mclmac_send_control_packet(mclmac);
