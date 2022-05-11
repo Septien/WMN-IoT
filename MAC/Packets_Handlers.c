@@ -108,7 +108,7 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
 
     if (mclmac->_state_cf == 5)
     {
-        if (mclmac->_trues5 > 2)
+        if (mclmac->_trues5 >= 2)
         {
             ARROW(mclmac->mac)_cf_message_received = false;
             return false;
@@ -257,7 +257,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
         if (mclmac->_state_ctrl == 3)
         {
             // Store collision slot, 0
-            bytes = ARROW(mclmac->mac)_collisionSlot;
+            bytes = ARROW(mclmac->mac)selectedSlot;
             WRITE_ARRAY(REFERENCE byteString, bytes,    8);
             // Store collision frequency, 0
             uint32_t freq = ARROW(mclmac->mac)transmitChannel;

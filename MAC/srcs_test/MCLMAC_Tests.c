@@ -906,33 +906,6 @@ void test_mclmac_set_cf_duration(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_mclmac_record_collision(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint32_t freq = (uint32_t) rand();
-        uint8_t slot = (uint8_t) rand();
-        mclmac_record_collision(REFERENCE mclmac, slot, freq);
-        assert(ARROW(ARROW(mclmac)mac)_collisionSlot == slot);
-        assert(ARROW(ARROW(mclmac)mac)_collisionFrequency == freq);
-        assert(ARROW(ARROW(mclmac)mac)_collisionDetected == true);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
 void test_mclmac_set_network_time(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1585,10 +1558,6 @@ void executeTestsMCLMAC(void)
 
     printf("Testing mclmac_set_cf_duration function.\n");
     test_mclmac_set_cf_duration();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_record_collision function.\n");
-    test_mclmac_record_collision();
     printf("Test passed.\n");
 
     printf("Testing mclmac_set_network_time function.\n");

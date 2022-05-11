@@ -457,16 +457,6 @@ uint32_t cf_duration
     ARROW(ARROW(mclmac->mac)frame)cf_duration = cf_duration;
 }
 
-void mclmac_record_collision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency)
-{
-    assert(mclmac != NULL);
-    assert(collisionFrequency > 0);
-
-    ARROW(mclmac->mac)_collisionDetected = true;
-    ARROW(mclmac->mac)_collisionSlot = collisionSlot;
-    ARROW(mclmac->mac)_collisionFrequency = collisionFrequency;
-}
-
 void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time)
 {
     assert(mclmac != NULL);

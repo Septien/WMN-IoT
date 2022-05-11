@@ -195,7 +195,6 @@ double cf_duration
 uint32_t cf_duration 
 #endif
 );
-void mclmac_record_collision(MCLMAC_t *mclmac, uint8_t collisionSlot, uint32_t collisionFrequency);
 void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time);
 uint32_t mclmac_get_network_time(MCLMAC_t *mclmac);
 uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac);
