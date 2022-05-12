@@ -317,6 +317,13 @@ void test_stub_mclmac_send_data_packet(void)
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == 0);
     assert(ARROW(ARROW(mclmac)mac)_last_send_message == last_send);
 
+#ifdef __LINUX__
+    free(byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&byteString);
+#endif
+
     MCLMAC_destroy(&mclmac);
 }
 
@@ -425,6 +432,12 @@ void test_stub_mclmac_send_layers_control_packet(void)
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == 0);
     assert(ARROW(ARROW(mclmac)mac)_last_send_control == last_send);
 
+#ifdef __LINUX__
+    free(byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&byteString);
+#endif
     MCLMAC_destroy(&mclmac);
 }
 

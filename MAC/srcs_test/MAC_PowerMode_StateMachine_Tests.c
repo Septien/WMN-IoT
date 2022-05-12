@@ -1085,7 +1085,7 @@ void test_finishp_state_powermode_stmachine(void)
     create_array(&data, PACKET_SIZE_MAC - 3);
 #endif
     uint i;
-    for (i = 0; i < PACKET_SIZE_MAC; i++)
+    for (i = 0; i < PACKET_SIZE_MAC - 3; i++)
         WRITE_ARRAY(REFERENCE data, rand(), i);
     DataPacket_t *pkt;
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)

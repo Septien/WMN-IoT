@@ -30,23 +30,24 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     controlpacket_init(&(SINGLE_POINTER mac)->ctrlpkt);
     controlpacket_init(&(SINGLE_POINTER mac)->ctrlpkt_recv);
 
-    // Initialize the data packets queues.
+    /* Initialize the data packets queues. These packets are not pointers, so just fill 
+    the memory space with zeros. */
     for (int i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
         DataPacket_t *pkt;
         pkt = &(SINGLE_POINTER mac)->_message_packets_to_send[i];
-        datapacket_init(REFERENCE2 pkt);
+        memset(pkt, 0, sizeof(DataPacket_t));
         pkt = &(SINGLE_POINTER mac)->_control_packets_to_send[i];
-        datapacket_init(REFERENCE2 pkt);
+        memset(pkt, 0, sizeof(DataPacket_t));
         pkt = &(SINGLE_POINTER mac)->_packets_received[i];
-        datapacket_init(REFERENCE2 pkt);
+        memset(pkt, 0, sizeof(DataPacket_t));
     }
 
     // Initialize the cf packets
     for (int i = 0; i < MAX_NUMBER_CF_PACKETS; i++)
     {
         CFPacket_t *cfpkt = &(SINGLE_POINTER mac)->_cf_messages[i];
-        cfpacket_init(REFERENCE2 cfpkt);
+        memset(cfpkt, 0, sizeof(CFPacket_t));
     }
 }
 
@@ -75,6 +76,8 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
     /* Destroy packets data structures */
     if ((*mac)->ctrlpkt != NULL)
         controlpacket_destroy(&(*mac)->ctrlpkt);
+    if ((*mac)->ctrlpkt_recv != NULL)
+        controlpacket_destroy(&(*mac)->ctrlpkt_recv);
     // Destroy Frame
     if ((*mac)->frame != NULL)
         free((*mac)->frame);
@@ -83,6 +86,7 @@ void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac)
 #endif
 #ifdef __RIOT__
     controlpacket_destroy(&mac->ctrlpkt);
+    controlpacket_destroy(&mac->ctrlpkt_recv);
 #endif
 }
 
@@ -104,4 +108,19 @@ void MAC_internals_clear(MAC_Internals_t *mac)
     mac->_collisionSlot = 0;
     mac->_collisionFrequency = 0;
     mac->_cf_message_received = false;
+        for (int i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        // As these packets are not pointers, just release the array's associated memory.
+        DataPacket_t *pkt = &mac->_message_packets_to_send[i];
+        datapacket_clear(pkt);
+        pkt = &mac->_control_packets_to_send[i];
+        datapacket_clear(pkt);
+        pkt = &mac->_packets_received[i];
+        datapacket_clear(pkt);
+    }
+    for (int i = 0; i < MAX_NUMBER_CF_PACKETS; i++)
+    {
+        CFPacket_t *pkt = &mac->_cf_messages[i];
+        cfpacket_clear(pkt);
+    }
 }

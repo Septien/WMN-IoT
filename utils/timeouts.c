@@ -454,7 +454,7 @@ int timeout_init(void)
 int timeout_done(void)
 {
 #ifdef __LINUX__
-    struct sigaction    act;
+    struct sigaction    act = {0};
     struct itimerspec   arm;
     int                 errors = 0;
 

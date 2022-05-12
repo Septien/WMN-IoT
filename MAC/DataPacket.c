@@ -104,9 +104,9 @@ void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString)
         element = READ_ARRAY(REFERENCE pkt->data, i);
         WRITE_ARRAY(REFERENCE byteStringA, element, i + 4);
     }
-    if (pkt->size < PACKET_SIZE_MAC - 3)
+    if (pkt->size < PACKET_SIZE_MAC - 4)
     {
-        for(; i < PACKET_SIZE_MAC - 3; i++)
+        for(; i < PACKET_SIZE_MAC - 4; i++)
             WRITE_ARRAY(REFERENCE byteStringA, 0, i + 4);
     }
 
@@ -118,7 +118,6 @@ void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString)
     assert(pkt != NULL);
     assert(byteString != NULL);
 
-    pkt->size = PACKET_SIZE_MAC - 3;
     pkt->destination_id = 0;
     pkt->type = READ_ARRAY(SINGLE_POINTER byteString, 0);
     pkt->destination_id |= ((uint16_t)READ_ARRAY(SINGLE_POINTER byteString, 1)) << 8;

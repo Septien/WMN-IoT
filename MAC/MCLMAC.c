@@ -355,7 +355,7 @@ void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t n_slots)
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->frame != NULL);
 #endif
-    assert(slots_number > 0);
+    assert(n_slots > 0);
 
     ARROW(ARROW(mclmac->mac)frame)slots_number = n_slots;
 }
@@ -367,7 +367,7 @@ void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t n_cf_slots)
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->frame != NULL);
 #endif
-    assert(cf_slots_number > 0);
+    assert(n_cf_slots > 0);
 
     ARROW(ARROW(mclmac->mac)frame)cf_slots_number = n_cf_slots;
 }
@@ -415,7 +415,7 @@ uint32_t slot_dur
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->frame != NULL);
 #endif
-    assert(slot_duration > 0);
+    assert(slot_dur > 0);
 
     ARROW(ARROW(mclmac->mac)frame)slot_duration = slot_dur;
 }
@@ -434,7 +434,7 @@ uint32_t frame_dur
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->frame != NULL);
 #endif
-    assert(frame_duration > 0);
+    assert(frame_dur > 0);
 
     ARROW(ARROW(mclmac->mac)frame)frame_duration = frame_dur;
 }
@@ -453,7 +453,7 @@ uint32_t cf_dur
     assert(mclmac->mac != NULL);
     assert(mclmac->mac->frame != NULL);
 #endif
-    assert(cf_duration > 0);
+    assert(cf_dur > 0);
     ARROW(ARROW(mclmac->mac)frame)cf_duration = cf_dur;
 }
 
@@ -502,6 +502,7 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
     if (elements_on_queue(mclmac->_mac_queue_id) == 0)
         return 0;
 
+    bool invalid = false;
     if (elements_on_queue(mclmac->_mac_queue_id) > 0)
     {
         size_t size = MAX_MESSAGE_SIZE;
@@ -552,16 +553,17 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         }
         // Invalid type, return 0
         else
-            return 0;
+            invalid = true;
 #ifdef __LINUX__
-        free(byteString);
+    free(msg);
+    free(byteString);
 #endif
 #ifdef __RIOT__
         free_array(&byteString);
 #endif
     }
 
-    return 1;
+    return (invalid ? 0 : 1);
 }
 
 int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)

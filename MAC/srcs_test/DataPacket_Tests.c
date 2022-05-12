@@ -155,9 +155,9 @@ void test_datapacket_get_packet_bytestring(void)
     assert(READ_ARRAY(REFERENCE byteString, 3) == size);
     for (i = 0; i < size; i++)
         assert(READ_ARRAY(REFERENCE byteString, i + 4) == READ_ARRAY(REFERENCE data, i));
-    if (size < PACKET_SIZE_MAC - 3)
+    if (size < PACKET_SIZE_MAC - 4)
     {
-        for (; i < PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 4; i++)
             assert(READ_ARRAY(REFERENCE byteString, i + 4) == 0);
     }
 
@@ -204,9 +204,9 @@ void test_datapacket_construct_from_bytestring(void)
         uint8_t e = READ_ARRAY(REFERENCE data, i);
         WRITE_ARRAY(REFERENCE byteString, e, i + 4);
     }
-    if (size < PACKET_SIZE_MAC - 3)
+    if (size < PACKET_SIZE_MAC - 4)
     {
-        for (; i < PACKET_SIZE_MAC - 3; i++)
+        for (; i < PACKET_SIZE_MAC - 4; i++)
             WRITE_ARRAY(REFERENCE byteString, 0, i);
     }
     datapacket_construct_from_bytestring(REFERENCE datapkt, &byteString);

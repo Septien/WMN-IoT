@@ -200,7 +200,7 @@ void test_create_queue(void)
 #ifdef __LINUX__
     assert(stack == NULL);
     char name[4] = { 0 };
-    sprintf(name, "/%i", qid);
+    sprintf(name, "/%u", qid);
     assert(strcmp(name, q->q_name) == 0);
 #endif
 #ifdef __RIOT__
@@ -496,6 +496,7 @@ void *recv_recv(void *arg)
         mq_getattr(qd, &attr);
     }
     assert(count > 0);
+    free(_msg);
     return (NULL);
 }
 #endif
@@ -805,6 +806,8 @@ void *open_q(void *arg)
         send_message(*qid, (void *)msg, size, pid);
     elements = elements_on_queue(*qid);
     assert(elements == n);
+
+    free(msg);
 
     return (NULL);
 }

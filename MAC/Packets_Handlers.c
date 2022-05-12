@@ -426,7 +426,9 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
     WRITE_ARRAY(REFERENCE byteString, bytes, 1);
     bytes = (mclmac->_nodeID & 0x00ff);
     WRITE_ARRAY(REFERENCE byteString, bytes, 2);
-    for (int i = 3; i < PACKET_SIZE_MAC; i++)
+    uint8_t size = rand() % (PACKET_SIZE_MAC - 4);
+    WRITE_ARRAY(REFERENCE byteString, size, 3);
+    for (int i = 4; i < PACKET_SIZE_MAC; i++)
     {
         WRITE_ARRAY(REFERENCE byteString, rand(), i);
     }
@@ -435,6 +437,12 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
     datapacket_construct_from_bytestring(pkt, &byteString);
     ARROW(mclmac->mac)_last_received++;
     ARROW(mclmac->mac)_number_packets_received++;
+#ifdef __LINUX__
+    free(byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&byteString);
+#endif
 }
 
 void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac)

@@ -1239,6 +1239,12 @@ void _write_queue(MCLMAC_t *mclmac)
         assert(pkt->data.size == 0);
 #endif
     }
+#ifdef __LINUX__
+    free(data);
+#endif
+#ifdef __RIOT__
+    free_array(&data);
+#endif
 }
 #ifdef __LINUX__
 void *write_queue(void *arg)
@@ -1411,6 +1417,8 @@ void test_stub_mclmac_start_split_phase(void)
     assert(ret == 1);
     ret = stub_mclmac_start_split_phase(REFERENCE mclmac, RECEIVE);
     assert(ret == 1);
+
+    MCLMAC_destroy(&mclmac);
 }
 
 void executeTestsMCLMAC(void)
