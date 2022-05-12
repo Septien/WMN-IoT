@@ -28,6 +28,7 @@ void test_MAC_internals_init(void)
     assert(ARROW(mac)receiveChannel == 0);
     assert(ARROW(mac)cfChannel == 0);
     assert(ARROW(mac)_collisionDetected == false);
+    assert(ARROW(mac)_is_internal_collision == false);
     assert(ARROW(mac)_collisionSlot == 0);
     assert(ARROW(mac)_collisionFrequency == 0);
     assert(ARROW(mac)_cf_message_received == false);

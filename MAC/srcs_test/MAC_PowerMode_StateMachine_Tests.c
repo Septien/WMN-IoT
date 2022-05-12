@@ -641,6 +641,7 @@ void test_active_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
 
     /* Test case 2:
         -There are no packets to transmit, but a packet is received.
@@ -657,6 +658,7 @@ void test_active_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.nextState == RECEIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
 
     /* Test case 3:
             -There are no packets to receive or send.
@@ -673,6 +675,7 @@ void test_active_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
 
     /*  Test case 4:
             -A packet was received and it should send a packet.
@@ -689,6 +692,7 @@ void test_active_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == true);
 
     /*  Test case 5:
             -Two packets should be received, and no packets to sent.
@@ -697,6 +701,7 @@ void test_active_state_powermode_stmachine(void)
                 -The next state should be PASSIVE.
                 -The current cf slot should be equal to the total number of frequencies.
     */
+    ARROW(ARROW(mclmac)mac)_is_internal_collision = false;
     ARROW(mclmac)_state_cf = 5;
     mclmac_set_current_slot(REFERENCE mclmac, 1U);
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
@@ -704,6 +709,7 @@ void test_active_state_powermode_stmachine(void)
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
     assert(ARROW(ARROW(ARROW(mclmac)mac)frame)current_cf_slot == MAX_NUMBER_FREQS);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
 
     /* Test case 6:
             -A collision was detected previously, that is, _collisionDetedted = true.
@@ -721,6 +727,7 @@ void test_active_state_powermode_stmachine(void)
     assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(ARROW(mclmac)powerMode.nextState == TRANSMIT);
     assert(ARROW(mclmac)powerMode.currentState == ACTIVE);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
 
     MCLMAC_destroy(&mclmac);
 
@@ -832,6 +839,34 @@ void test_transmit_powermode_stmachine(void)
     assert(ARROW(ARROW(mclmac)mac)_first_send_message == ARROW(ARROW(mclmac)mac)_last_send_message);
     assert(ARROW(mclmac)powerMode.currentState == TRANSMIT);
     assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
+
+    // Simulate an external collision detection
+    ARROW(ARROW(mclmac)mac)_collisionDetected = true;
+    ARROW(ARROW(mclmac)mac)_is_internal_collision = false;
+    ARROW(ARROW(mclmac)mac)_collisionSlot = rand() % MAX_NUMBER_SLOTS;
+    ARROW(ARROW(mclmac)mac)_collisionFrequency = ARROW(mclmac)_frequencies[2];
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(ARROW(ARROW(mclmac)mac)_collisionDetected == false);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
+    assert(ARROW(ARROW(mclmac)mac)_collisionSlot == 0);
+    assert(ARROW(ARROW(mclmac)mac)_collisionFrequency == 0);
+    assert(ARROW(mclmac)powerMode.nextState == PASSIVE);
+
+    // Simulate an internal collision detection
+    ARROW(ARROW(mclmac)mac)_collisionDetected = true;
+    ARROW(ARROW(mclmac)mac)_is_internal_collision = true;
+    ARROW(ARROW(mclmac)mac)_collisionSlot = rand() % MAX_NUMBER_SLOTS;
+    ARROW(ARROW(mclmac)mac)_collisionFrequency = ARROW(mclmac)_frequencies[2];
+    mclmac_set_next_powermode_state(REFERENCE mclmac, TRANSMIT);
+    ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_COLLISION_ERROR);
+    assert(ARROW(ARROW(mclmac)mac)_collisionDetected == false);
+    assert(ARROW(ARROW(mclmac)mac)_is_internal_collision == false);
+    assert(ARROW(ARROW(mclmac)mac)_collisionSlot == 0);
+    assert(ARROW(ARROW(mclmac)mac)_collisionFrequency == 0);
+    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
 
     MCLMAC_destroy(&mclmac);
 }

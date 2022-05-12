@@ -233,7 +233,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 }
                 if (mclmac->_is_first_node == true)
                 {
-                    printf("First node.\n");
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
                     uint16_t nodeid = mclmac_get_nodeid(mclmac);
@@ -268,17 +267,19 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if ((send && receive) || (packets > 1))
         {
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
+            if (send && receive)
+                ARROW(mclmac->mac)_is_internal_collision = true;
             return E_PM_COLLISION_DETECTED;
         }
         
         // Packets to send
         if (send)
             mclmac_set_next_powermode_state(mclmac, TRANSMIT);
-        
+
         // Packets to receive
         if (receive)
             mclmac_set_next_powermode_state(mclmac, RECEIVE);
-        
+ 
         // If there are no packets to send
         if (!send && !receive)
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
@@ -288,8 +289,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     case TRANSMIT:  ;
         stub_mclmac_start_split_phase(mclmac, TRANSMIT);
 
-        if (mclmac->_is_first_node)
-            printf("First node transmit.\n");
         /* Create and send control packet. */
         mclmac_create_control_packet(mclmac);
         stub_mclmac_send_control_packet(mclmac);
@@ -298,6 +297,14 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if (ARROW(mclmac->mac)_collisionDetected == true)
         {
             ARROW(mclmac->mac)_collisionDetected = false;
+            ARROW(mclmac->mac)_collisionSlot = 0;
+            ARROW(mclmac->mac)_collisionFrequency = 0;
+            if (ARROW(mclmac->mac)_is_internal_collision == true)
+            {
+                ARROW(mclmac->mac)_is_internal_collision = false;
+                mclmac_set_next_powermode_state(mclmac, FINISHP);
+                return E_PM_COLLISION_ERROR;
+            }
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
             break;
         }

@@ -813,12 +813,13 @@ void test_medium_access_state_stmachine(void)
     assert(ARROW(ARROW(mclmac)mac)_collisionFrequency == ARROW(ARROW(mclmac)mac)receiveChannel);
     assert(ARROW(ARROW(mclmac)mac)_destination_id == 0);*/
 
+    // Collision detected, receive and transmit at the same time
     ARROW(mclmac)_trues = 0;
     ARROW(mclmac)_trues5 = 0;
     ARROW(mclmac)_state_cf = 2;
     ARROW(mclmac)_state_ctrl = 0;    
-    mclmac_set_current_slot(REFERENCE mclmac, 1U);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
+    mclmac_set_current_slot(REFERENCE mclmac, 0);
+    mclmac_set_current_cf_slot(REFERENCE mclmac, 0);
     mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);

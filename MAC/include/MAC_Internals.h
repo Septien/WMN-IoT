@@ -64,6 +64,7 @@ typedef struct MAC_Internals
     uint16_t        transmiterID;
     // Collision
     bool            _collisionDetected;
+    bool            _is_internal_collision;
     uint8_t         _collisionSlot;
     uint32_t        _collisionFrequency;
     /* CF messages */
