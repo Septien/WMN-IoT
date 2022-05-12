@@ -496,6 +496,7 @@ void test_passive_state_powermode_stmachine(void)
         send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer = timeout_set(TIME(SLOT_DURATION));
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(elements_on_queue(ARROW(mclmac)_mac_queue_id) == 0);
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_control == MAX_ELEMENTS_ON_QUEUE);
     timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);
@@ -505,6 +506,7 @@ void test_passive_state_powermode_stmachine(void)
         send_message(ARROW(mclmac)_mac_queue_id, msg, MAX_MESSAGE_SIZE, ARROW(mclmac)_self_pid);
     ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer = timeout_set(TIME(SLOT_DURATION));
     ret = mclmac_execute_powermode_state(REFERENCE mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
     assert(elements_on_queue(ARROW(mclmac)_mac_queue_id) == 0);
     assert(ARROW(ARROW(mclmac)mac)_packets_to_send_message == MAX_ELEMENTS_ON_QUEUE);
     timeout_unset(ARROW(ARROW(ARROW(mclmac)mac)frame)slot_timer);

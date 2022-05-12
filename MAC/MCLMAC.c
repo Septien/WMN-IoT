@@ -256,14 +256,14 @@ uint16_t mclmac_get_transmiterid(MCLMAC_t *mclmac)
     return ARROW(mclmac->mac)transmiterID;
 }
 
-void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot)
+void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
     assert(mclmac->mac != NULL);
 #endif
 
-    ARROW(mclmac->mac)selectedSlot = selectedSlot;
+    ARROW(mclmac->mac)selectedSlot = slot;
 
 }
 
@@ -319,7 +319,7 @@ void mclmac_increase_frame(MCLMAC_t *mclmac)
     ARROW(ARROW(mclmac->mac)frame)current_frame++;
 }
 
-void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot)
+void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t slot)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -327,7 +327,7 @@ void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot)
     assert(mclmac->mac->frame != NULL);
 #endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_slot = current_slot;
+    ARROW(ARROW(mclmac->mac)frame)current_slot = slot;
 }
 
 uint8_t mclmac_get_current_slot(MCLMAC_t *mclmac)
@@ -348,7 +348,7 @@ void mclmac_increase_slot(MCLMAC_t *mclmac)
     ARROW(ARROW(mclmac->mac)frame)current_slot++;
 }
 
-void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t slots_number)
+void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t n_slots)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -357,10 +357,10 @@ void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t slots_number)
 #endif
     assert(slots_number > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)slots_number = slots_number;
+    ARROW(ARROW(mclmac->mac)frame)slots_number = n_slots;
 }
 
-void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t cf_slots_number)
+void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t n_cf_slots)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -369,10 +369,10 @@ void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t cf_slots_number)
 #endif
     assert(cf_slots_number > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)cf_slots_number = cf_slots_number;
+    ARROW(ARROW(mclmac->mac)frame)cf_slots_number = n_cf_slots;
 }
 
-void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot)
+void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t cur_cf_slot)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -380,7 +380,7 @@ void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot)
     assert(mclmac->mac->frame != NULL);
 #endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_cf_slot = current_cf_slot;
+    ARROW(ARROW(mclmac->mac)frame)current_cf_slot = cur_cf_slot;
 }
 
 uint8_t mclmac_get_current_cf_slot(MCLMAC_t *mclmac)
@@ -403,10 +403,10 @@ void mclmac_increase_cf_slot(MCLMAC_t *mclmac)
 
 void mclmac_set_slot_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-double slot_duration
+double slot_dur
 #endif
 #ifdef __RIOT__
-uint32_t slot_duration
+uint32_t slot_dur
 #endif
 )
 {
@@ -417,15 +417,15 @@ uint32_t slot_duration
 #endif
     assert(slot_duration > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)slot_duration = slot_duration;
+    ARROW(ARROW(mclmac->mac)frame)slot_duration = slot_dur;
 }
 
 void mclmac_set_frame_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-double frame_duration
+double frame_dur
 #endif
 #ifdef __RIOT__
-uint32_t frame_duration
+uint32_t frame_dur
 #endif
 )
 {
@@ -436,15 +436,15 @@ uint32_t frame_duration
 #endif
     assert(frame_duration > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)frame_duration = frame_duration;
+    ARROW(ARROW(mclmac->mac)frame)frame_duration = frame_dur;
 }
 
 void mclmac_set_cf_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-double cf_duration
+double cf_dur
 #endif
 #ifdef __RIOT__
-uint32_t cf_duration 
+uint32_t cf_dur
 #endif
 )
 {
@@ -454,7 +454,7 @@ uint32_t cf_duration
     assert(mclmac->mac->frame != NULL);
 #endif
     assert(cf_duration > 0);
-    ARROW(ARROW(mclmac->mac)frame)cf_duration = cf_duration;
+    ARROW(ARROW(mclmac->mac)frame)cf_duration = cf_dur;
 }
 
 void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time)

@@ -200,7 +200,7 @@ void test_create_queue(void)
 #ifdef __LINUX__
     assert(stack == NULL);
     char name[4] = { 0 };
-    sprintf(name, "/%d", qid);
+    sprintf(name, "/%i", qid);
     assert(strcmp(name, q->q_name) == 0);
 #endif
 #ifdef __RIOT__
@@ -651,7 +651,7 @@ void test_close_queue(void)
     for (int i = 0; i < n; i++)
         send_message(qid, msg, msg_size, pid);
     thread_wakeup(pid);
-    ztimer_sleep(ZTIMER_USEC, 100);
+    //ztimer_sleep(ZTIMER_USEC, 100);
 #endif
 
     IPC_Queues_t *Queues = get_queues_pointer();
@@ -874,7 +874,7 @@ void test_elements_on_queue(void)
 #ifdef __RIOT__
     kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
     open_q, (void *)&qid, "Name");
-    ztimer_sleep(ZTIMER_USEC, 100);
+    //ztimer_sleep(ZTIMER_USEC, 100);
     thread_wakeup(pid);
 #endif
 

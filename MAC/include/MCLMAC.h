@@ -159,42 +159,42 @@ void mclmac_set_nodeid(MCLMAC_t *mclmac, uint16_t id);
 uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac);
 void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id);
 uint16_t mclmac_get_transmiterid(MCLMAC_t *mclmac);
-void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t selectedSlot);
+void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot);
 uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac);
 void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops);
 uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac);
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number);
 void mclmac_increase_frame(MCLMAC_t *mclmac);
-void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t current_slot);
+void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t slot);
 uint8_t mclmac_get_current_slot(MCLMAC_t *mclmac);
 void mclmac_increase_slot(MCLMAC_t *mclmac);
-void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t slots_number);
-void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t cf_slots_number);
-void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t current_cf_slot);
+void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t n_slots);
+void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t n_cf_slots);
+void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t cur_cf_slot);
 uint8_t mclmac_get_current_cf_slot(MCLMAC_t *mclmac);
 void mclmac_increase_cf_slot(MCLMAC_t *mclmac);
 void mclmac_set_slot_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-double slotDuration
+double slot_dur
 #endif
 #ifdef __RIOT__
-uint32_t slotDuration
+uint32_t slot_dur
 #endif
 );
 void mclmac_set_frame_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-double frame_duration
+double frame_dur
 #endif
 #ifdef __RIOT__
-uint32_t frame_duration
+uint32_t frame_dur
 #endif
 );
 void mclmac_set_cf_duration(MCLMAC_t *mclmac,
 #ifdef __LINUX__
-double cf_duration
+double cf_dur
 #endif
 #ifdef __RIOT__
-uint32_t cf_duration 
+uint32_t cf_dur 
 #endif
 );
 void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time);

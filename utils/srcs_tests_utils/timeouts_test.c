@@ -20,11 +20,16 @@ void test_timeout(void)
     printf("Setting timeouts:\ntimeout1 = %f, timeout2 = %f usec.\n", useconds1, useconds2);
 #endif
 #ifdef __RIOT__
-    printf("Setting timeouts:\ntimeout1 = %d, timeout2 = %d usec.\n", useconds1, useconds2);
+    printf("Setting timeouts:\ntimeout1 = %i, timeout2 = %i usec.\n", useconds1, useconds2);
 #endif
     timeout1 = timeout_set(useconds1);
     timeout2 = timeout_set(useconds2);
+    #ifdef __LINUX__
     printf("timeout1 = %d, timeout2 = %d\n", timeout1, timeout2);
+#endif
+#ifdef __RIOT__
+    printf("timeout1 = %i, timeout2 = %i\n", timeout1, timeout2);
+#endif
 
     while (1)
     {

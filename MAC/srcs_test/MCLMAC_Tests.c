@@ -115,11 +115,10 @@ void test_mclmac_set_cf_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint32_t cfchannel;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        cfchannel = (uint32_t)rand();
+        uint32_t cfchannel = (uint32_t)rand();
         mclmac_set_cf_channel(REFERENCE mclmac, cfchannel);
         assert(ARROW(ARROW(mclmac)mac)cfChannel == cfchannel);
     }
@@ -140,13 +139,12 @@ void test_mclmac_get_cf_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint32_t cfchannel, cfchannelS;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        cfchannel = (uint32_t)rand();
+        uint32_t cfchannel = (uint32_t)rand();
         mclmac_set_cf_channel(REFERENCE mclmac, cfchannel);
-        cfchannelS = mclmac_get_cf_channel(REFERENCE mclmac);
+        uint32_t cfchannelS = mclmac_get_cf_channel(REFERENCE mclmac);
         assert(cfchannelS == cfchannel);
     }
 
@@ -166,11 +164,10 @@ void test_mclmac_set_transmit_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint32_t channel;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        channel = (uint32_t)rand();
+        uint32_t channel = (uint32_t)rand();
         mclmac_set_transmit_channel(REFERENCE mclmac, channel);
         assert(ARROW(ARROW(mclmac)mac)transmitChannel == channel);
     }
@@ -191,13 +188,12 @@ void test_mclmac_get_transmit_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint32_t channel, channelS;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        channel = (uint32_t)rand();
+        uint32_t channel = (uint32_t)rand();
         mclmac_set_transmit_channel(REFERENCE mclmac, channel);
-        channelS = mclmac_get_transmit_channel(REFERENCE mclmac);
+        uint32_t channelS = mclmac_get_transmit_channel(REFERENCE mclmac);
         assert(channelS == channel);
     }
 
@@ -217,11 +213,10 @@ void test_mclmac_set_reception_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint32_t channel;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        channel = (uint32_t)rand();
+        uint32_t channel = (uint32_t)rand();
         mclmac_set_reception_channel(REFERENCE mclmac, channel);
         assert(ARROW(ARROW(mclmac)mac)receiveChannel == channel);
     }
@@ -242,13 +237,12 @@ void test_mclmac_get_reception_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint32_t channel, channelS;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        channel = (uint32_t)rand();
+        uint32_t channel = (uint32_t)rand();
         mclmac_set_reception_channel(REFERENCE mclmac, channel);
-        channelS = mclmac_get_reception_channel(REFERENCE mclmac);
+        uint32_t channelS = mclmac_get_reception_channel(REFERENCE mclmac);
         assert(channelS == channel);
     }
 
@@ -487,11 +481,10 @@ void test_mclmac_set_selected_slot(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint8_t slot;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        slot = (uint8_t) rand() % 256;
+        uint8_t slot = (uint8_t) rand() % 256;
         mclmac_set_selected_slot(REFERENCE mclmac, slot);
         assert(ARROW(ARROW(mclmac)mac)selectedSlot == slot);
     }
@@ -512,13 +505,12 @@ void test_mclmac_get_selected_slot(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint8_t slot, slotR;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        slot = (uint8_t) rand() % 256;
+        uint8_t slot = (uint8_t) rand() % 256;
         mclmac_set_selected_slot(REFERENCE mclmac, slot);
-        slotR = mclmac_get_selected_slot(REFERENCE mclmac);
+        uint8_t slotR = mclmac_get_selected_slot(REFERENCE mclmac);
         assert(slotR == slot);
     }
 
@@ -538,11 +530,10 @@ void test_mclmac_set_number_of_hops(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint8_t hops;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        hops = (uint8_t)rand() % 256;
+        uint8_t hops = (uint8_t)rand() % 256;
         mclmac_set_number_of_hops(REFERENCE mclmac, hops);
         assert(ARROW(mclmac)_hopCount == hops);
     }
@@ -563,13 +554,12 @@ void test_mclmac_get_number_of_hops(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    uint8_t hops, hopsR;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        hops = (uint8_t)rand();
+        uint8_t hops = (uint8_t)rand();
         mclmac_set_number_of_hops(REFERENCE mclmac, hops);
-        hopsR = mclmac_get_number_of_hops(REFERENCE mclmac);
+        uint8_t hopsR = mclmac_get_number_of_hops(REFERENCE mclmac);
         assert(hopsR == hops);
     }
 
