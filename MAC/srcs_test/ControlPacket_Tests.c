@@ -109,35 +109,6 @@ uint16_t nodeID = 1;
     controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_nodeID(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    for (uint16_t i = 0; i < 255; i++)
-    {
-        controlpacket_set_nodeID(REFERENCE pkt, i);
-        assert(ARROW(pkt)nodeID == i);
-    }
-
-    controlpacket_destroy(&pkt);
-}
-
-void test_controlpacket_get_nodeID(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    for (uint16_t i = 0; i < 255; i++)
-    {
-        controlpacket_set_nodeID(REFERENCE pkt, i);
-        uint16_t nodeid = controlpacket_get_nodeID(REFERENCE pkt);
-        assert(nodeid == i);
-    }
-
-    controlpacket_destroy(&pkt);
-}
-
 void test_controlpacket_set_current_frame(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
@@ -204,41 +175,16 @@ void test_controlpacket_get_current_slot(void)
     controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_collision_slot(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    uint8_t slot = 10;
-    controlpacket_set_collision_slot(REFERENCE pkt, slot);
-
-    assert(ARROW(pkt)collisionSlot == slot);
-
-    controlpacket_destroy(&pkt);
-}
-
 void test_controlpacket_get_collision_slot(void)
 {
     ControlPacket_t SINGLE_POINTER pkt;
     controlpacket_init(&pkt);
 
     uint8_t slot = 10;
-    controlpacket_set_collision_slot(REFERENCE pkt, slot);
+    ARROW(pkt)collisionSlot = slot;
 
     slot = controlpacket_get_collision_slot(REFERENCE pkt);
     assert(slot == ARROW(pkt)collisionSlot);
-
-    controlpacket_destroy(&pkt);
-}
-
-void test_controlpacket_set_collision_frequency(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
-
-    uint32_t freq = 915000000;
-    controlpacket_set_collision_frequency(REFERENCE pkt, freq);
-    assert(ARROW(pkt)collisionFrequency == freq);
 
     controlpacket_destroy(&pkt);
 }
@@ -249,7 +195,7 @@ void test_controlpacket_get_collision_frequency(void)
     controlpacket_init(&pkt);
 
     uint32_t freq = 915000000;
-    controlpacket_set_collision_frequency(REFERENCE pkt, freq);
+    ARROW(pkt)collisionFrequency = freq;
     
     uint32_t freqr = controlpacket_get_collision_frequency(REFERENCE pkt);
     assert(freqr == ARROW(pkt)collisionFrequency);
@@ -530,14 +476,6 @@ void executeTestsCP(void)
     test_controlpacket_clear();
     printf("Test passed.\n");
 
-    printf("Testing controlpacket_set_nodeID function.\n");
-    test_controlpacket_set_nodeID();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_nodeID function.\n");
-    test_controlpacket_get_nodeID();
-    printf("Test passed.\n");
-
     printf("Testing controlpacket_set_current_frame function.\n");
     test_controlpacket_set_current_frame();
     printf("Test passed.\n");
@@ -554,16 +492,8 @@ void executeTestsCP(void)
     test_controlpacket_get_current_slot();
     printf("Test passed.\n");
 
-    printf("Testing controlpacket_set_collision_slot function.\n");
-    test_controlpacket_set_collision_slot();
-    printf("Test passed.\n");
-
     printf("Testing controlpacket_get_collision_slot function.\n");
     test_controlpacket_get_collision_slot();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_collision_frequency function.\n");
-    test_controlpacket_set_collision_frequency();
     printf("Test passed.\n");
 
     printf("Testing _controlpacket_get_collision_frequency function.\n");

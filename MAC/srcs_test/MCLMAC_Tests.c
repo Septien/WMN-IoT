@@ -102,55 +102,6 @@ void test_MCLMAC_clear(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_mclmac_set_cf_channel(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint32_t cfchannel = (uint32_t)rand();
-        mclmac_set_cf_channel(REFERENCE mclmac, cfchannel);
-        assert(ARROW(ARROW(mclmac)mac)cfChannel == cfchannel);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_get_cf_channel(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint32_t cfchannel = (uint32_t)rand();
-        mclmac_set_cf_channel(REFERENCE mclmac, cfchannel);
-        uint32_t cfchannelS = mclmac_get_cf_channel(REFERENCE mclmac);
-        assert(cfchannelS == cfchannel);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
 void test_mclmac_set_transmit_channel(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -271,128 +222,6 @@ void test_mclmac_get_frequency(void)
     MCLMAC_destroy(&mclmac);
 }
 
-/*void test_mclmac_set_available_channels(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    uint8_t nChannels = (uint8_t) rand();
-    nChannels = (nChannels == 0 ? 1 : nChannels);
-    ARRAY channels;
-#ifdef __LINUX__
-     channels = (uint8_t *)malloc(4 * nChannels * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&channels, nChannels * 4);
-#endif
-    int i;
-    for (i = 0; i < nChannels; i++)
-        WRITE_ARRAY(REFERENCE channels, (uint8_t)rand(), i);
-    
-    mclmac_set_available_channels(REFERENCE mclmac, &channels, nChannels);
-    assert(ARROW(ARROW(mclmac)mac)numberChannels == nChannels);
-    for (i = 0; i < nChannels; i++)
-    {
-        uint8_t element = READ_ARRAY(REFERENCE channels, i);
-        uint8_t element2 = READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)channels, i);
-        assert(element == element2);
-    }
-
-#ifdef __LINUX__
-    free(channels);
-#endif
-#ifdef __RIOT__
-    free_array(&channels);
-#endif
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_get_available_channels(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    uint8_t nChannels = (uint8_t) rand();
-    ARRAY channels;
-#ifdef __LINUX__
-     channels = (uint8_t *)malloc(nChannels * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&channels, nChannels);
-#endif
-    int i;
-    for (i = 0; i < nChannels; i++)
-        WRITE_ARRAY(REFERENCE channels, (uint8_t)rand(), i);
-    
-    mclmac_set_available_channels(REFERENCE mclmac, &channels, nChannels);
-
-    uint8_t nChannelsS;
-    ARRAY channelS;
-#ifdef __LINUX__
-    channelS = (uint8_t *)malloc(nChannels * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&channelS, nChannels);
-#endif
-    mclmac_get_available_channels(REFERENCE mclmac, &channelS, &nChannelsS);
-
-    assert(nChannelsS == nChannels);
-    for (i = 0; i < nChannelsS; i++)
-        assert(READ_ARRAY(REFERENCE channelS, i) == READ_ARRAY(REFERENCE channels, i));    
-
-#ifdef __LINUX__
-    free(channels);
-    free(channelS);
-#endif
-#ifdef __RIOT__
-    free_array(&channels);
-    free_array(&channelS);
-#endif
-
-    MCLMAC_destroy(&mclmac);
-}*/
-
-void test_mclmac_set_nodeid(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint16_t nodeid = (uint16_t)rand();
-        mclmac_set_nodeid(REFERENCE mclmac, nodeid);
-        assert(ARROW(mclmac)_nodeID == nodeid);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
 void test_mclmac_get_nodeid(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -410,7 +239,7 @@ void test_mclmac_get_nodeid(void)
     for (int i = 0; i < n; i++)
     {
         uint16_t nodeid = (uint16_t)rand();
-        mclmac_set_nodeid(REFERENCE mclmac, nodeid);
+        ARROW(mclmac)_nodeID = nodeid;
         uint16_t nodeidR = mclmac_get_nodeid(REFERENCE mclmac);
         assert(nodeidR == nodeid);
     }
@@ -439,31 +268,6 @@ void test_mclmac_set_transmiterid(void)
     senderid = (senderid == ARROW(mclmac)_nodeID ? senderid + 1 : senderid);
     mclmac_set_transmiterid(REFERENCE mclmac, senderid);
     assert(ARROW(ARROW(mclmac)mac)transmiterID == senderid);
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_get_transmiterid(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    /**
-     * Get the sender id, it should be different to the current node's id.
-     */
-    uint16_t senderid = rand() % 16;
-    senderid = (senderid == ARROW(mclmac)_nodeID ? senderid + 1 : senderid);
-    mclmac_set_transmiterid(REFERENCE mclmac, senderid);
-    uint16_t senderidA = mclmac_get_transmiterid(REFERENCE mclmac);
-    assert(senderid == senderidA);
 
     MCLMAC_destroy(&mclmac);
 }
@@ -512,55 +316,6 @@ void test_mclmac_get_selected_slot(void)
         mclmac_set_selected_slot(REFERENCE mclmac, slot);
         uint8_t slotR = mclmac_get_selected_slot(REFERENCE mclmac);
         assert(slotR == slot);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_set_number_of_hops(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint8_t hops = (uint8_t)rand() % 256;
-        mclmac_set_number_of_hops(REFERENCE mclmac, hops);
-        assert(ARROW(mclmac)_hopCount == hops);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_get_number_of_hops(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint8_t hops = (uint8_t)rand();
-        mclmac_set_number_of_hops(REFERENCE mclmac, hops);
-        uint8_t hopsR = mclmac_get_number_of_hops(REFERENCE mclmac);
-        assert(hopsR == hops);
     }
 
     MCLMAC_destroy(&mclmac);
@@ -891,55 +646,6 @@ void test_mclmac_set_cf_duration(void)
         cf_duration = rand();
         mclmac_set_cf_duration(REFERENCE mclmac, cf_duration);
         assert(ARROW(ARROW(ARROW(mclmac)mac)frame)cf_duration == cf_duration);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_set_network_time(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint32_t netTime = (uint32_t)rand();
-        mclmac_set_network_time(REFERENCE mclmac, netTime);
-        assert(ARROW(mclmac)_networkTime == netTime);
-    }
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_get_network_time(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int n = rand() % ITERATIONS;
-    for (int i = 0; i < n; i++)
-    {
-        uint32_t netTime = rand();
-        mclmac_set_network_time(REFERENCE mclmac, netTime);
-        uint32_t netTimeA = mclmac_get_network_time(REFERENCE mclmac);
-        assert(netTimeA == netTime);
     }
 
     MCLMAC_destroy(&mclmac);
@@ -1315,7 +1021,7 @@ void test_mclmac_change_cf_channel(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+    ARROW(ARROW(mclmac)mac)cfChannel = 915000000;
 
     stub_mclmac_change_cf_channel(REFERENCE mclmac);
     
@@ -1338,7 +1044,7 @@ void test_mclmac_start_cf_phase(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+    ARROW(ARROW(mclmac)mac)cfChannel = 915000000;
 
     stub_mclmac_change_cf_channel(REFERENCE mclmac);
 
@@ -1364,11 +1070,11 @@ void test_mclmac_send_cf_message(void)
 
     MCLMAC_init(&mclmac, &radio, nodeid);
 
-    mclmac_set_nodeid(REFERENCE mclmac, 1);
+    ARROW(mclmac)_nodeID = 1;
 //    mclmac_set_destination_id(REFERENCE mclmac, 2);
 //    mclmac_create_cf_packet(REFERENCE mclmac);
 
-    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
+    ARROW(ARROW(mclmac)mac)cfChannel = 915000000;
 
     stub_mclmac_change_cf_channel(REFERENCE mclmac);
 
@@ -1438,14 +1144,6 @@ void executeTestsMCLMAC(void)
     test_MCLMAC_clear();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_set_cf_channel function.\n");
-    test_mclmac_set_cf_channel();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_get_cf_channel function.\n");
-    test_mclmac_get_cf_channel();
-    printf("Test passed.\n");
-
     printf("Testing mclmac_set_transmit_channel function.\n");
     test_mclmac_set_transmit_channel();
     printf("Test passed.\n");
@@ -1466,18 +1164,6 @@ void executeTestsMCLMAC(void)
     test_mclmac_get_frequency();
     printf("Test passed.\n");
 
-    /*printf("Testing mclmac_set_available_channels function.\n");
-    test_mclmac_set_available_channels();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_get_available_channels function.\n");
-    test_mclmac_get_available_channels();
-    printf("Test passed.\n");*/
-
-    printf("Testing mclmac_set_nodeid function.\n");
-    test_mclmac_set_nodeid();
-    printf("Test passed.\n");
-
     printf("Testing mclmac_get_nodeid function.\n");
     test_mclmac_get_nodeid();
     printf("Test passed.\n");
@@ -1486,24 +1172,12 @@ void executeTestsMCLMAC(void)
     test_mclmac_set_transmiterid();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_get_transmiterid function.\n");
-    test_mclmac_get_transmiterid();
-    printf("Test passed.\n");
-
     printf("Testing mclmac_set_selected_slot function.\n");
     test_mclmac_set_selected_slot();
     printf("Test passed.\n");
 
     printf("Testing mclmac_get_selected_slot function.\n");
     test_mclmac_get_selected_slot();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_set_number_of_hops function.\n");
-    test_mclmac_set_number_of_hops();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_get_number_of_hops function.\n");
-    test_mclmac_get_number_of_hops();
     printf("Test passed.\n");
 
     printf("Testing mclmac_set_current_frame function.\n");
@@ -1556,14 +1230,6 @@ void executeTestsMCLMAC(void)
 
     printf("Testing mclmac_set_cf_duration function.\n");
     test_mclmac_set_cf_duration();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_set_network_time function.\n");
-    test_mclmac_set_network_time();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_get_network_time function.\n");
-    test_mclmac_get_network_time();
     printf("Test passed.\n");
 
     printf("Testing the mclmac_available_data_packets function.\n");

@@ -27,14 +27,6 @@ void mclmac_set_next_powermode_state(MCLMAC_t *mclmac, PowerMode_t next)
     mclmac->powerMode.nextState = next;
 }
 
-PowerMode_t mclmac_get_powermode_state(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-
-    return mclmac->powerMode.currentState;
-}
-
-
 int mclmac_update_powermode_state_machine(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);

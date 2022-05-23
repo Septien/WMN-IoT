@@ -88,42 +88,6 @@ void test_mclmac_set_next_powermode_state(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_mclmac_get_powermode_state(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    PowerMode_t mode = PASSIVE, modeR;
-    mclmac_set_powermode_state(REFERENCE mclmac, mode);
-    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
-    assert(modeR == mode);
-
-    mode = ACTIVE;
-    mclmac_set_powermode_state(REFERENCE mclmac, mode);
-    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
-    assert(modeR == mode);
-
-    mode = TRANSMIT;
-    mclmac_set_powermode_state(REFERENCE mclmac, mode);
-    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
-    assert(modeR == mode);
-
-    mode = RECEIVE;
-    mclmac_set_powermode_state(REFERENCE mclmac, mode);
-    modeR = mclmac_get_powermode_state(REFERENCE mclmac);
-    assert(modeR == mode);
-    
-    MCLMAC_destroy(&mclmac);
-}
-
 void test_mclmac_update_powermode_state_machine(void)
 {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -1173,10 +1137,6 @@ void executetests_mac_powermode_statemachine(void)
 
     printf("Testing mclmac_set_next_powermode_state function.\n");
     test_mclmac_set_next_powermode_state();
-    printf("Test passed.\n");
-
-    printf("Testing mclmac_get_powermode_state function.\n");
-    test_mclmac_get_powermode_state();
     printf("Test passed.\n");
 
     printf("Test mclmac_update_powermode_state_machine function.\n");

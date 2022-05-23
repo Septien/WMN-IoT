@@ -107,47 +107,6 @@ void test_mclmac_set_next_MAC_state(void)
     MCLMAC_destroy(&mclmac);
 }
 
-void test_mclmac_get_MAC_state(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    state_t state = START, stateA;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
-    assert(stateA == state);
-
-    state = INITIALIZATION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
-    assert(stateA == state);
-
-    state = SYNCHRONIZATION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
-    assert(stateA == state);
-
-    state = TIMESLOT_AND_CHANNEL_SELECTION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
-    assert(stateA == state);
-    
-    state = MEDIUM_ACCESS;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    stateA = mclmac_get_MAC_state(REFERENCE mclmac);
-    assert(stateA == state);
-
-    MCLMAC_destroy(&mclmac);
-}
-
 void test_mclmac_update_mac_state_machine(void)
 {
         MCLMAC_t SINGLE_POINTER mclmac;
@@ -895,10 +854,6 @@ void executetests_mac_statemachine(void)
     test_mclmac_set_next_MAC_state();
     printf("Test passed.\n");
 
-    printf("Testing mclmac_get_MAC_state function.\n");
-    test_mclmac_get_MAC_state();
-    printf("Test passed.\n");
-
     printf("Testing mclmac_udpate_mac_state_machine function.\n");
     test_mclmac_update_mac_state_machine();
     printf("Test passed.\n");
@@ -913,7 +868,7 @@ void executetests_mac_statemachine(void)
     printf("Test passed.\n");
 
     printf("Testing the SYNCHRONIZATION state.\n");
-    //test_synchronization_state_mac_stmachine();
+    test_synchronization_state_mac_stmachine();
     printf("Test passed.\n");
 
     printf("Testing the TIMESLOT_AND_CHANNEL_SELECTION state.\n");

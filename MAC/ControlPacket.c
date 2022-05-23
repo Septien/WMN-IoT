@@ -69,20 +69,6 @@ void controlpacket_clear(ControlPacket_t *pkt)
     memset(pkt, 0, sizeof(ControlPacket_t));
 }
 
-void controlpacket_set_nodeID(ControlPacket_t *pkt, uint16_t nodeID)
-{
-    assert(pkt != NULL);
-
-    pkt->nodeID = nodeID;
-}
-
-uint16_t controlpacket_get_nodeID(ControlPacket_t *pkt)
-{
-    assert(pkt != NULL);
-    
-    return pkt->nodeID;
-}
-
 void controlpacket_set_current_frame(ControlPacket_t *pkt, uint32_t frame)
 {
     assert(pkt != NULL);
@@ -111,25 +97,11 @@ uint8_t controlpacket_get_current_slot(ControlPacket_t *pkt)
     return pkt->currentSlot;
 }
 
-void controlpacket_set_collision_slot(ControlPacket_t *pkt, uint8_t slot)
-{
-    assert(pkt != NULL);
-
-    pkt->collisionSlot = slot;
-}
-
 uint8_t controlpacket_get_collision_slot(ControlPacket_t *pkt)
 {
     assert(pkt != NULL);
 
     return pkt->collisionSlot;
-}
-
-void controlpacket_set_collision_frequency(ControlPacket_t *pkt, uint32_t frequency)
-{
-    assert(pkt != NULL);
-
-    pkt->collisionFrequency = frequency;
 }
 
 uint32_t controlpacket_get_collision_frequency(ControlPacket_t *pkt)

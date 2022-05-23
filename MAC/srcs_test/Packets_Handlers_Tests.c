@@ -441,100 +441,6 @@ void test_stub_mclmac_send_layers_control_packet(void)
     MCLMAC_destroy(&mclmac);
 }
 
-#if 0
-void test_stub_mclmac_receive_cf_message(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_set_nodeid(REFERENCE mclmac, 1);
-//    mclmac_set_destination_id(REFERENCE mclmac, 2);
-
-    mclmac_set_cf_channel(REFERENCE mclmac, 915000000);
-
-    stub_mclmac_change_cf_channel(REFERENCE mclmac);
-
-    stub_mclmac_start_cf_phase(REFERENCE mclmac);
-
-    /* Receive the packet the destination id is already known, and the 
-       cf phase is already started. */
-    stub_mclmac_receive_cf_message(REFERENCE mclmac);
-
-    MCLMAC_destroy(&mclmac);
-}
-
-void test_mclmac_receive_cf_message(void)
-{
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
-    size_t size = 5 * sizeof(uint16_t);
-
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    int ret;
-#ifdef __LINUX__
-    mclmac->mac->_cf_messages = (uint8_t *)malloc(size * sizeof(uint8_t));
-    if (mclmac->mac->_cf_messages == NULL)
-    {
-        printf("Unable to create _cf_messages queue. Linux.\n");
-        exit(0);
-    }
-    memset(mclmac->mac->_cf_messages, 0, size);
-#endif
-#ifdef __RIOT__
-    ret = create_array(&mclmac.mac._cf_messages, size);
-    if (ret == 0)
-    {
-        printf("Unable to craeate _cf_messages queue. RIOT.\n");
-        exit(0);
-    }
-#endif
-//    mclmac_create_cf_packet(REFERENCE mclmac);
-
-    for (int i = 0; i < ITERATIONS; i++)
-    {
-        ret = stub_mclmac_receive_cf_message(REFERENCE mclmac);
-        if (ret)
-        {
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 0) > 0);
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 1) > 0);
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 2) > 0);
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 3) > 0);
-        }
-        else
-        {
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 0) == 0);
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 1) == 0);
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 2) == 0);
-            assert(READ_ARRAY(REFERENCE ARROW(ARROW(mclmac)mac)_cf_messages, 3) == 0);
-        }
-    }
-
-#ifdef __LINUX__
-    free(mclmac->mac->_cf_messages);
-#endif
-#ifdef __RIOT__
-    free_array(&mclmac.mac._cf_messages);
-#endif
-
-    MCLMAC_destroy(&mclmac);
-}
-#endif
-
 void executetests_packets_handlers(void)
 {
     init_queues();
@@ -566,10 +472,6 @@ void executetests_packets_handlers(void)
     printf("Testing the stub_mclmac_send_layers_control_packet function.\n");
     test_stub_mclmac_send_layers_control_packet();
     printf("Test passed.\n");
-
-    /*printf("Testing mclmac_receive_cf_message function.\n");
-    test_mclmac_receive_cf_message();
-    printf("Test passed.\n");*/
 
     end_queues();
     return;

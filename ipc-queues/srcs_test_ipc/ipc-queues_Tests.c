@@ -375,11 +375,11 @@ void test_send_message(void)
     init_queues();
 
     uint32_t queue_size, msgs_allow, message_size;
-    char *stack = NULL;
+    char *p_stack = NULL;
     queue_size = QUEUE_SIZE;
     msgs_allow = MAX_ELEMENTS_ON_QUEUE;
     message_size = MAX_MESSAGE_SIZE;
-    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &p_stack);
 
     size_t msg_size = MAX_MESSAGE_SIZE;
     uint8_t msg[msg_size];
@@ -436,7 +436,7 @@ void test_send_message(void)
 #endif
 #ifdef __RIOT__
     IPC_Queues_t *Queues = get_queues_pointer();
-    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
+    kernel_pid_t pid = thread_create(p_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
     THREAD_CREATE_SLEEPING, recv, (void *)&qid, "Name");
     thread_wakeup(pid);
 
@@ -549,11 +549,11 @@ void test_recv_message(void)
     init_queues();
 
     uint32_t queue_size, msgs_allow, message_size;
-    char *stack = NULL;
+    char *p_stack = NULL;
     queue_size = QUEUE_SIZE;
     msgs_allow = MAX_ELEMENTS_ON_QUEUE;
     message_size = MAX_MESSAGE_SIZE;
-    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &p_stack);
 
     size_t msg_size = MAX_MESSAGE_SIZE;
     uint8_t msg[msg_size];
@@ -584,7 +584,7 @@ void test_recv_message(void)
     pthread_join(pid, NULL);
 #endif
 #ifdef __RIOT__
-    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
+    kernel_pid_t pid = thread_create(p_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
     THREAD_CREATE_SLEEPING, recv_recv, (void *)&qid, "Name");
     thread_wakeup(pid);
     for (int i = 0; i < n; i++)
@@ -625,11 +625,11 @@ void test_close_queue(void)
     init_queues();
 
     uint32_t queue_size, msgs_allow, message_size;
-    char *stack = NULL;
+    char *p_stack = NULL;
     queue_size = QUEUE_SIZE;
     msgs_allow = MAX_ELEMENTS_ON_QUEUE;
     message_size = MAX_MESSAGE_SIZE;
-    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &p_stack);
 
     size_t msg_size = MAX_MESSAGE_SIZE;
     uint8_t msg[msg_size];
@@ -646,7 +646,7 @@ void test_close_queue(void)
     pthread_join(pid, NULL);
 #endif
 #ifdef __RIOT__
-    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
+    kernel_pid_t pid = thread_create(p_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 
     THREAD_CREATE_SLEEPING, recv_recv, (void *)&qid, "Name");
     thread_wakeup(pid);
     for (int i = 0; i < n; i++)
@@ -851,7 +851,7 @@ void test_elements_on_queue(void)
     //IPC_Queues_t *Queues = get_queues_pointer();
 
     uint32_t queue_size, msgs_allow, message_size;
-    char *stack = NULL;
+    char *p_stack = NULL;
     queue_size = QUEUE_SIZE;
     msgs_allow = MAX_ELEMENTS_ON_QUEUE;
     message_size = MAX_MESSAGE_SIZE;
@@ -866,7 +866,7 @@ void test_elements_on_queue(void)
      * For the test, we need to create and open a queue first, for RIOT we need to create a 
      * thread to call the function open_queue.
      */
-    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &stack);
+    uint32_t qid = create_queue(queue_size, message_size, msgs_allow, &p_stack);
 
 #ifdef __LINUX__
     pthread_t pid = 0;
@@ -875,7 +875,7 @@ void test_elements_on_queue(void)
 #endif
 
 #ifdef __RIOT__
-    kernel_pid_t pid = thread_create(stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
+    kernel_pid_t pid = thread_create(p_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
     open_q, (void *)&qid, "Name");
     //ztimer_sleep(ZTIMER_USEC, 100);
     thread_wakeup(pid);

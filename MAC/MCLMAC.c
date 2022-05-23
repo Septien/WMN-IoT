@@ -90,26 +90,6 @@ void MCLMAC_clear(MCLMAC_t *mclmac)
     mclmac->_mac_queue_id = 0;
 }
 
-void mclmac_set_cf_channel(MCLMAC_t *mclmac, uint32_t cfchannel)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-
-    ARROW(mclmac->mac)cfChannel = cfchannel;
-}
-
-uint32_t mclmac_get_cf_channel(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-
-    return ARROW(mclmac->mac)cfChannel;
-}
-
 void mclmac_set_transmit_channel(MCLMAC_t *mclmac, uint32_t channel)
 {
     assert(mclmac != NULL);
@@ -158,65 +138,6 @@ uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index)
     return mclmac->_frequencies[index];
 }
 
-/*void mclmac_set_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t nChannels)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(channels != NULL);
-#endif
-#ifdef __RIOT__
-    assert(channels->size > 0);
-#endif
-    assert(nChannels > 0);
-
-    mclmac->_nChannels = nChannels;
-#ifdef __LINUX__
-    mclmac->mac->channels = (uint8_t *)malloc(mclmac->mac->numberChannels * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&mclmac->mac.channels, nChannels);
-#endif
-    for (int i = 0; i < ARROW(mclmac)_nChannels; i++)
-    {
-        uint8_t element = READ_ARRAY((SINGLE_POINTER channels), i);
-        WRITE_ARRAY(REFERENCE ARROW(mclmac->mac)channels, element, i);
-    }
-}
-
-void mclmac_get_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t *nChannels)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->channels != NULL);
-    assert(channels != NULL);
-    assert(*channels != NULL);
-#endif
-#ifdef __RIOT__
-    assert(mclmac->mac.channels.size > 0);
-    assert(channels->size > 0);
-#endif
-    assert(nChannels != NULL);
-
-    *nChannels = ARROW(mclmac->mac)numberChannels;
-    for (int i = 0; i < *nChannels; i++)
-    {
-        uint8_t element = READ_ARRAY(REFERENCE ARROW(mclmac->mac)channels, i);
-        WRITE_ARRAY(SINGLE_POINTER channels, element, i);
-    }
-}*/
-
-void mclmac_set_nodeid(MCLMAC_t *mclmac, uint16_t id)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-
-    mclmac->_nodeID = id;
-}
-
 uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
@@ -227,33 +148,12 @@ uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac)
     return mclmac->_nodeID;
 }
 
-/**
- * @brief Set the id of the node that will transmit a message to the 
- * current node.
- * 
- * @param mclmac 
- * @param id 
- */
 void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id)
 {
     assert(mclmac != NULL);
     assert(id != mclmac->_nodeID);
 
     ARROW(mclmac->mac)transmiterID = id;
-}
-
-/**
- * @brief Get the id of the node that will transmit a message to the
- * current node.
- * 
- * @param mclmac 
- * @return uint16_t 
- */
-uint16_t mclmac_get_transmiterid(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-
-    return ARROW(mclmac->mac)transmiterID;
 }
 
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot)
@@ -275,26 +175,6 @@ uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac)
 #endif
     
     return ARROW(mclmac->mac)selectedSlot;
-}
-
-void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-
-    mclmac->_hopCount = hops;
-}
-
-uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
-
-    return mclmac->_hopCount;
 }
 
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number)
@@ -455,20 +335,6 @@ uint32_t cf_dur
 #endif
     assert(cf_dur > 0);
     ARROW(ARROW(mclmac->mac)frame)cf_duration = cf_dur;
-}
-
-void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time)
-{
-    assert(mclmac != NULL);
-
-    mclmac->_networkTime = time;
-}
-
-uint32_t mclmac_get_network_time(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-
-    return mclmac->_networkTime;
 }
 
 uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac)

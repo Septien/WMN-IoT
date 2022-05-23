@@ -138,31 +138,21 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac);
 // State machines status
 void mclmac_set_MAC_state(MCLMAC_t *mclmac, state_t state);
 void mclmac_set_next_MAC_state(MCLMAC_t *mclmac, state_t next);
-state_t mclmac_get_MAC_state(MCLMAC_t *mclmac);
 void mclmac_set_powermode_state(MCLMAC_t *mclmac, PowerMode_t mode);
 void mclmac_set_next_powermode_state(MCLMAC_t *mclmac, PowerMode_t next);
-PowerMode_t mclmac_get_powermode_state(MCLMAC_t *mclmac);
 
 // Channels
-void mclmac_set_cf_channel(MCLMAC_t *mclmac, uint32_t cfChannel);
-uint32_t mclmac_get_cf_channel(MCLMAC_t *mclmac);
 void mclmac_set_transmit_channel(MCLMAC_t *mclmac, uint32_t channel);
 uint32_t mclmac_get_transmit_channel(MCLMAC_t *mclmac);
 void mclmac_set_reception_channel(MCLMAC_t *mclmac, uint32_t rChannel);
 uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac);
 uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index);
-void mclmac_set_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t nChannels);
-void mclmac_get_available_channels(MCLMAC_t *mclmac, ARRAY* channels, uint8_t *nChannels);
 
 // Properties and configuration
-void mclmac_set_nodeid(MCLMAC_t *mclmac, uint16_t id);
 uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac);
 void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id);
-uint16_t mclmac_get_transmiterid(MCLMAC_t *mclmac);
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot);
 uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac);
-void mclmac_set_number_of_hops(MCLMAC_t *mclmac, uint8_t hops);
-uint8_t mclmac_get_number_of_hops(MCLMAC_t *mclmac);
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number);
 void mclmac_increase_frame(MCLMAC_t *mclmac);
 void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t slot);
@@ -197,8 +187,6 @@ double cf_dur
 uint32_t cf_dur 
 #endif
 );
-void mclmac_set_network_time(MCLMAC_t *mclmac, uint32_t time);
-uint32_t mclmac_get_network_time(MCLMAC_t *mclmac);
 uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac);
 
 /* Packet functions */
@@ -231,8 +219,6 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac);
 void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac);
 
 // Channel selection
-void mclmac_change_transmit_channel(MCLMAC_t *mclmac);
-void mclmac_change_receive_channel(MCLMAC_t *mclmac);
 void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac);
 
 // Radio modes
@@ -259,8 +245,5 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac);
  * @return int32_t 
  */
 int32_t mclmac_write_queue_element(MCLMAC_t *mclmac);
-
-/* Private functions */
-void _select_slot_and_channel(MCLMAC_t *mclmac);
 
 #endif  // MCLMAC_H
