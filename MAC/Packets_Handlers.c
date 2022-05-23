@@ -238,7 +238,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
     create_array(&byteString, MAX_MESSAGE_SIZE);
 #endif
     for (uint i = 0; i < MAX_MESSAGE_SIZE; i++)
-        WRITE_ARRAY(REFERENCE byteString, rand(), i);
+        WRITE_ARRAY(REFERENCE byteString, rand() % 250, i);
     uint8_t bytes = 1;
     // Store type
     WRITE_ARRAY(REFERENCE byteString, bytes,    0);
