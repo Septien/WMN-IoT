@@ -133,7 +133,7 @@ FEATURES_REQUIRED += arch_esp32
 endif
 FEATURES_REQUIRED += periph_gpio
 
-include WMNLoRa.include
+include WMN-IoT.include
 
 CFLAGS += -Wno-unused-variable
 CFLAGS += -Wno-unused-parameter
