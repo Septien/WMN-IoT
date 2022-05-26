@@ -16,4 +16,8 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/utils
 
 USEMODULE += srcs_test_ipc
 EXTERNAL_MODULE_DIRS += $(CURDIR)/ipc-queues
+
+CUNIT_PATH = /home/phantom/CP_Systems/Implementations
+USEMODULE += cUnit
+EXTERNAL_MODULE_DIRS += $(CUNIT_PATH)
 endif

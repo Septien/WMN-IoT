@@ -16,6 +16,17 @@ ifdef TEST
 CFLAGS += -DTESTING
 endif
 CPPFLAGS += -D__LINUX__
+# Makeit available to all the files.
+ifdef TEST
+# Path to cUnit module
+CUNIT_PATH = /home/phantom/CP_Systems/Implementations/cUnit
+CUNIT_LIB_PATH = $(CUNIT_PATH)/bin/linux-x86_64/lib_cunit
+CUNIT_INCLUDE = $(CUNIT_PATH)/include
+
+CFLAGS += -I$(CUNIT_INCLUDE)
+
+LIBS += cunit
+endif
 # Compile each of the submodules
 include ipc-queues/Makefile.linux
 include utils/Makefile.linux
@@ -68,11 +79,14 @@ $(info $$LIBS is [${LIBS}])
 LDFLAGS += $(IPC_QUEUES_PATH)
 LDFLAGS += $(UTILS_PATH)
 LDFLAGS += $(MAC_PATH)
+ifdef TEST
+LDFLAGS += $(CUNIT_LIB_PATH)
+endif
 $(info $$LDFLAGS is [${LDFLAGS}])
 
 TARGETS = directories_main
 ifdef TEST
-TARGETS += $(BIN)/wmnlora
+TARGETS += $(BIN)/wmn-iot
 endif
 $(info $$TARGETS is [${TARGETS}])
 
@@ -82,13 +96,13 @@ directories_main:
 	$(MKDIR_WMNL)
 
 ifdef TEST
-$(BIN)/wmnlora : $(OBJ)/main_test.o
+$(BIN)/wmn-iot : $(OBJ)/main_test.o
 	$(CC) $< -o $@ $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -lrt -lpthread
 
 $(OBJ)/main_test.o : main.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJ)/main_test.o : $(INCT_DIR)/mclmac_tests.h
+$(OBJ)/main_test.o : $(INCT_DIR)/mclmac_tests.h $(CUNIT_INCLUDE)/cUnit.h
 endif
 
 # Remove object files and static libraries
