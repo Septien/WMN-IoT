@@ -15,6 +15,8 @@
 #include "ztimer.h"
 #endif
 
+#include "cUnit.h"
+
 #include "ipc-queues_Tests.h"
 #include "ipc-queues.h"
 #include "config_ipc.h"
@@ -30,9 +32,10 @@
         ((byte) & 0x02 ? '1' : '0'), \
         ((byte) & 0x01 ? '1' : '0')
 
-void test_init_queues(void)
+void test_init_queues(void *arg)
 {
-    init_queues();
+    (void) arg;
+
     IPC_Queues_t *Queues = get_queues_pointer();
     printf("Queues: %p\n", (void *)Queues);
 #ifdef __RIOT__
@@ -72,14 +75,13 @@ void test_init_queues(void)
     assert(Queues->end_storage == 0);
     assert(Queues->stored_elements == 0);
 #endif
-    end_queues();
 }
 
-void test_end_queues(void)
+void test_end_queues(void *arg)
 {
-    init_queues();
-    IPC_Queues_t *Queues = get_queues_pointer();
+    (void) arg;
 
+    IPC_Queues_t *Queues = get_queues_pointer();
 #ifdef __RIOT__
     memset(Queues->msg_storage, rand(), MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
 #endif
@@ -125,13 +127,14 @@ void test_end_queues(void)
     assert(Queues->end_storage == 0);
     assert(Queues->stored_elements == 0);
 #endif
+    init_queues();
 }
 
-void test_create_queue(void)
+void test_create_queue(void *arg)
 {
-    init_queues();
-    IPC_Queues_t *Queues = get_queues_pointer();
+    (void) arg;
 
+    IPC_Queues_t *Queues = get_queues_pointer();
     uint32_t qid = 0;
     uint32_t queue_size, msgs_allow, message_size;
     char *stack = NULL;
@@ -241,8 +244,6 @@ void test_create_queue(void)
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
     assert(qid == 0);
     assert(stack == NULL);
-
-    end_queues();
 }
 #ifdef __RIOT__
 static void *func(void *arg)
@@ -270,9 +271,9 @@ void *func(void *arg)
     return (NULL);
 }
 #endif
-void test_open_queue(void)
+void test_open_queue(void *arg)
 {
-    init_queues();
+    (void) arg;
 
     uint32_t qid = 0;
     uint32_t queue_size, msgs_allow, message_size;
@@ -300,7 +301,6 @@ void test_open_queue(void)
     func, (void *)&qid, "Name");
     //while (thread_getstatus(pid) != STATUS_STOPPED) ;
 #endif
-    end_queues();
 }
 
 #ifdef __LINUX__
@@ -370,9 +370,9 @@ static void *recv(void *arg)
     return NULL;
 }
 #endif
-void test_send_message(void)
+void test_send_message(void *arg)
 {
-    init_queues();
+    (void) arg;
 
     uint32_t queue_size, msgs_allow, message_size;
     char *p_stack = NULL;
@@ -464,8 +464,6 @@ void test_send_message(void)
     //while (thread_getstatus(pid) != STATUS_STOPPED) ;
     memset(Queues->msg_storage, 0, MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
 #endif
-
-    end_queues();
 }
 
 #ifdef __LINUX__
@@ -544,9 +542,9 @@ static void *recv_recv(void *arg)
     return NULL;
 }
 #endif
-void test_recv_message(void)
+void test_recv_message(void *arg)
 {
-    init_queues();
+    (void) arg;
 
     uint32_t queue_size, msgs_allow, message_size;
     char *p_stack = NULL;
@@ -616,13 +614,11 @@ void test_recv_message(void)
     assert(ret == 0);
     ret = recv_message(MAX_QUEUES + 1, _msg2, 0, &_pid);
     assert(ret == 0);
-
-    end_queues();
 }
 
-void test_close_queue(void)
+void test_close_queue(void *arg)
 {
-    init_queues();
+    (void) arg;
 
     uint32_t queue_size, msgs_allow, message_size;
     char *p_stack = NULL;
@@ -687,96 +683,6 @@ void test_close_queue(void)
 #endif
     assert(Queues->queues_ids[qid - 1].queue_id == 0);
     assert(Queues->queues_ids[qid - 1].pid == 0);
-
-    end_queues();
-}
-
-void test_open_close_queues(void)
-{
-    init_queues();
-    IPC_Queues_t *Queues = get_queues_pointer();
-
-    uint32_t queue_size, msgs_allow, message_size;
-    char *stack = NULL;
-    queue_size = QUEUE_SIZE;
-    msgs_allow = MAX_ELEMENTS_ON_QUEUE;
-    message_size = MAX_MESSAGE_SIZE;
-    /**
-     * This tests the creation and closing of several non-consecutive queues, for
-     * knowing how the API handles such situations. 
-     * The fist test does the following:
-     *      -Create N queues.
-     *      -Closes M queues at random (M < N);
-     *      -Creates once again M queues.
-     *      -The queues might be or might not be consecutive.
-     */
-    int n = rand() % MAX_QUEUES;
-    int m = rand() % n;         // m < n
-    int i;
-    uint32_t qs[n];
-    memset(qs, 0, n * sizeof(uint32_t));
-    for (i = 0; i < n; i++)
-    {
-        qs[i] = create_queue(queue_size, message_size, msgs_allow, &stack);
-    }
-    int count = 0;
-    for (i = 0; i < n; i++)
-    {
-        /* Close at random at most m queues. */
-        if (count < m)
-        {
-            if (i % 2 == 0)
-            {
-                //uint8_t _qid = qs[i];
-                Queue_t *q = &Queues->queues[qs[i] - 1];
-#ifdef __LINUX__
-                assert(q->q_name != NULL);
-#endif
-#ifdef __RIOT__
-                assert(q->stack == Queues->free_stack + (i * THREAD_STACKSIZE_DEFAULT));
-                assert(q->queue == Queues->free_queue + (i * QUEUE_SIZE));
-#endif
-                close_queue(qs[i]);
-                //assert(Queues->queues_ids[_qid - 1] == 0);
-#ifdef __LINUX__
-                assert(q->queue == (mqd_t) -1);
-                assert(q->q_name == NULL);
-#endif
-#ifdef __RIOT__
-                assert(q->stack == NULL);
-                assert(q->queue == NULL);
-#endif
-                qs[i] = 0;
-                count++;
-                
-               ;
-            }
-        }
-    }
-
-    /* Re-open the closed queues. */
-    for (i = 0; i < MAX_QUEUES; i++)
-    {
-        if (qs[i] == 0)
-        {
-            //assert(Queues->queues_ids[i] == 0);
-            qs[i] = create_queue(queue_size, message_size, msgs_allow, &stack);
-            assert(qs[i] != 0);
-            uint8_t qid = qs[i];
-            Queue_t *q = &Queues->queues[qid - 1];
-            //assert(Queues->queues_ids[qid - 1] == 1);
-#ifdef __LINUX__
-            assert(q->q_name != NULL);
-#endif
-#ifdef __RIOT__
-            assert(q->stack == Queues->free_stack + (i * THREAD_STACKSIZE_DEFAULT));
-            assert(q->queue == Queues->free_queue + (i * QUEUE_SIZE));
-#endif
-            //assert(Queues->queues_ids[qid - 1] != 0);
-        }
-    }
-
-    end_queues();
 }
 
 #ifdef __LINUX__
@@ -845,10 +751,9 @@ static void *open_q(void *arg)
     return NULL;
 }
 #endif
-void test_elements_on_queue(void)
+void test_elements_on_queue(void *arg)
 {
-    init_queues();
-    //IPC_Queues_t *Queues = get_queues_pointer();
+    (void) arg;
 
     uint32_t queue_size, msgs_allow, message_size;
     char *p_stack = NULL;
@@ -877,52 +782,40 @@ void test_elements_on_queue(void)
 #ifdef __RIOT__
     kernel_pid_t pid = thread_create(p_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST,
     open_q, (void *)&qid, "Name");
-    //ztimer_sleep(ZTIMER_USEC, 100);
     thread_wakeup(pid);
 #endif
+}
 
+void setup(void *arg)
+{
+    (void) arg;
+    init_queues();
+}
+
+void teardown(void *arg)
+{
+    (void) arg;
     end_queues();
 }
 
 void ipc_queues_tests(void)
 {
+    cUnit_t *tests;
+    int dummy_data = rand();
+
+    cunit_init(&tests, &setup, &teardown, (void *)&dummy_data);
+
     printf("Testing the IPC Queues API.\n");
 
-    printf("Testing the init_queues function.\n");
-    test_init_queues();
-    printf("Test passed.\n");
+    cunit_add_test(tests, &test_init_queues,        "init_queues\0");
+    cunit_add_test(tests, &test_end_queues,         "end_queues\0");
+    cunit_add_test(tests, &test_create_queue,       "create_queue\0");
+    cunit_add_test(tests, &test_open_queue,         "open_queue\0");
+    cunit_add_test(tests, &test_send_message,       "send_message\0");
+    cunit_add_test(tests, &test_recv_message,       "recv_message\0");
+    cunit_add_test(tests, &test_close_queue,        "close_queue\0");
+    cunit_add_test(tests, &test_elements_on_queue,  "elements_on_queue\0");
 
-    printf("Testing the end_queues function.\n");
-    test_end_queues();
-    printf("Test passed.\n");
-
-    printf("Testing the create_queue function.\n");
-    test_create_queue();
-    printf("Test passed.\n");
-
-    printf("Testing the open_queue function.\n");
-    test_open_queue();
-    printf("Test passed.\n");
-
-    printf("Testing the send_message function.\n");
-    test_send_message();
-    printf("Test passed.\n");
-
-    printf("Testing the recv_message function.\n");
-    test_recv_message();
-    printf("Test passed.\n");
-
-    printf("Testing the close_queue function.\n");
-    test_close_queue();
-    printf("Test passed.\n");
-
-    /*printf("Testing the creation and closing of non-consecutive queues.\n");
-    test_open_close_queues();
-    printf("Test passed.\n");*/
-
-    printf("Testing the elements_on_queue function.\n");
-    test_elements_on_queue();
-    printf("Test passed.\n");
-
-    return;
+    cunit_execute_tests(tests);
+    cunit_terminate(&tests);
 }
