@@ -1,17 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <time.h>
 
 #include "assert.h"
 
 #include "CFPacket.h"
 #include "memory.h"
 
-void test_cfpacket_init(void)
-{
+#include "cUnit.h"
+
+struct cfpacket_data {
     CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+};
+
+void setup_cfpacket(void *arg)
+{
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    printf("Hello\n");
+    cfpacket_init(&data->cfpkt);
+}
+
+void teardown_cfpacket(void *arg)
+{
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    cfpacket_destroy(&data->cfpkt);
+}
+
+void test_cfpacket_init(void *arg)
+{
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
 #ifdef __LINUX__
     assert(cfpkt != NULL);
@@ -20,29 +38,27 @@ void test_cfpacket_init(void)
     assert(cfpkt.nodeID == 0);
     assert(cfpkt.destinationID == 0);
 #endif
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_destroy(void)
+void test_cfpacket_destroy(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
 
-    cfpacket_destroy(&cfpkt);
+    cfpacket_destroy(&data->cfpkt);
 #ifdef __LINUX__
-    assert(cfpkt == NULL);
+    assert(data->cfpkt == NULL);
 #endif
 #ifdef __RIOT__
-    assert(cfpkt.nodeID == 0);
-    assert(cfpkt.destinationID == 0);
+    assert(data->cfpkt.nodeID == 0);
+    assert(data->cfpkt.destinationID == 0);
 #endif
+    cfpacket_init(&data->cfpkt);
 }
 
-void test_cfpacket_create(void)
+void test_cfpacket_create(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     uint16_t nodeID = (uint16_t)rand();
     uint16_t destinationID = (uint16_t)rand();
@@ -51,14 +67,12 @@ void test_cfpacket_create(void)
 
     assert(ARROW(cfpkt)nodeID == nodeID);
     assert(ARROW(cfpkt)destinationID == destinationID);
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_clear(void)
+void test_cfpacket_clear(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     uint16_t nodeID = (uint16_t)rand();
     uint16_t destinationID = (uint16_t)rand();
@@ -69,26 +83,22 @@ void test_cfpacket_clear(void)
 
     assert(ARROW(cfpkt)nodeID == 0);
     assert(ARROW(cfpkt)destinationID == 0);
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void tests_cfpacket_set_nodeid(void)
+void test_cfpacket_set_nodeid(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     uint16_t nodeID = rand();
     cfpacket_set_nodeid(REFERENCE cfpkt, nodeID);
     assert(ARROW(cfpkt)nodeID == nodeID);
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_get_nodeid(void)
+void test_cfpacket_get_nodeid(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     uint16_t nodeID = rand();
     cfpacket_set_nodeid(REFERENCE cfpkt, nodeID);
@@ -96,27 +106,22 @@ void test_cfpacket_get_nodeid(void)
     uint16_t nodeIDR;
     nodeIDR = cfpacket_get_nodeid(REFERENCE cfpkt);
     assert(nodeIDR == ARROW(cfpkt)nodeID);
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_set_destinationid(void)
+void test_cfpacket_set_destinationid(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    srand(time(NULL));
     uint16_t destinationID = (uint16_t)rand();
     cfpacket_set_destinationid(REFERENCE cfpkt, destinationID);
     assert(ARROW(cfpkt)destinationID == destinationID);
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_get_destinationid(void)
+void test_cfpacket_get_destinationid(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     uint16_t destinationID = (uint16_t)rand();
     cfpacket_set_destinationid(REFERENCE cfpkt, destinationID);
@@ -124,14 +129,12 @@ void test_cfpacket_get_destinationid(void)
     uint16_t dIDF = cfpacket_get_destinationid(REFERENCE cfpkt);
     assert(dIDF == destinationID);
     assert(dIDF == ARROW(cfpkt)destinationID);
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_get_packet_bytestring(void)
+void test_cfpacket_get_packet_bytestring(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     uint16_t nodeID = (uint16_t)rand();
     uint16_t destinationID = (uint16_t)rand();
@@ -156,14 +159,12 @@ void test_cfpacket_get_packet_bytestring(void)
 #ifdef __RIOT__
     free_array(&byteString);
 #endif
-
-    cfpacket_destroy(&cfpkt);
 }
 
-void test_cfpacket_construct_packet_from_bytestring(void)
+void test_cfpacket_construct_packet_from_bytestring(void *arg)
 {
-    CFPacket_t SINGLE_POINTER cfpkt;
-    cfpacket_init(&cfpkt);
+    struct cfpacket_data *data = (struct cfpacket_data *)arg;
+    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
     ARRAY byteString;
 #ifdef __LINUX__
@@ -193,51 +194,27 @@ void test_cfpacket_construct_packet_from_bytestring(void)
 #ifdef __RIOT__
     free_array(&byteString);
 #endif
-    
-    cfpacket_destroy(&cfpkt);
 }
 
 void executeTestsCF(void)
 {
-    srand(time(NULL));
+    cUnit_t *tests;
+    struct cfpacket_data data;
 
-    printf("Testing cfpacket_init function.\n");
-    test_cfpacket_init();
-    printf("Test passed.\n");
+    cunit_init(&tests, &setup_cfpacket, &teardown_cfpacket, (void *)&data);
 
-    printf("Testing cfpacket_destroy function.\n");
-    test_cfpacket_destroy();
-    printf("Test passed.\n");
+    cunit_add_test(tests, &test_cfpacket_init,      "cfpacket_init\0");
+    cunit_add_test(tests, &test_cfpacket_destroy,   "cfpacket_destroy\0");
+    cunit_add_test(tests, &test_cfpacket_create,    "cfpacket_create\0");
+    cunit_add_test(tests, &test_cfpacket_clear,     "cfpacket_clear\0");
+    cunit_add_test(tests, &test_cfpacket_set_nodeid, "cfpacket_set_nodeid\0");
+    cunit_add_test(tests, &test_cfpacket_get_nodeid, "cfpacket_get_nodeid\0");
+    cunit_add_test(tests, &test_cfpacket_set_destinationid, "cfpacket_set_destinationid\0");
+    cunit_add_test(tests, &test_cfpacket_get_destinationid, "cfpacket_get_destinationid\0");
+    cunit_add_test(tests, &test_cfpacket_get_packet_bytestring,             "cfpacket_get_packet_bytestring\0");
+    cunit_add_test(tests, &test_cfpacket_construct_packet_from_bytestring,  "cfpacket_construct_packet_from_bytestring\0");
 
-    printf("Testing createPacketCF function.\n");
-    test_cfpacket_create();
-    printf("Test passed.\n");
+    cunit_execute_tests(tests);
 
-    printf("Testing cfpacket_clear function.\n");
-    test_cfpacket_clear();
-    printf("Test passed.\n");
-
-    printf("Testing cfpacket_set_nodeid function.\n");
-    tests_cfpacket_set_nodeid();
-    printf("Test passed.\n");
-    
-    printf("Testing cfpacket_get_nodeid function.\n");
-    test_cfpacket_get_nodeid();
-    printf("Test passed.\n");
-
-    printf("Testing cfpacket_set_destinationid function.\n");
-    test_cfpacket_set_destinationid();
-    printf("Test passed.\n");
-
-    printf("Testing cfpacket_get_destinationid function.\n"),
-    test_cfpacket_get_destinationid();
-    printf("Test passed.\n");
-
-    printf("Testing cfpacket_get_packet_bytestring function.\n");
-    test_cfpacket_get_packet_bytestring();
-    printf("Test passed.\n");
-
-    printf("Testing cfpacket_construct_packet_from_bytestring function.\n");
-    test_cfpacket_construct_packet_from_bytestring();
-    printf("Test passed.\n");
+    cunit_terminate(&tests);
 }
