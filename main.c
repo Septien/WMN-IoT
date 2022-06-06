@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 #ifdef __RIOT__
 #include "periph/pm.h"
@@ -26,6 +27,7 @@
 int main(void)
 {
 #ifdef __LINUX__
+    srand(time(NULL));
     printf("\nTesting the IPC API module.\n");
     ipc_queues_tests();
     printf("\nTesting the UTILS module.\n");
@@ -36,6 +38,7 @@ int main(void)
 #ifdef __RIOT__
     puts("Welcome to RIOT!\n");
     do {
+        srand(time(NULL));
         printf("\nTesting the IPC API module.\n");
         ipc_queues_tests();
         printf("\nTesting the UTILS module.\n");
