@@ -24,8 +24,6 @@ CUNIT_LIB_PATH = $(CUNIT_PATH)/bin/linux-x86_64/lib_cunit
 CUNIT_INCLUDE = $(CUNIT_PATH)/include
 
 CFLAGS += -I$(CUNIT_INCLUDE)
-
-LIBS += cunit
 endif
 # Compile each of the submodules
 include ipc-queues/Makefile.linux
@@ -76,12 +74,14 @@ LIBS += mclmac
 $(info $$LIBS is [${LIBS}])
 
 # Paths to static libraries
+ifdef TEST
+LDFLAGS += $(CUNIT_LIB_PATH)
+
+LIBS += cunit
+endif
 LDFLAGS += $(IPC_QUEUES_PATH)
 LDFLAGS += $(UTILS_PATH)
 LDFLAGS += $(MAC_PATH)
-ifdef TEST
-LDFLAGS += $(CUNIT_LIB_PATH)
-endif
 $(info $$LDFLAGS is [${LDFLAGS}])
 
 TARGETS = directories_main

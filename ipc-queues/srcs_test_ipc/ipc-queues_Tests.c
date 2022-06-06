@@ -721,6 +721,7 @@ void *open_q(void *arg)
 #ifdef __RIOT__
 static void *open_q(void *arg)
 {
+    printf("Hello.\n");
     uint32_t *qid = (uint32_t *)arg;
     kernel_pid_t pid = thread_getpid();
     open_queue(*qid, pid);
@@ -786,13 +787,13 @@ void test_elements_on_queue(void *arg)
 #endif
 }
 
-void setup(void *arg)
+void setup_ipc(void *arg)
 {
     (void) arg;
     init_queues();
 }
 
-void teardown(void *arg)
+void teardown_ipc(void *arg)
 {
     (void) arg;
     end_queues();
@@ -803,7 +804,7 @@ void ipc_queues_tests(void)
     cUnit_t *tests;
     int dummy_data = rand();
 
-    cunit_init(&tests, &setup, &teardown, (void *)&dummy_data);
+    cunit_init(&tests, &setup_ipc, &teardown_ipc, (void *)&dummy_data);
 
     printf("Testing the IPC Queues API.\n");
 
@@ -814,8 +815,9 @@ void ipc_queues_tests(void)
     cunit_add_test(tests, &test_send_message,       "send_message\0");
     cunit_add_test(tests, &test_recv_message,       "recv_message\0");
     cunit_add_test(tests, &test_close_queue,        "close_queue\0");
-    cunit_add_test(tests, &test_elements_on_queue,  "elements_on_queue\0");
+    //cunit_add_test(tests, &test_elements_on_queue,  "elements_on_queue\0");
 
     cunit_execute_tests(tests);
+
     cunit_terminate(&tests);
 }
