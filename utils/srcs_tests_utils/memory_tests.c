@@ -5,13 +5,22 @@
 #include "memory_tests.h"
 #include "memory.h"
 
-void test_memory_init(void)
+#include "cUnit.h"
+
+void setup_mem(void *arg)
 {
+    (void) arg;
+}
+
+void test_memory_init(void *arg)
+{
+    (void) arg;
     memory_init();    
 }
 
-void test_create_array(void)
+void test_create_array(void *arg)
 {
+    (void) arg;
     array_t array;
     array.head = NULL;
 
@@ -106,8 +115,9 @@ void test_create_array(void)
     assert(array.size == 0);    
 }
 
-void test_free_array(void)
+void test_free_array(void *arg)
 {
+    (void) arg;
     array_t array;
     array.head = NULL;
     size_t size = 0;
@@ -138,8 +148,9 @@ void test_free_array(void)
     assert(array.head == NULL);
 }
 
-void test_write_array(void)
+void test_write_array(void *arg)
 {
+    (void) arg;
     array_t array;
     array.head = NULL;
     size_t size = MAX_NUMBER_BLOCKS;
@@ -195,8 +206,9 @@ void test_write_array(void)
     assert(ret == 1);
 }
 
-void test_read_element(void)
+void test_read_element(void *arg)
 {
+    (void) arg;
     array_t array;
     array.head = NULL;
     size_t size = MAX_NUMBER_BLOCKS;
@@ -241,29 +253,29 @@ void test_read_element(void)
    free_array(&array);
 }
 
+void teardown_mem(void *arg)
+{
+    (void) arg;
+}
+
 void memory_tests(void)
 {
+    cUnit_t *tests;
+    uint8_t dummy_data = rand();
+
+    cunit_init(&tests, &setup_mem, &teardown_mem, (void *)&dummy_data);
+
     printf("\nTesting the memory API\n");
 
-    printf("Testing memory_init function.\n");
-    test_memory_init();
-    printf("Test passed.\n");
+    cunit_add_test(tests, &test_memory_init,    "memory_init\0");
+    cunit_add_test(tests, &test_create_array,   "create_array\0");
+    cunit_add_test(tests, &test_free_array,     "free_array\0");
+    cunit_add_test(tests, &test_write_array,    "write_array\0");
+    cunit_add_test(tests, &test_read_element,   "read_element\0");
 
-    printf("Testing create_array function.\n");
-    test_create_array();
-    printf("Test passed.\n");
+    cunit_execute_tests(tests);
 
-    printf("Testing free_array function.\n");
-    test_free_array();
-    printf("Test passed.\n");
-
-    printf("Testing write_array function.\n");
-    test_write_array();
-    printf("Test passed.\n");
-
-    printf("Testing read_element function.\n");
-    test_read_element();
-    printf("Test passed.\n");
+    cunit_terminate(&tests);
 
     return;
 }
