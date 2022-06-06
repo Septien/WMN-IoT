@@ -15,20 +15,20 @@ def main():
     cmd = "rm code-analysis/*"
     # Compilation and analysis for linux
     # Compile with testing
-    cmd = "make all DEBUG=1 LINUX=1 TEST=1"
+    cmd = "make clean all DEBUG=1 LINUX=1 TEST=1"
     os.system(cmd)
     # Static analysis
     cmd = "cppcheck . -D__LINUX__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --includes-file=utils/include --includes-file=utils/include/testsinclude --includes-file=ipc-queues/include --includes-file=ipc-queues/include/testinclude --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output.txt"
     os.system(cmd)
     # Memory leaks check with valgrin
-    cmd = "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output/memcheck-output.txt bin/linux-x86_64/wmnlora"
+    cmd = "valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-output/memcheck-output.txt bin/linux-x86_64/wmn-iot"
     os.system(cmd)
     # Valgrind with massif
-    cmd = "valgrind --tool=massif --stacks=yes --massif-out-file=valgrind-output/massif-output.txt bin/linux-x86_64/wmnlora"
+    cmd = "valgrind --tool=massif --stacks=yes --massif-out-file=valgrind-output/massif-output.txt bin/linux-x86_64/wmn-iot"
     os.system(cmd)
 
     # Compilation and analysis for RIOT
-    cmd = "make all RIOT=1 TEST=1"
+    cmd = "make clean all RIOT=1 TEST=1"
     os.system(cmd)
     # Static code analysis
     cmd = "cppcheck . -D__RIOT__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --includes-file=utils/include --includes-file=utils/include/testsinclude --includes-file=ipc-queues/include --includes-file=ipc-queues/include/testinclude --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output_riot.txt"

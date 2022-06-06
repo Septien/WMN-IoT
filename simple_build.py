@@ -22,7 +22,7 @@ def main():
     os.system(cmd)
     
     print("\n\nTesting for LINUX\n\n")
-    cmd = "bin/linux-x86_64/wmnlora"
+    cmd = "bin/linux-x86_64/wmn-iot"
     print(cmd)
     os.system(cmd)
 
