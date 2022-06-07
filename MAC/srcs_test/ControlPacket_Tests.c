@@ -6,13 +6,31 @@
 
 #include "ControlPacket.h"
 
+#include "cUnit.h"
+
 #define ITERATIONS 1000
 
-void test_controlpacket_init(void)
-{
-    ControlPacket_t SINGLE_POINTER pkt;
+struct controlpacket_data {
+    ControlPacket_t SINGLE_POINTER ctrlpkt;
+};
 
-    controlpacket_init(&pkt);
+void setup_controlpacket(void *arg)
+{
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    controlpacket_init(&data->ctrlpkt);
+}
+
+void teardown_controlpacket(void *arg)
+{
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    controlpacket_destroy(&data->ctrlpkt);
+}
+
+void test_controlpacket_init(void *arg)
+{
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
+
 #ifdef __LINUX__
     assert(pkt != NULL);
 #endif
@@ -25,35 +43,33 @@ void test_controlpacket_init(void)
     assert(pkt.networkTime == 0);
     assert(pkt.initTime == 0);
 #endif
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_destroy(void)
+void test_controlpacket_destroy(void *arg)
 {
-    ControlPacket_t  SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;    
 
-    controlpacket_destroy(&pkt);
+    controlpacket_destroy(&data->ctrlpkt);
 
 #ifdef __LINUX__
-    assert(pkt == NULL);
+    assert(data->ctrlpkt == NULL);
 #endif
 #ifdef __RIOT__
-    assert(pkt.nodeID == 0);
-    assert(pkt.currentFrame == 0);
-    assert(pkt.currentSlot == 0);
-    assert(pkt.collisionSlot == 0);
-    assert(pkt.hopCount == 0);
-    assert(pkt.networkTime == 0);
-    assert(pkt.initTime == 0);
+    assert(data->ctrlpkt.nodeID == 0);
+    assert(data->ctrlpkt.currentFrame == 0);
+    assert(data->ctrlpkt.currentSlot == 0);
+    assert(data->ctrlpkt.collisionSlot == 0);
+    assert(data->ctrlpkt.hopCount == 0);
+    assert(data->ctrlpkt.networkTime == 0);
+    assert(data->ctrlpkt.initTime == 0);
 #endif
+    controlpacket_init(&data->ctrlpkt);
 }
 
-void test_controlpacket_create(void)
+void test_controlpacket_create(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint16_t nodeID = 1;
     uint32_t frame = 20;
@@ -77,16 +93,14 @@ void test_controlpacket_create(void)
     assert(ARROW(pkt)hopCount == hopCount);
     assert(ARROW(pkt)networkTime == netTime);
     assert(ARROW(pkt)initTime == initTime);
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_clear(void)
+void test_controlpacket_clear(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
-uint16_t nodeID = 1;
+    uint16_t nodeID = 1;
     uint32_t frame = 20;
     uint8_t slot = 8;
     uint8_t collisionSlot = 10;
@@ -105,14 +119,12 @@ uint16_t nodeID = 1;
     assert(ARROW(pkt)hopCount == 0);
     assert(ARROW(pkt)networkTime == 0);
     assert(ARROW(pkt)initTime == 0);
-    
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_current_frame(void)
+void test_controlpacket_set_current_frame(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % 1024;
     for (int i = 0; i < n; i++)
@@ -121,14 +133,12 @@ void test_controlpacket_set_current_frame(void)
         controlpacket_set_current_frame(REFERENCE pkt, frame);
         assert(ARROW(pkt)currentFrame == frame);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_current_frame(void)
+void test_controlpacket_get_current_frame(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % 1024;
     for (int i = 0; i < n; i++)
@@ -138,14 +148,12 @@ void test_controlpacket_get_current_frame(void)
         uint32_t frameA = controlpacket_get_current_frame(REFERENCE pkt);
         assert(frameA == frame);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_current_slot(void)
+void test_controlpacket_set_current_slot(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand()%1024;
     for (int i = 0; i < n; i++)
@@ -154,14 +162,12 @@ void test_controlpacket_set_current_slot(void)
         controlpacket_set_current_slot(REFERENCE pkt, slot);
         assert(ARROW(pkt)currentSlot == slot);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_current_slot(void)
+void test_controlpacket_get_current_slot(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand()%1024;
     for (int i = 0; i < n; i++)
@@ -171,28 +177,24 @@ void test_controlpacket_get_current_slot(void)
         uint8_t slotA = controlpacket_get_current_slot(REFERENCE pkt);
         assert(slotA == slot);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_collision_slot(void)
+void test_controlpacket_get_collision_slot(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint8_t slot = 10;
     ARROW(pkt)collisionSlot = slot;
 
     slot = controlpacket_get_collision_slot(REFERENCE pkt);
     assert(slot == ARROW(pkt)collisionSlot);
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_collision_frequency(void)
+void test_controlpacket_get_collision_frequency(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint32_t freq = 915000000;
     ARROW(pkt)collisionFrequency = freq;
@@ -200,26 +202,22 @@ void test_controlpacket_get_collision_frequency(void)
     uint32_t freqr = controlpacket_get_collision_frequency(REFERENCE pkt);
     assert(freqr == ARROW(pkt)collisionFrequency);
     assert(freqr == freq);
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_hop_count(void)
+void test_controlpacket_set_hop_count(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint16_t hops = 8;
     controlpacket_set_hop_count(REFERENCE pkt, hops);
     assert(ARROW(pkt)hopCount == hops);
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_hop_count(void)
+void test_controlpacket_get_hop_count(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint16_t hops = 8;
     controlpacket_set_hop_count(REFERENCE pkt, hops);
@@ -227,14 +225,12 @@ void test_controlpacket_get_hop_count(void)
     uint8_t hops2 = controlpacket_get_hop_count(REFERENCE pkt);
     assert(hops2 == ARROW(pkt)hopCount);
     assert(hops2 == hops);
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_network_time(void)
+void test_controlpacket_set_network_time(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -243,14 +239,12 @@ void test_controlpacket_set_network_time(void)
         controlpacket_set_network_time(REFERENCE pkt, netTime);
         assert(ARROW(pkt)networkTime == netTime);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_network_time(void)
+void test_controlpacket_get_network_time(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -260,14 +254,12 @@ void test_controlpacket_get_network_time(void)
         uint64_t timeA = controlpacket_get_network_time(REFERENCE pkt);
         assert(timeA == time);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_set_init_time(void)
+void test_controlpacket_set_init_time(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -276,14 +268,12 @@ void test_controlpacket_set_init_time(void)
         controlpacket_set_init_time(REFERENCE pkt, initTime);
         assert(ARROW(pkt)initTime == initTime);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_init_time(void)
+void test_controlpacket_get_init_time(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
@@ -293,14 +283,12 @@ void test_controlpacket_get_init_time(void)
         uint32_t initTimeT = controlpacket_get_init_time(REFERENCE pkt);
         assert(initTimeT == initTime);
     }
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_get_packet_bytestring(void)
+void test_controlpacket_get_packet_bytestring(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint16_t nodeID = (uint16_t) rand();
     uint32_t frame = 0x0f0f0f0f;
@@ -377,14 +365,12 @@ void test_controlpacket_get_packet_bytestring(void)
 #ifdef __RIOT__
     free_array(&byteStr);
 #endif
-
-    controlpacket_destroy(&pkt);
 }
 
-void test_controlpacket_construct_packet_from_bytestring(void)
+void test_controlpacket_construct_packet_from_bytestring(void *arg)
 {
-    ControlPacket_t SINGLE_POINTER pkt;
-    controlpacket_init(&pkt);
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint16_t nodeID = rand();
     uint8_t currentSlot = 1;
@@ -452,83 +438,35 @@ void test_controlpacket_construct_packet_from_bytestring(void)
 #ifdef __RIOT__
     free_array(&byteStr);
 #endif
-
-    controlpacket_destroy(&pkt);
 }
 
 void executeTestsCP(void)
 {
-    srand(time(NULL));
+    cUnit_t *tests;
+    struct controlpacket_data data;
 
-    printf("Testing controlpacket_init function.\n");
-    test_controlpacket_init();
-    printf("Test passed\n");
+    cunit_init(&tests, &setup_controlpacket, &teardown_controlpacket, (void *)&data);
 
-    printf("Testing controlpacket_destroy function.\n");
-    test_controlpacket_destroy();
-    printf("Test passed.\n");
+    cunit_add_test(tests, &test_controlpacket_init, "controlpacket_init\0");
+    cunit_add_test(tests, &test_controlpacket_destroy, "controlpacket_destroy\0");
+    cunit_add_test(tests, &test_controlpacket_create, "controlpacket_create\0");
+    cunit_add_test(tests, &test_controlpacket_clear, "controlpacket_clear\0");
+    cunit_add_test(tests, &test_controlpacket_set_current_frame, "controlpacket_set_current_frame\0");
+    cunit_add_test(tests, &test_controlpacket_get_current_frame, "controlpacket_get_current_frame\0");
+    cunit_add_test(tests, &test_controlpacket_set_current_slot, "controlpacket_set_current_slot\0");
+    cunit_add_test(tests, &test_controlpacket_get_current_slot, "controlpacket_get_current_slot\0");
+    cunit_add_test(tests, &test_controlpacket_get_collision_slot, "controlpacket_get_collision_slot\0");
+    cunit_add_test(tests, &test_controlpacket_get_collision_frequency, "controlpacket_get_collision_frequency\0");
+    cunit_add_test(tests, &test_controlpacket_set_hop_count, "controlpacket_set_hop_count\0");
+    cunit_add_test(tests, &test_controlpacket_get_hop_count, "controlpacket_set_hop_count\0");
+    cunit_add_test(tests, &test_controlpacket_set_network_time, "controlpacket_set_network_time\0");
+    cunit_add_test(tests, &test_controlpacket_get_network_time, "controlpacket_get_network_time\0");
+    cunit_add_test(tests, &test_controlpacket_set_init_time, "controlpacket_set_init_time\0");
+    cunit_add_test(tests, &test_controlpacket_get_init_time, "controlpacket_get_init_time\0");
+    cunit_add_test(tests, &test_controlpacket_get_packet_bytestring, "controlpacket_get_packet_bytestring\0");
+    cunit_add_test(tests, &test_controlpacket_construct_packet_from_bytestring, "controlpacket_construct_packet_from_bytestring\0");
 
-    printf("Testing controlpacket_create function.\n");
-    test_controlpacket_create();
-    printf("Test passed.\n");
+    cunit_execute_tests(tests);
 
-    printf("Testing controlpacket_clear function.\n");
-    test_controlpacket_clear();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_current_frame function.\n");
-    test_controlpacket_set_current_frame();
-    printf("Test passed.\n");
-
-    printf("Teting controlpacket_get_current_frame function.\n");
-    test_controlpacket_get_current_frame();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_current_slot function.\n");
-    test_controlpacket_set_current_slot();
-    printf("Test passed.\n");
-    
-    printf("Testing controlpacket_get_current_slot function.\n");
-    test_controlpacket_get_current_slot();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_collision_slot function.\n");
-    test_controlpacket_get_collision_slot();
-    printf("Test passed.\n");
-
-    printf("Testing _controlpacket_get_collision_frequency function.\n");
-    test_controlpacket_get_collision_frequency();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_hop_count function.\n");
-    test_controlpacket_set_hop_count();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_hop_count function.\n");
-    test_controlpacket_get_hop_count();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_network_time function.\n");
-    test_controlpacket_set_network_time();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_network_time function.\n");
-    test_controlpacket_get_network_time();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_set_init_time function.\n");
-    test_controlpacket_set_init_time();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_init_time function.\n");
-    test_controlpacket_get_init_time();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_get_packet_bytestring function.\n");
-    test_controlpacket_get_packet_bytestring();
-    printf("Test passed.\n");
-
-    printf("Testing controlpacket_construct_packet_from_bytestring function.\n");
-    test_controlpacket_construct_packet_from_bytestring();
-    printf("Test passed.\n");
+    cunit_terminate(&tests);
 }
