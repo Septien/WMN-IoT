@@ -7,6 +7,8 @@
 
 #include "MCLMAC.h"
 
+#include "cUnit.h"
+
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte) \
         (((byte) & 0x80) ? '1' : '0'), \
@@ -18,9 +20,7 @@
         (((byte) & 0x02) ? '1' : '0'), \
         (((byte) & 0x01) ? '1' : '0')
 
-
-void test_mclmac_init_MAC_state_machine(void)
-{
+struct statemachine_data {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
     uint8_t radio;
@@ -28,99 +28,87 @@ void test_mclmac_init_MAC_state_machine(void)
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    uint16_t nodeid = 0;
+    uint16_t nodeid;
+};
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
-    assert(ARROW(mclmac)macState.currentState == START);
-    assert(ARROW(mclmac)macState.nextState == NONE);
-
-    MCLMAC_destroy(&mclmac);
+void setup_statemachine(void *arg)
+{
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    data->nodeid = rand();
+    MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
 }
 
-void test_mclmac_set_MAC_state(void)
+void teardown_statemachine(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_destroy(&data->mclmac);
+}
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
+void test_mclmac_init_MAC_state_machine(void *arg)
+{
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+
+    mclmac_init_mac_state_machine(mclmac);
+    assert(mclmac->macState.currentState == START);
+    assert(mclmac->macState.nextState == NONE);
+}
+
+void test_mclmac_set_MAC_state(void *arg)
+{
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
     state_t state = START;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.currentState == state);
+    mclmac_set_MAC_state(mclmac, state);
+    assert(mclmac->macState.currentState == state);
 
     state = INITIALIZATION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.currentState == state);
+    mclmac_set_MAC_state(mclmac, state);
+    assert(mclmac->macState.currentState == state);
 
     state = SYNCHRONIZATION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.currentState == state);
+    mclmac_set_MAC_state(mclmac, state);
+    assert(mclmac->macState.currentState == state);
 
     state = TIMESLOT_AND_CHANNEL_SELECTION;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.currentState == state);
+    mclmac_set_MAC_state(mclmac, state);
+    assert(mclmac->macState.currentState == state);
 
     state = MEDIUM_ACCESS;
-    mclmac_set_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.currentState == state);
-
-    MCLMAC_destroy(&mclmac);
+    mclmac_set_MAC_state(mclmac, state);
+    assert(mclmac->macState.currentState == state);
 }
 
-void test_mclmac_set_next_MAC_state(void)
+void test_mclmac_set_next_MAC_state(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
 
     state_t state = INITIALIZATION;
-    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.nextState == state);
+    mclmac_set_next_MAC_state(mclmac, state);
+    assert(mclmac->macState.nextState == state);
 
     state = SYNCHRONIZATION;
-    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.nextState == state);
+    mclmac_set_next_MAC_state(mclmac, state);
+    assert(mclmac->macState.nextState == state);
 
     state = TIMESLOT_AND_CHANNEL_SELECTION;
-    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.nextState == state);
+    mclmac_set_next_MAC_state(mclmac, state);
+    assert(mclmac->macState.nextState == state);
 
     state = MEDIUM_ACCESS;
-    mclmac_set_next_MAC_state(REFERENCE mclmac, state);
-    assert(ARROW(mclmac)macState.nextState == state);
-
-    MCLMAC_destroy(&mclmac);
+    mclmac_set_next_MAC_state(mclmac, state);
+    assert(mclmac->macState.nextState == state);
 }
 
-void test_mclmac_update_mac_state_machine(void)
+void test_mclmac_update_mac_state_machine(void *arg)
 {
-        MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_mac_state_machine(mclmac);
     /**
      * We begin at the START state, where initialization occurs.
      * From this state, only the INITIALIZATION state is reachable.
@@ -130,42 +118,42 @@ void test_mclmac_update_mac_state_machine(void)
      * If trying to reach the same state, return no transition;
      */
     // If next state is NONE, do nothing, return no transition
-    int ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_NO_TRANSITION);
-    assert(ARROW(mclmac)macState.nextState == NONE);
-    assert(ARROW(mclmac)macState.currentState == START);
+    assert(mclmac->macState.nextState == NONE);
+    assert(mclmac->macState.currentState == START);
 
     // Try to transit from START to any state other than INITIALIZATION, return error.
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == START);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == START);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
 
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == START);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.currentState == START);
+    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == START);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
+    assert(mclmac->macState.currentState == START);
+    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
 
-    mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, FINISH);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == START);
-    assert(ARROW(mclmac)macState.nextState == FINISH);
+    assert(mclmac->macState.currentState == START);
+    assert(mclmac->macState.nextState == FINISH);
 
     // Set next state as INITIALIZATION, return success.
-    mclmac_set_next_MAC_state(REFERENCE mclmac, INITIALIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == INITIALIZATION);
 
     /**
      * We are now at the INITIALIZATION state.
@@ -175,46 +163,46 @@ void test_mclmac_update_mac_state_machine(void)
      * If next state is the same as the current one or NONE, return no transition.
      */
     // Try to reach the same state
-    mclmac_set_next_MAC_state(REFERENCE mclmac, INITIALIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_NO_TRANSITION);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == INITIALIZATION);
 
     // Try to reach start, return error.
-    ARROW(mclmac)macState.nextState = START;
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->macState.nextState = START;
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_INVALID_STATE);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == START);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == START);
 
     // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     // Try to reach MEDIUM_ACCESS, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
 
     // Try to reach FINISH, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, FINISH);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == FINISH);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == FINISH);
 
     // Set next state as SYNCHRONIZATION, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
 
 
     /**
@@ -225,46 +213,46 @@ void test_mclmac_update_mac_state_machine(void)
      * 1f next state is the same as the current one or NONE, return no transition.
      */
     // Try to reach the same state
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_NO_TRANSITION);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
 
     // Try to reach start, return error.
-    ARROW(mclmac)macState.nextState = START;
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->macState.nextState = START;
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_INVALID_STATE);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == START);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == START);
 
     // Set next state as INITIALIZATION, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, INITIALIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == INITIALIZATION);
 
     // Try to reach MEDIUM_ACCESS, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
 
     // Try to reach FINISH, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, FINISH);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == FINISH);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == FINISH);
 
     // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     /**
      * We are now at the TIMESLOT_AND_CHANNEL_SELECTION state.
@@ -274,50 +262,50 @@ void test_mclmac_update_mac_state_machine(void)
      * No other states can be reached from this one.
      */
     // Try to reach the same state
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_NO_TRANSITION);
-    assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     // Try to reach the start state, return error.
-    ARROW(mclmac)macState.nextState = START;
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->macState.nextState = START;
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_INVALID_STATE);
-    assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(ARROW(mclmac)macState.nextState == START);
+    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.nextState == START);
 
     // Try to reach the INITIALIZATION state, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, INITIALIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.nextState == INITIALIZATION);
 
     // Try to reach the FINISH state, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, FINISH);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(ARROW(mclmac)macState.nextState == FINISH);
+    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.nextState == FINISH);
 
     // Try to reach the SYNCHRONIZATION state, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
 
     // Return to TIMESLOT_AND_CHANNEL_SELECTION
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     // Try to reach the MEDIUM_ACCESS state, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
 
     /**
      * We are now at the MEDIUM_ACCESS state.
@@ -327,80 +315,70 @@ void test_mclmac_update_mac_state_machine(void)
      * No other states can be reached from this one.
      */
     // Try to reach the same state
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_NO_TRANSITION);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
 
     // Try to reach the start state, return error.
-    ARROW(mclmac)macState.nextState = START;
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->macState.nextState = START;
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_INVALID_STATE);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)macState.nextState == START);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->macState.nextState == START);
 
     // Try to reach the TIMESLOT_AND_CHANNEL_SELECTION state, return error
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     // Try to reach the INITIALIZATION state, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, INITIALIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == INITIALIZATION);
 
     // Return to MEDIUM_ACCESS
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     // Try to reach the SYNCRHONIZATION state, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, SYNCHRONIZATION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
 
     // Return to MEDIUM_ACCESS
-    mclmac_set_next_MAC_state(REFERENCE mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
+    ret = mclmac_update_mac_state_machine(mclmac);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     // Try to reach the FINISH state, return success
-    mclmac_set_next_MAC_state(REFERENCE mclmac, FINISH);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac_set_next_MAC_state(mclmac, FINISH);
+    ret = mclmac_update_mac_state_machine(mclmac);
     assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == FINISH);
-    assert(ARROW(mclmac)macState.nextState == FINISH);
-
-    MCLMAC_destroy(&mclmac);
+    assert(mclmac->macState.currentState == FINISH);
+    assert(mclmac->macState.nextState == FINISH);
 }
 
-void test_start_state_mac_stmachine(void)
+void test_start_state_mac_stmachine(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
+    mclmac_init_mac_state_machine(mclmac);
 
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
-
-    int ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_update_mac_state_machine(mclmac);
 
     /**
      * We are now at the START state and should execute its functionality.
@@ -410,37 +388,26 @@ void test_start_state_mac_stmachine(void)
      *  -Once the variables are correctly initialize, set the next state to INITIALIZE.
      *  -Return success.
      */
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
     for (int i = 0; i < 8; i++)
-        assert(ARROW(mclmac)_frequencies[i] >= 902000000 && ARROW(mclmac)_frequencies[i] <= 928000000);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
-    assert(ARROW(mclmac)_wakeup_frame > 0);
-    assert(ARROW(mclmac)_is_first_node == false);
-
-    MCLMAC_destroy(&mclmac);
-    
+        assert(mclmac->_frequencies[i] >= 902000000 && mclmac->_frequencies[i] <= 928000000);
+    assert(mclmac->macState.nextState == INITIALIZATION);
+    assert(mclmac->_wakeup_frame > 0);
+    assert(mclmac->_is_first_node == false);    
 }
 
-void test_initialization_state_mac_stmachine(void)
+void test_initialization_state_mac_stmachine(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_mac_state_machine(mclmac);
     // Pass to START state and execute
-    int ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_update_mac_state_machine(mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     // Pass to INITIALIZATION state
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
     /**
      * We are now at the INITIALIZATION state.
      * This state hears for cf packets on the network; once such packet is found, 
@@ -457,53 +424,43 @@ void test_initialization_state_mac_stmachine(void)
      *      -If timer expires, both nextState and currentState should remain unchanged.
      *      -Return success if packet is found.
      */
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     // Assert the frequency is cf.
     // Assert radio is in standby
     // Make it fail by expiring the initialization timeout 
-    ARROW(mclmac)_init_state = 0;
+    mclmac->_init_state = 0;
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == INITIALIZATION);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
     // Make it success
-    ARROW(mclmac)_init_state = 1;
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_init_state = 1;
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.currentState == INITIALIZATION);
-
-    MCLMAC_destroy(&mclmac);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == INITIALIZATION);
 }
 
-void test_synchronization_state_mac_stmachine(void)
+void test_synchronization_state_mac_stmachine(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_mac_state_machine(mclmac);
 
     /*Execute START state */
-    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     /* Execute INITIALIZATION state, the first time will fail. */
-    ARROW(mclmac)_init_state = 1;
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->_init_state = 1;
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
-    ARROW(mclmac)_initTime = rand() % 100;
-    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
-    ARROW(mclmac)_hopCount = rand() % 10;
-    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
-    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
+    mclmac->_initTime = rand() % 100;
+    mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
+    mclmac->_hopCount = rand() % 10;
+    ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /**
      * We are now at the SYNCHRONIZATION state.
      * The purpose of this state is to synchronize the node with the network
@@ -517,59 +474,49 @@ void test_synchronization_state_mac_stmachine(void)
      * wakeup_frame. When the current_frame equals wakeup_frame - 1,
      * pass to the next state, TIMESLOT_AND_CHANNEL_SELECTION.
      */
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    //assert(ARROW(mclmac)_networkTime > 0);
-    assert(ARROW(mclmac)_initTime > 0);
-    assert(ARROW(mclmac)_hopCount > 0);
-    assert(ARROW(mclmac)macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    //assert(mclmac->_networkTime > 0);
+    assert(mclmac->_initTime > 0);
+    assert(mclmac->_hopCount > 0);
+    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
     {
-        printf("For the frequency %d, we have:\n", ARROW(mclmac)_frequencies[i]);
+        printf("For the frequency %d, we have:\n", mclmac->_frequencies[i]);
         for (int j = 0; j < m; j++)
         {
-            printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(ARROW(mclmac)_occupied_frequencies_slots[i][j]));
+            printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_occupied_frequencies_slots[i][j]));
         }
         printf("\n");
     }
-
-    MCLMAC_destroy(&mclmac);
 }
 
-void test_timeslot_frequency_state_mac_stmachine(void)
+void test_timeslot_frequency_state_mac_stmachine(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_mac_state_machine(mclmac);
 
     /*Execute START state */
-    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     /* Execute INITIALIZATION state, the first time will fail. */
-    ARROW(mclmac)_init_state = 1;
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->_init_state = 1;
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
-    ARROW(mclmac)_initTime = rand() % 100;
-    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
-    ARROW(mclmac)_hopCount = rand() % 10;
-    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
-    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
+    mclmac->_initTime = rand() % 100;
+    mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
+    mclmac->_hopCount = rand() % 10;
+    ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     /**
      * We are now at the TIMESLOT_AND_CHANNEL_SELECTION state.
@@ -597,12 +544,12 @@ void test_timeslot_frequency_state_mac_stmachine(void)
     {
         for (int j = 0; j < m; j++)
         {
-            ARROW(mclmac)_occupied_frequencies_slots[i][j] = 0xff;
+            mclmac->_occupied_frequencies_slots[i][j] = 0xff;
         }
     }
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
 
     /* For the case when there is one available slot. */
     uint8_t pos = rand() % 8;
@@ -613,50 +560,40 @@ void test_timeslot_frequency_state_mac_stmachine(void)
     {
         for (int j = 0; j < m; j++)
         {
-            ARROW(mclmac)_occupied_frequencies_slots[i][j] = slot;
+            mclmac->_occupied_frequencies_slots[i][j] = slot;
         }
     }
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == MEDIUM_ACCESS);
-    assert(ARROW(ARROW(mclmac)mac)selectedSlot == pos);
-
-    MCLMAC_destroy(&mclmac);
+    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
+    assert(ARROW(mclmac->mac)selectedSlot == pos);
 }
 
-void test_medium_access_state_stmachine(void)
+void test_medium_access_state_stmachine(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_mac_state_machine(mclmac);
 
     /*Execute START state */
-    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     /* Execute INITIALIZATION state, the first time will fail. */
-    ARROW(mclmac)_init_state = 1;
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    mclmac->_init_state = 1;
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
-    ARROW(mclmac)_initTime = rand() % 100;
-    ARROW(mclmac)_networkTime = (rand() % 1000) + ARROW(mclmac)_initTime;
-    ARROW(mclmac)_hopCount = rand() % 10;
-    ARROW(ARROW(ARROW(mclmac)mac)frame)current_frame = rand() % 10;
-    ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
+    mclmac->_initTime = rand() % 100;
+    mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
+    mclmac->_hopCount = rand() % 10;
+    ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
+    ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     /* Execute the TIMESLOT_AND_CHANNEL_SELECTION state, assuring a free slot */
     uint8_t pos = rand() % 8;
@@ -669,11 +606,11 @@ void test_medium_access_state_stmachine(void)
     {
         for (int j = 0; j < m; j++)
         {
-            ARROW(mclmac)_occupied_frequencies_slots[i][j] = slot;
+            mclmac->_occupied_frequencies_slots[i][j] = slot;
         }
     }
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     /**
      * We are now at the MEDIUM_ACCESS state, which will control the transmission and reception
@@ -698,143 +635,131 @@ void test_medium_access_state_stmachine(void)
      *            error; set the next state to INITIALIZATION and end the cycle.
      */
     // Collision error.
-    ARROW(mclmac)_trues = 0;
-    ARROW(mclmac)_trues5 = 0;
-    ARROW(mclmac)_state_cf = 2;
-    ARROW(mclmac)_state_ctrl = 3;
-    mclmac_set_current_slot(REFERENCE mclmac, 1U);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_trues = 0;
+    mclmac->_trues5 = 0;
+    mclmac->_state_cf = 2;
+    mclmac->_state_ctrl = 3;
+    mclmac_set_current_slot(mclmac, 1U);
+    mclmac_set_current_cf_slot(mclmac, 1U);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == SYNCHRONIZATION);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
-    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(mclmac->powerMode.nextState == FINISHP);
 
     // Synchronization error, slot different
-    ARROW(mclmac)_trues = 0;
-    ARROW(mclmac)_trues5 = 0;
-    ARROW(mclmac)_state_cf = 2;
-    ARROW(mclmac)_state_ctrl = 4;
-    mclmac_set_current_slot(REFERENCE mclmac, 1U);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_trues = 0;
+    mclmac->_trues5 = 0;
+    mclmac->_state_cf = 2;
+    mclmac->_state_ctrl = 4;
+    mclmac_set_current_slot(mclmac, 1U);
+    mclmac_set_current_cf_slot(mclmac, 1U);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
-    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(mclmac->macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(mclmac->powerMode.nextState == FINISHP);
 
     // Synchronization error, frame different
-    ARROW(mclmac)_trues = 0;
-    ARROW(mclmac)_trues5 = 0;
-    ARROW(mclmac)_state_cf = 2;
-    ARROW(mclmac)_state_ctrl = 5;
-    mclmac_set_current_slot(REFERENCE mclmac, 1U);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_trues = 0;
+    mclmac->_trues5 = 0;
+    mclmac->_state_cf = 2;
+    mclmac->_state_ctrl = 5;
+    mclmac_set_current_slot(mclmac, 1U);
+    mclmac_set_current_cf_slot(mclmac, 1U);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
-    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(mclmac->macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(mclmac->powerMode.nextState == FINISHP);
     
     // Synchronization error, network time different
-    ARROW(mclmac)_trues = 0;
-    ARROW(mclmac)_trues5 = 0;
-    ARROW(mclmac)_state_cf = 2;
-    ARROW(mclmac)_state_ctrl = 6;
-    mclmac_set_current_slot(REFERENCE mclmac, 1U);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_trues = 0;
+    mclmac->_trues5 = 0;
+    mclmac->_state_cf = 2;
+    mclmac->_state_ctrl = 6;
+    mclmac_set_current_slot(mclmac, 1U);
+    mclmac_set_current_cf_slot(mclmac, 1U);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)macState.nextState == INITIALIZATION);
-    assert(ARROW(mclmac)macState.currentState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac)powerMode.currentState == FINISHP);
-    assert(ARROW(mclmac)powerMode.nextState == FINISHP);
+    assert(mclmac->macState.nextState == INITIALIZATION);
+    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
+    assert(mclmac->powerMode.currentState == FINISHP);
+    assert(mclmac->powerMode.nextState == FINISHP);
 
     // Collision detected, two packets are received
     /*printf("Collision detected.\n");
-    ARROW(mclmac)_trues = 0;
-    ARROW(mclmac)_trues5 = 0;
-    ARROW(mclmac)_state_cf = 5;
-    ARROW(mclmac)_state_ctrl = 0;    
-    mclmac_set_current_slot(REFERENCE mclmac, 1U);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 1U);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_trues = 0;
+    mclmac->_trues5 = 0;
+    mclmac->_state_cf = 5;
+    mclmac->_state_ctrl = 0;    
+    mclmac_set_current_slot(mclmac, 1U);
+    mclmac_set_current_cf_slot(mclmac, 1U);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(ARROW(mclmac)mac)_collisionDetected == true);
-    assert(ARROW(ARROW(mclmac)mac)_collisionSlot == ARROW(ARROW(ARROW(mclmac)mac)frame)current_slot);
-    assert(ARROW(ARROW(mclmac)mac)_collisionFrequency == ARROW(ARROW(mclmac)mac)receiveChannel);
-    assert(ARROW(ARROW(mclmac)mac)_destination_id == 0);*/
+    assert(ARROW(mclmac->mac)_collisionDetected == true);
+    assert(ARROW(mclmac->mac)_collisionSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    assert(ARROW(mclmac->mac)_collisionFrequency == ARROW(mclmac->mac)receiveChannel);
+    assert(ARROW(mclmac->mac)_destination_id == 0);*/
 
     // Collision detected, receive and transmit at the same time
-    ARROW(mclmac)_trues = 0;
-    ARROW(mclmac)_trues5 = 0;
-    ARROW(mclmac)_state_cf = 2;
-    ARROW(mclmac)_state_ctrl = 0;    
-    mclmac_set_current_slot(REFERENCE mclmac, 0);
-    mclmac_set_current_cf_slot(REFERENCE mclmac, 0);
-    mclmac_set_next_MAC_state(REFERENCE mclmac, MEDIUM_ACCESS);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_trues = 0;
+    mclmac->_trues5 = 0;
+    mclmac->_state_cf = 2;
+    mclmac->_state_ctrl = 0;    
+    mclmac_set_current_slot(mclmac, 0);
+    mclmac_set_current_cf_slot(mclmac, 0);
+    mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(ARROW(mclmac)mac)_destination_id == 0);
-
-    MCLMAC_destroy(&mclmac);
+    assert(ARROW(mclmac->mac)_destination_id == 0);
 }
 
-void test_first_node_case_mac(void)
+void test_first_node_case_mac(void *arg)
 {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
-    uint8_t radio;
-#endif
-#ifdef __RIOT__
-    sx127x_t radio;
-#endif
-    uint16_t nodeid = 0;
+    struct statemachine_data *data = (struct statemachine_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    MCLMAC_init(&mclmac, &radio, nodeid);
-
-    mclmac_init_mac_state_machine(REFERENCE mclmac);
+    mclmac_init_mac_state_machine(mclmac);
 
     // Execute the START state
-    int ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
+    int ret = mclmac_execute_mac_state_machine(mclmac);
+    ret = mclmac_update_mac_state_machine(mclmac);
 
     // Execute the INITIALIZATION state
-    ARROW(mclmac)_init_state = 0;
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_init_state = 0;
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)_is_first_node == true);
+    assert(mclmac->_is_first_node == true);
 
     // Execute the SYNCHRONIZATION state
-    ARROW(mclmac)_hopCount = 1;
-    ret = mclmac_update_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    mclmac->_hopCount = 1;
+    ret = mclmac_update_mac_state_machine(mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac)_initTime > 0);
-    printf("Init time = %d\n", ARROW(mclmac)_initTime);
-    assert(ARROW(mclmac)_hopCount == 0);
-    assert(ARROW(mclmac)_is_first_node == true);
+    assert(mclmac->_initTime > 0);
+    printf("Init time = %d\n", mclmac->_initTime);
+    assert(mclmac->_hopCount == 0);
+    assert(mclmac->_is_first_node == true);
 
     // Execute the TIMESLOT_AND_CHANNEL_SELECTION state
-    ARROW(ARROW(mclmac)mac)selectedSlot = 1; // Just store a value different to zero, to make the test fail
-    mclmac_update_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    ARROW(mclmac->mac)selectedSlot = 1; // Just store a value different to zero, to make the test fail
+    mclmac_update_mac_state_machine(mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(ARROW(mclmac)mac)selectedSlot == 0);
-    assert(ARROW(ARROW(mclmac)mac)transmitChannel == ARROW(mclmac)_frequencies[0]);
+    assert(ARROW(mclmac->mac)selectedSlot == 0);
+    assert(ARROW(mclmac->mac)transmitChannel == mclmac->_frequencies[0]);
 
-    /*mclmac_update_mac_state_machine(REFERENCE mclmac);
-    ret = mclmac_execute_mac_state_machine(REFERENCE mclmac);
+    /*mclmac_update_mac_state_machine(mclmac);
+    ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);*/
-
-    MCLMAC_destroy(&mclmac);
 }
 
 void executetests_mac_statemachine(void)
@@ -842,49 +767,26 @@ void executetests_mac_statemachine(void)
     init_queues();
     timeout_init();
 
-    printf("Testing mclmac_init_MAC_state_machine function.\n");
-    test_mclmac_init_MAC_state_machine();
-    printf("Test passed.\n");
+    cUnit_t *tests;
+    struct statemachine_data data;
 
-    printf("Testing mclmac_set_MAC_state function.\n");
-    test_mclmac_set_MAC_state();
-    printf("Test passed.\n");
+    cunit_init(&tests, &setup_statemachine, &teardown_statemachine, (void *)&data);
 
-    printf("Testing mclmac_set_next_MAC_state function.\n");
-    test_mclmac_set_next_MAC_state();
-    printf("Test passed.\n");
+    cunit_add_test(tests, &test_mclmac_init_MAC_state_machine, "mclmac_init_MAC_state_machine\0");
+    cunit_add_test(tests, &test_mclmac_set_MAC_state, "mclmac_set_MAC_state\0");
+    cunit_add_test(tests, &test_mclmac_set_next_MAC_state, "mclmac_set_next_MAC_state\0");
+    cunit_add_test(tests, &test_mclmac_update_mac_state_machine, "mclmac_update_mac_state_machine\0");
+    cunit_add_test(tests, &test_start_state_mac_stmachine, "START state.\0");
+    cunit_add_test(tests, &test_initialization_state_mac_stmachine, "INITIALIZATION state.\0");
+    cunit_add_test(tests, &test_synchronization_state_mac_stmachine, "SYNCHRONIZATION state.\0");
+    cunit_add_test(tests, &test_timeslot_frequency_state_mac_stmachine, "TIMESLOT_AND_CHANNEL_SELECTION state.\0");
+    cunit_add_test(tests, &test_medium_access_state_stmachine, "MEDIUM_ACCESS state.\0");
+    cunit_add_test(tests, &test_first_node_case_mac, "network's first node case\0");
 
-    printf("Testing mclmac_udpate_mac_state_machine function.\n");
-    test_mclmac_update_mac_state_machine();
-    printf("Test passed.\n");
+    cunit_execute_tests(tests);
 
-    printf("Testing mclmac_execute_state_machine function.\n");
-    printf("Testing the START state.\n");
-    test_start_state_mac_stmachine();
-    printf("Test passed.\n");
-
-    printf("Testing the INITIALIZATION state.\n");
-    test_initialization_state_mac_stmachine();
-    printf("Test passed.\n");
-
-    printf("Testing the SYNCHRONIZATION state.\n");
-    test_synchronization_state_mac_stmachine();
-    printf("Test passed.\n");
-
-    printf("Testing the TIMESLOT_AND_CHANNEL_SELECTION state.\n");
-    test_timeslot_frequency_state_mac_stmachine();
-    printf("Test passed.\n");
-
-    printf("Testing the MEDIUM_ACCESS state.\n");
-    test_medium_access_state_stmachine();
-    printf("Test passed.\n");
-
-    printf("Testing the network's first node case.\n");
-    test_first_node_case_mac();
-    printf("Test passed.\n");
+    cunit_terminate(&tests);
 
     timeout_done();
     end_queues();
-
-    return;
 }
