@@ -24,7 +24,7 @@ struct packethandlers_data{
 void setup_packet_handlers(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
-    data->nodeid = 0;
+    data->nodeid = rand();
     MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
 }
 

@@ -26,7 +26,7 @@ struct mclmac_data {
 void setup_mclmac(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    data->nodeid = 0;
+    data->nodeid = rand();
     MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
 }
 
