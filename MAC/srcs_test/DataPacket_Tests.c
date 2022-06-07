@@ -7,154 +7,166 @@
 
 #include "DataPacket.h"
 
+#include "cUnit.h"
 
-void test_datapacket_init(void)
-{
+struct datapacket_data {
     DataPacket_t SINGLE_POINTER datapkt;
-    datapacket_init(&datapkt);
-#ifdef __LINUX__
-    assert(datapkt != NULL);
-    assert(datapkt->data == NULL);
-#endif
-    assert(ARROW(datapkt)type == -1);
-    assert(ARROW(datapkt)destination_id == 0);
-    assert(ARROW(datapkt)size == 0);
-#ifdef __RIOT__
-    assert(datapkt.data.size == 0);
-#endif
+};
 
-    datapacket_destroy(&datapkt);
+void setup_datapacket(void *arg)
+{
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+    datapacket_init(&data->datapkt);
 }
 
-void test_datapacket_destroy(void)
+void teardown_datapacket(void *arg)
 {
-    DataPacket_t SINGLE_POINTER datapkt;
-    datapacket_init(&datapkt);
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+    datapacket_destroy(&data->datapkt);
+}
 
-    datapacket_destroy(&datapkt);
+void test_datapacket_init(void *arg)
+{
+    struct datapacket_data *data = (struct datapacket_data *)arg;
 #ifdef __LINUX__
-    assert(datapkt == NULL);
+    assert(data->datapkt != NULL);
+    assert(data->datapkt->data == NULL);
 #endif
+    assert(ARROW(data->datapkt)type == -1);
+    assert(ARROW(data->datapkt)destination_id == 0);
+    assert(ARROW(data->datapkt)size == 0);
 #ifdef __RIOT__
-    assert(datapkt.type == -1);
-    assert(datapkt.destination_id == 0);
-    assert(datapkt.size == 0);
-    assert(datapkt.data.size == 0);
+    assert(data->datapkt.data.size == 0);
 #endif
 }
 
-void test_datapacket_create(void)
+void test_datapacket_destroy(void *arg)
 {
-    DataPacket_t SINGLE_POINTER datapkt;
-    datapacket_init(&datapkt);
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+
+    datapacket_destroy(&data->datapkt);
+#ifdef __LINUX__
+    assert(data->datapkt == NULL);
+#endif
+#ifdef __RIOT__
+    assert(data->datapkt.type == -1);
+    assert(data->datapkt.destination_id == 0);
+    assert(data->datapkt.size == 0);
+    assert(data->datapkt.data.size == 0);
+#endif
+    datapacket_init(&data->datapkt);
+}
+
+void test_datapacket_create(void *arg)
+{
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+    DataPacket_t *datapkt = REFERENCE data->datapkt;
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 4;
-    ARRAY data;
+    ARRAY data_array;
 #ifdef __LINUX__
-    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    data_array = (uint8_t *)malloc(size * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(&data, size);
+    create_array(&data_array, size);
 #endif
     for (uint i = 0; i < size; i++)
-        WRITE_ARRAY(REFERENCE data, rand(), i);
+        WRITE_ARRAY(REFERENCE data_array, rand(), i);
 
-    datapacket_create(REFERENCE datapkt, type, destination_id, &data, size);
-    assert(ARROW(datapkt)destination_id == destination_id);
-    assert(ARROW(datapkt)size == size);
-    assert(ARROW(datapkt)type == type);
+    datapacket_create(datapkt, type, destination_id, &data_array, size);
+    assert(datapkt->destination_id == destination_id);
+    assert(datapkt->size == size);
+    assert(datapkt->type == type);
 #ifdef __LINUX__
     assert(datapkt->data != NULL);
 #endif
 #ifdef __RIOT__
-    assert(datapkt.data.size > 0);
+    assert(datapkt->data.size > 0);
 #endif
     uint i = 0;
     for (i = 0; i < size; i++)
-        assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == READ_ARRAY(REFERENCE data, i));
+        assert(READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE data_array, i));
 
 #ifdef __LINUX__
-    free(data);
+    free(data_array);
 #endif
 #ifdef __RIOT__
-    free_array(&data);
+    free_array(&data_array);
 #endif
-    datapacket_destroy(&datapkt);
 }
 
-void test_datapacket_clear(void)
+void test_datapacket_clear(void *arg)
 {
-    DataPacket_t SINGLE_POINTER datapkt;
-    datapacket_init(&datapkt);
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+    DataPacket_t *datapkt = REFERENCE data->datapkt;
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     size = (size == 0 ? 1 : size);
     int8_t type = rand() % 4;
-    ARRAY data;
+    ARRAY data_array;
 #ifdef __LINUX__
-    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    data_array = (uint8_t *)malloc(size * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(&data, size);
+    create_array(&data_array, size);
 #endif
     for (uint i = 0; i < size; i++)
-        WRITE_ARRAY(REFERENCE data, rand(), i);
+        WRITE_ARRAY(REFERENCE data_array, rand(), i);
 
-    datapacket_create(REFERENCE datapkt, type, destination_id, &data, size);
+    datapacket_create(datapkt, type, destination_id, &data_array, size);
     
-    datapacket_clear(REFERENCE datapkt);
-    assert(ARROW(datapkt)destination_id == 0);
-    assert(ARROW(datapkt)size == 0);
-    assert(ARROW(datapkt)type == -1);
+    datapacket_clear( datapkt);
+    assert(datapkt->destination_id == 0);
+    assert(datapkt->size == 0);
+    assert(datapkt->type == -1);
 #ifdef __LINUX__
     assert(datapkt->data == NULL);
 #endif
 #ifdef __RIOT__
-    assert(datapkt.data.size == 0);
+    assert(datapkt->data.size == 0);
 #endif
 
 #ifdef __LINUX__
-    free(data);
+    free(data_array);
 #endif
 #ifdef __RIOT__
-    free_array(&data);
+    free_array(&data_array);
 #endif
-    datapacket_destroy(&datapkt);
 }
 
-void test_datapacket_get_packet_bytestring(void)
+void test_datapacket_get_packet_bytestring(void *arg)
 {
-    DataPacket_t SINGLE_POINTER datapkt;
-    datapacket_init(&datapkt);
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+    DataPacket_t *datapkt = REFERENCE data->datapkt;
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 10;
-    ARRAY data;
+    ARRAY data_array;
 #ifdef __LINUX__
-    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    data_array = (uint8_t *)malloc(size * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(&data, size);
+    create_array(&data_array, size);
 #endif
     uint i;
     for (i = 0; i < size; i++)
-        WRITE_ARRAY(REFERENCE data, rand(), i);
+        WRITE_ARRAY(REFERENCE data_array, rand(), i);
 
-    datapacket_create(REFERENCE datapkt, type, destination_id, &data, size);
+    datapacket_create(datapkt, type, destination_id, &data_array, size);
 
     ARRAY byteString;
 
-    datapacket_get_packet_bytestring(REFERENCE datapkt, &byteString);
+    datapacket_get_packet_bytestring(datapkt, &byteString);
     assert(READ_ARRAY(REFERENCE byteString, 0) == type);
     assert(READ_ARRAY(REFERENCE byteString, 1) == (destination_id & 0xff00) >> 8);
     assert(READ_ARRAY(REFERENCE byteString, 2) == (destination_id & 0x00ff));
     assert(READ_ARRAY(REFERENCE byteString, 3) == size);
     for (i = 0; i < size; i++)
-        assert(READ_ARRAY(REFERENCE byteString, i + 4) == READ_ARRAY(REFERENCE data, i));
+        assert(READ_ARRAY(REFERENCE byteString, i + 4) == READ_ARRAY(REFERENCE data_array, i));
     if (size < PACKET_SIZE_MAC - 4)
     {
         for (; i < PACKET_SIZE_MAC - 4; i++)
@@ -162,38 +174,36 @@ void test_datapacket_get_packet_bytestring(void)
     }
 
 #ifdef __LINUX__
-    free(data);
+    free(data_array);
     free(byteString);
 #endif
 #ifdef __RIOT__
-    free_array(&data);
+    free_array(&data_array);
     free_array(&byteString);
 #endif
-
-    datapacket_destroy(&datapkt);
 }
 
-void test_datapacket_construct_from_bytestring(void)
+void test_datapacket_construct_from_bytestring(void *arg)
 {
-    DataPacket_t SINGLE_POINTER datapkt;
-    datapacket_init(&datapkt);
+    struct datapacket_data *data = (struct datapacket_data *)arg;
+    DataPacket_t *datapkt = REFERENCE data->datapkt;
 
     uint16_t destination_id = rand();
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 10;
-    ARRAY data;
+    ARRAY data_array;
     ARRAY byteString;
 #ifdef __LINUX__
-    data = (uint8_t *)malloc(size * sizeof(uint8_t));
+    data_array = (uint8_t *)malloc(size * sizeof(uint8_t));
     byteString = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    create_array(&data, size);
+    create_array(&data_array, size);
     create_array(&byteString, PACKET_SIZE_MAC);
 #endif
     uint i;
     for (i = 0; i < size; i++)
-        WRITE_ARRAY(REFERENCE data, rand(), i);
+        WRITE_ARRAY(REFERENCE data_array, rand(), i);
 
     WRITE_ARRAY(REFERENCE byteString, type, 0);
     WRITE_ARRAY(REFERENCE byteString, (destination_id & 0xff00) >> 8, 1);
@@ -201,7 +211,7 @@ void test_datapacket_construct_from_bytestring(void)
     WRITE_ARRAY(REFERENCE byteString, size, 3);
     for (i = 0; i < size; i++)
     {
-        uint8_t e = READ_ARRAY(REFERENCE data, i);
+        uint8_t e = READ_ARRAY(REFERENCE data_array, i);
         WRITE_ARRAY(REFERENCE byteString, e, i + 4);
     }
     if (size < PACKET_SIZE_MAC - 4)
@@ -209,53 +219,41 @@ void test_datapacket_construct_from_bytestring(void)
         for (; i < PACKET_SIZE_MAC - 4; i++)
             WRITE_ARRAY(REFERENCE byteString, 0, i);
     }
-    datapacket_construct_from_bytestring(REFERENCE datapkt, &byteString);
-    assert(ARROW(datapkt)destination_id == destination_id);
-    assert(ARROW(datapkt)size == size);
-    assert(ARROW(datapkt)type == type);
+    datapacket_construct_from_bytestring(datapkt, &byteString);
+    assert(datapkt->destination_id == destination_id);
+    assert(datapkt->size == size);
+    assert(datapkt->type == type);
     for (i = 0; i < size; i++)
     {
-        assert(READ_ARRAY(REFERENCE ARROW(datapkt)data, i) == READ_ARRAY(REFERENCE byteString, i + 4));
+        assert(READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE byteString, i + 4));
     }
 
 #ifdef __LINUX__
-    free(data);
+    free(data_array);
     free(byteString);
 #endif
 #ifdef __RIOT__
-    free_array(&data);
+    free_array(&data_array);
     free_array(&byteString);
 #endif
-
-    datapacket_destroy(&datapkt);
 }
 
 void executeTestsDP(void)
 {
 
-    srand(time(NULL));
-    
-    printf("Testing datapacket_init function.\n");
-    test_datapacket_init();
-    printf("Test passed.\n");
+    cUnit_t *tests;
+    struct datapacket_data data;
 
-    printf("Testing the datapacket_destroy function.\n");
-    test_datapacket_init();
-    printf("Test passed.\n");
+    cunit_init(&tests, &setup_datapacket, &teardown_datapacket, (void *)&data);
 
-    printf("Testing the datapacket_create function.\n");
-    test_datapacket_create();
-    printf("Test passed.\n");
+    cunit_add_test(tests, &test_datapacket_init,    "datapacket_init\0");
+    cunit_add_test(tests, &test_datapacket_destroy, "datapacket_destroy\0");
+    cunit_add_test(tests, &test_datapacket_create,  "datapacket_create\0");
+    cunit_add_test(tests, &test_datapacket_clear,   "datapacket_clear\0");
+    cunit_add_test(tests, &test_datapacket_get_packet_bytestring,       "datapacket_get_packet_bytestring\0");
+    cunit_add_test(tests, &test_datapacket_construct_from_bytestring,   "datapacket_construct_from_bytestring\0");
 
-    printf("Testing the datapacket_clear function.\n");
-    test_datapacket_clear();
-    printf("Test passed.\n");
+    cunit_execute_tests(tests);
 
-    printf("Teting datapacket_get_packet_bytestring function.\n");
-    test_datapacket_get_packet_bytestring();
-    printf("Test passed.\n");
-
-    printf("Test datapacket_construct_from_bytestring function.\n");
-    test_datapacket_construct_from_bytestring();
-    printf("Test passed.\n");
+    cunit_terminate(&tests);
 }

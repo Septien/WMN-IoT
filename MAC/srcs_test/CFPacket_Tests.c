@@ -16,7 +16,6 @@ struct cfpacket_data {
 void setup_cfpacket(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    printf("Hello\n");
     cfpacket_init(&data->cfpkt);
 }
 
