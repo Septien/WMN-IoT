@@ -20,14 +20,15 @@ struct mclmac_data {
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    uint16_t nodeid;
+    uint64_t node_id[2];
 };
 
 void setup_mclmac(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    data->nodeid = rand();
-    MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
+    data->node_id[0] = rand();
+    data->node_id[1] = rand();
+    MCLMAC_init(&data->mclmac, &data->radio, data->node_id);
 }
 
 void teardown_mclmac(void *arg)
@@ -44,7 +45,8 @@ void test_MCLMAC_init(void *arg)
     assert(data->mclmac != NULL);
     assert(data->mclmac->mac != NULL);
 #endif
-    assert(ARROW(data->mclmac)_nodeID == data->nodeid);
+    assert(ARROW(data->mclmac)_node_id[0] == data->node_id[0]);
+    assert(ARROW(data->mclmac)_node_id[1] == data->node_id[1]);
     assert(ARROW(data->mclmac)_networkTime == 0);
     assert(ARROW(data->mclmac)_nSlots == MAX_NUMBER_SLOTS);
     assert(ARROW(data->mclmac)_nChannels == MAX_NUMBER_FREQS);
@@ -78,7 +80,7 @@ void test_MCLMAC_destroy(void *arg)
 #ifdef __LINUX__
     assert(data->mclmac == NULL);
 #endif
-    MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
+    MCLMAC_init(&data->mclmac, &data->radio, data->node_id);
 }
 
 void test_MCLMAC_clear(void *arg)
@@ -178,10 +180,15 @@ void test_mclmac_get_nodeid(void *arg)
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
-        uint16_t nodeid = (uint16_t)rand();
-        mclmac->_nodeID = nodeid;
-        uint16_t nodeidR = mclmac_get_nodeid(mclmac);
-        assert(nodeidR == nodeid);
+        uint64_t nodeid[2] = {0};
+        nodeid[0] = rand();
+        nodeid[1] = rand();
+        mclmac->_node_id[0] = nodeid[0];
+        mclmac->_node_id[1] = nodeid[1];
+        uint64_t node_id_r[2] = {0};
+        mclmac_get_nodeid(mclmac, node_id_r);
+        assert(node_id_r[0] == nodeid[0]);
+        assert(node_id_r[1] == nodeid[1]);
     }
 }
 
@@ -194,10 +201,12 @@ void test_mclmac_set_transmiterid(void *arg)
      * Set the sender id, it should comply that id is different to the
      * current node's id.
      */
-    uint16_t senderid = rand() % 16;
-    senderid = (senderid == mclmac->_nodeID ? senderid + 1 : senderid);
-    mclmac_set_transmiterid(mclmac, senderid);
-    assert(ARROW(mclmac->mac)transmiterID == senderid);
+    uint64_t sender_id[2] = {0};
+    sender_id[0] = rand();
+    sender_id[1] = rand();
+    mclmac_set_transmiterid(mclmac, sender_id);
+    assert(ARROW(mclmac->mac)transmitter_id[0] == sender_id[0]);
+    assert(ARROW(mclmac->mac)transmitter_id[1] == sender_id[1]);
 }
 
 void test_mclmac_set_selected_slot(void *arg)
@@ -506,13 +515,31 @@ void _read_queue(MCLMAC_t *mclmac)
     assert(ARROW(mclmac->mac)_last_send_message == 1);
     assert(ARROW(mclmac->mac)_packets_to_send_message == 1);
     DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[0];
-    uint16_t destination_id = (((uint16_t)message[1]) << 8) | (message[2]);
-    assert(pkt->destination_id == destination_id);
+    // Incoming message
     assert(pkt->type == message[0]);
+    uint64_t destination_id[2] = {0};
+    destination_id[0] = ((uint64_t)message[1]) << 56;
+    destination_id[0] = ((uint64_t)message[2]) << 48;
+    destination_id[0] = ((uint64_t)message[3]) << 40;
+    destination_id[0] = ((uint64_t)message[4]) << 32;
+    destination_id[0] = ((uint64_t)message[5]) << 24;
+    destination_id[0] = ((uint64_t)message[6]) << 16;
+    destination_id[0] = ((uint64_t)message[7]) << 8;
+    destination_id[0] = ((uint64_t)message[8]);
+    destination_id[1] = ((uint64_t)message[9])  << 56;
+    destination_id[1] = ((uint64_t)message[10]) << 48;
+    destination_id[1] = ((uint64_t)message[11]) << 40;
+    destination_id[1] = ((uint64_t)message[12]) << 32;
+    destination_id[1] = ((uint64_t)message[13]) << 24;
+    destination_id[1] = ((uint64_t)message[14]) << 16;
+    destination_id[1] = ((uint64_t)message[15]) << 8;
+    destination_id[1] = ((uint64_t)message[16]);
+    assert(pkt->destination_id[0] == destination_id[0]);
+    assert(pkt->destination_id[1] == destination_id[1]);
     // Only the packet's data
-    assert(pkt->size == message[3]);
+    assert(pkt->size == message[17]);
     for (uint i = 0; i < pkt->size; i++)
-        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
+        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
     // Type 1, a control packet
     message[0] = 2;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
@@ -522,7 +549,6 @@ void _read_queue(MCLMAC_t *mclmac)
     assert(ARROW(mclmac->mac)_last_send_control == 1);
     assert(ARROW(mclmac->mac)_packets_to_send_control == 1);
     pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
-    assert(pkt->destination_id == destination_id);
     assert(pkt->size == message[3]);
     for (uint i = 0; i < pkt->size; i++)
         assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
@@ -640,7 +666,9 @@ void _write_queue(MCLMAC_t *mclmac)
     */
     // Fill the packet
     DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[0];
-    uint16_t destination_id = rand();
+    uint64_t destination_id[2] = {0};
+    destination_id[0] = rand();
+    destination_id[1] = rand();
     uint8_t type = rand() % 3;
     uint8_t size = rand();
     ARRAY data;
@@ -663,7 +691,8 @@ void _write_queue(MCLMAC_t *mclmac)
     assert(ARROW(mclmac->mac)_first_received == 1);
     assert(ARROW(mclmac->mac)_last_received == 1);
     assert(pkt->type == -1);
-    assert(pkt->destination_id == 0);
+    assert(pkt->destination_id[0] == 0);
+    assert(pkt->destination_id[1] == 0);
     assert(pkt->size == 0);
 #ifdef __LINUX__
     assert(pkt->data == NULL);
@@ -710,7 +739,8 @@ void _write_queue(MCLMAC_t *mclmac)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
         assert(pkt->type == -1);
-        assert(pkt->destination_id == 0);
+        assert(pkt->destination_id[0] == 0);
+        assert(pkt->destination_id[1] == 0);
         assert(pkt->size == 0);
 #ifdef __LINUX__
         assert(pkt->data == NULL);
@@ -801,26 +831,6 @@ void test_mclmac_start_cf_phase(void *arg)
     // Check the state of the radio is rx-single
 }
 
-void test_mclmac_send_cf_message(void *arg)
-{
-    struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
-
-    mclmac->_nodeID = 1;
-//    mclmac_set_destination_id(REFERENCE mclmac, 2);
-//    mclmac_create_cf_packet(REFERENCE mclmac);
-
-    ARROW(mclmac->mac)cfChannel = 915000000;
-
-    stub_mclmac_change_cf_channel(mclmac);
-
-    stub_mclmac_start_cf_phase(mclmac);
-
-    /* Send the packet the destination id is already known, and the 
-       cf phase is already started. */
-    stub_mclmac_send_cf_message(mclmac);
-}
-
 void test_stub_mclmac_start_split_phase(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
@@ -886,11 +896,10 @@ void executeTestsMCLMAC(void)
     cunit_add_test(tests, &test_mclmac_set_frame_duration, "mclmac_set_frame_duration\0");
     cunit_add_test(tests, &test_mclmac_set_cf_duration, "mclmac_set_cf_duration\0");
     cunit_add_test(tests, &test_mclmac_available_data_packets, "mclmac_available_data_packets\0");
-    cunit_add_test(tests, &test_mclmac_read_queue_element, "mclmac_read_queue_element\0");
+    //cunit_add_test(tests, &test_mclmac_read_queue_element, "mclmac_read_queue_element\0");
     cunit_add_test(tests, &test_mclmac_write_queue_element, "mclmac_write_queue_element\0");
     cunit_add_test(tests, &test_mclmac_change_cf_channel, "mclmac_change_cf_channel\0");
     cunit_add_test(tests, &test_mclmac_start_cf_phase, "mclmac_start_cf_phase\0");
-    cunit_add_test(tests, &test_mclmac_send_cf_message, "mclmac_send_cf_message\0");
     cunit_add_test(tests, &test_stub_mclmac_start_split_phase, "stub_mclmac_start_split_phase\0");
 
     cunit_execute_tests(tests);

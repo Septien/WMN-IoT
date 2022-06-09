@@ -11,7 +11,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    uint16_t nodeid
+    uint64_t *node_id
 )
 {
 #ifdef __LINUX__
@@ -24,7 +24,8 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     memset((SINGLE_POINTER mclmac), 0, sizeof(MCLMAC_t));
 
     MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
-    (SINGLE_POINTER mclmac)->_nodeID = nodeid;
+    (SINGLE_POINTER mclmac)->_node_id[0] = node_id[0];
+    (SINGLE_POINTER mclmac)->_node_id[1] = node_id[1];
     (SINGLE_POINTER mclmac)->_nChannels = MAX_NUMBER_FREQS;
     (SINGLE_POINTER mclmac)->_nSlots = MAX_NUMBER_SLOTS;
     (SINGLE_POINTER mclmac)->_hopCount = 0;
@@ -138,22 +139,23 @@ uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index)
     return mclmac->_frequencies[index];
 }
 
-uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac)
+void mclmac_get_nodeid(MCLMAC_t *mclmac, uint64_t *node_id)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__    
     assert(mclmac->mac != NULL);
 #endif
 
-    return mclmac->_nodeID;
+    node_id[0] = mclmac->_node_id[0];
+    node_id[1] = mclmac->_node_id[1];
 }
 
-void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id)
+void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint64_t *transmitter_id)
 {
     assert(mclmac != NULL);
-    assert(id != mclmac->_nodeID);
 
-    ARROW(mclmac->mac)transmiterID = id;
+    ARROW(mclmac->mac)transmitter_id[0] = transmitter_id[0];
+    ARROW(mclmac->mac)transmitter_id[1] = transmitter_id[1];
 }
 
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot)
@@ -385,18 +387,13 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         recv_message(mclmac->_mac_queue_id, msg, size, &pid);
         ARRAY byteString;
 #ifdef __LINUX__
-        byteString = (uint8_t *)malloc((size) * sizeof(uint8_t));
+        byteString = (uint8_t *)malloc(size * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
         create_array(&byteString, size);
 #endif
         // Copy the message to the byte string
-        // Store the type
-        WRITE_ARRAY(REFERENCE byteString, msg[0], 0);
-        // Store the  destination id
-        WRITE_ARRAY(REFERENCE byteString, msg[1], 1);
-        WRITE_ARRAY(REFERENCE byteString, msg[2], 2);
-        for (uint i = 3; i < size; i++)
+        for (uint i = 0; i < size; i++)
         {
             uint8_t e = msg[i];
             WRITE_ARRAY(REFERENCE byteString, e, i);
@@ -404,8 +401,7 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         if (msg[0] >= 7 && msg[0] < 10)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_message;
-            DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[last];
-            datapacket_construct_from_bytestring(pkt, &byteString);
+            datapacket_construct_from_bytestring(&ARROW(mclmac->mac)_message_packets_to_send[last], &byteString);
             ARROW(mclmac->mac)_last_send_message++;
             ARROW(mclmac->mac)_packets_to_send_message++;
         }
@@ -419,13 +415,15 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         }
         // Invalid type, return 0
         else
+        {
             invalid = true;
+        }
 #ifdef __LINUX__
     free(msg);
     free(byteString);
 #endif
 #ifdef __RIOT__
-        free_array(&byteString);
+    free_array(&byteString);
 #endif
     }
 

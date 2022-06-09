@@ -19,14 +19,15 @@ struct powermode_data
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    uint16_t nodeid;
+    uint64_t node_id[2];
 };
 
 void setup_powermode(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
-    data->nodeid = rand();
-    MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
+    data->node_id[0] = rand();
+    data->node_id[1] = rand();
+    MCLMAC_init(&data->mclmac, &data->radio, data->node_id);
 }
 
 void teardown_powermode(void *arg)
@@ -644,7 +645,8 @@ void test_active_state_powermode_stmachine(void *arg)
     */
     mclmac->_state_cf = 0;
     ARROW(mclmac->mac)_collisionDetected = true;
-    ARROW(mclmac->mac)_destination_id = 0;
+    ARROW(mclmac->mac)_destination_id[0] = 0;
+    ARROW(mclmac->mac)_destination_id[1] = 0;
     mclmac_set_current_slot(mclmac, 0);
     mclmac_set_current_cf_slot(mclmac, 0);
     ret = mclmac_execute_powermode_state(mclmac);
@@ -852,7 +854,8 @@ void test_receive_state_powermode_stmachine(void *arg)
     ret = mclmac_execute_powermode_state(mclmac);
     ControlPacket_t *ctrlpkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ctrlpkt->nodeID == ARROW(mclmac->mac)transmiterID);
+    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
     assert(ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
     assert(ctrlpkt->collisionSlot == 0);
@@ -929,7 +932,8 @@ void test_receive_state_powermode_stmachine(void *arg)
     for (uint i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
-        assert(pkt->destination_id == mclmac->_nodeID);
+        assert(pkt->destination_id[0] == mclmac->_node_id[0]);
+        assert(pkt->destination_id[1] == mclmac->_node_id[1]);
         assert(pkt->type > 1);
         assert(pkt->size > 0);
 #ifdef __LINUX__
@@ -950,15 +954,22 @@ void test_finishp_state_powermode_stmachine(void *arg)
     mclmac_init_powermode_state_machine(mclmac);
 
     ControlPacket_t *ctrlpkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
-    controlpacket_create(ctrlpkt, rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand());
+    uint64_t node_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    controlpacket_create(ctrlpkt, node_id, rand(), rand(), rand(), rand(), rand(), rand(), rand());
     ctrlpkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
-    controlpacket_create(ctrlpkt, rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand());
+    controlpacket_create(ctrlpkt, node_id, rand(), rand(), rand(), rand(), rand(), rand(), rand());
 
     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
-    cfpacket_create(cfpkt, rand(), rand());
+    uint64_t node_id2[2] = {0};
+    node_id2[0] = rand();
+    node_id2[1] = rand();
+    cfpacket_create(cfpkt, node_id, node_id2);
     cfpkt = &ARROW(mclmac->mac)_cf_messages[1];
-    cfpacket_create(cfpkt, rand(), rand());
-    ARROW(mclmac->mac)_destination_id = rand();
+    cfpacket_create(cfpkt, node_id, node_id2);
+    ARROW(mclmac->mac)_destination_id[0] = rand();
+    ARROW(mclmac->mac)_destination_id[1] = rand();
     ARROW(mclmac->mac)_packets_to_send_message = 0;
     ARROW(mclmac->mac)_first_send_message = 0;
     ARROW(mclmac->mac)_last_send_message = MAX_NUMBER_DATA_PACKETS - 1;
@@ -982,13 +993,13 @@ void test_finishp_state_powermode_stmachine(void *arg)
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
         pkt = &ARROW(mclmac->mac)_message_packets_to_send[i];
-        datapacket_create(pkt, rand() % 10, rand(), &data_array, PACKET_SIZE_MAC - 3);
+        datapacket_create(pkt, rand() % 10, node_id2, &data_array, PACKET_SIZE_MAC - 3);
         ARROW(mclmac->mac)_packets_to_send_message++;
         pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
-        datapacket_create(pkt, rand() % 10, rand(), &data_array, PACKET_SIZE_MAC - 3);
+        datapacket_create(pkt, rand() % 10, node_id2, &data_array, PACKET_SIZE_MAC - 3);
         ARROW(mclmac->mac)_packets_to_send_control++;
         pkt = &ARROW(mclmac->mac)_packets_received[i];
-        datapacket_create(pkt, rand() % 10, rand(), &data_array, PACKET_SIZE_MAC - 3);
+        datapacket_create(pkt, rand() % 10, node_id2, &data_array, PACKET_SIZE_MAC - 3);
         ARROW(mclmac->mac)_number_packets_received++;
     }
 
@@ -996,7 +1007,8 @@ void test_finishp_state_powermode_stmachine(void *arg)
     mclmac->powerMode.nextState = FINISHP;
     int ret = mclmac_execute_powermode_state(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac->mac)_destination_id == 0);
+    assert(ARROW(mclmac->mac)_destination_id[0] == 0);
+    assert(ARROW(mclmac->mac)_destination_id[1] == 0);
     assert(ARROW(mclmac->mac)_packets_to_send_message == 0);
     assert(ARROW(mclmac->mac)_first_send_message == 0);
     assert(ARROW(mclmac->mac)_last_send_message == 0);
@@ -1010,7 +1022,8 @@ void test_finishp_state_powermode_stmachine(void *arg)
     {
         pkt = &ARROW(mclmac->mac)_message_packets_to_send[i];
         assert(pkt->type == -1);
-        assert(pkt->destination_id == 0);
+        assert(pkt->destination_id[0] == 0);
+        assert(pkt->destination_id[1] == 0);
         assert(pkt->size == 0);
 #ifdef __LINUX__
         assert(pkt->data == NULL);
@@ -1020,7 +1033,8 @@ void test_finishp_state_powermode_stmachine(void *arg)
 #endif
         pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
         assert(pkt->type == -1);
-        assert(pkt->destination_id == 0);
+        assert(pkt->destination_id[0] == 0);
+        assert(pkt->destination_id[1] == 0);
         assert(pkt->size == 0);
 #ifdef __LINUX__
         assert(pkt->data == NULL);
@@ -1030,7 +1044,8 @@ void test_finishp_state_powermode_stmachine(void *arg)
 #endif
         pkt = &ARROW(mclmac->mac)_packets_received[i];
         assert(pkt->type == -1);
-        assert(pkt->destination_id == 0);
+        assert(pkt->destination_id[0] == 0);
+        assert(pkt->destination_id[1] == 0);
         assert(pkt->size == 0);
 #ifdef __LINUX__
         assert(pkt->data == NULL);

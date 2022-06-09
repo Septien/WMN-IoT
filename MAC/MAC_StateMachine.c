@@ -361,7 +361,8 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 ARROW(mclmac->mac)_collisionDetected = true;
                 ARROW(mclmac->mac)_collisionSlot = mclmac_get_current_slot(mclmac);
                 ARROW(mclmac->mac)_collisionFrequency = mclmac_get_reception_channel(mclmac);
-                ARROW(mclmac->mac)_destination_id = 0;      // Set to broadcast
+                ARROW(mclmac->mac)_destination_id[0] = 0;      // Set to broadcast
+                ARROW(mclmac->mac)_destination_id[1] = 0;
                 break;
             default:
                 break;

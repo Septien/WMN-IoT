@@ -107,6 +107,9 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
         ARROW(mclmac->mac)_cf_message_received = false;
         return false;
     }
+
+    uint64_t node_id[2] = {0};
+    uint64_t id[2] = {0};
     if (mclmac->_state_cf == 2)
     {
         if (mclmac->_trues == 1)
@@ -119,15 +122,15 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
         CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
         if (ARROW(mclmac->mac)_cf_message_received)
         {
-            uint16_t id = rand() % 256;
-            id = (id == mclmac->_nodeID ? id + 1 : id);
-            uint16_t nodeid = mclmac_get_nodeid(mclmac);
-            cfpacket_create(pkt, id, nodeid);
+            id[0] = rand();
+            id[1] = rand();
+            mclmac_get_nodeid(mclmac, node_id);
+            cfpacket_create(pkt, id, node_id);
             mclmac->_trues++;
         }
         else
         {            
-            cfpacket_create(pkt, 0, 0);
+            cfpacket_create(pkt, id, node_id);
         }
     }
 
@@ -147,10 +150,10 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
         CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
         if (ARROW(mclmac->mac)_cf_message_received)
         {
-            uint16_t id = rand() % 256;
-            id = (id == mclmac->_nodeID ? id + 1 : id);
-            uint16_t nodeid = mclmac_get_nodeid(mclmac);
-            cfpacket_create(pkt, id, nodeid);
+            id[0] = rand();
+            id[1] = rand();
+            mclmac_get_nodeid(mclmac, node_id);
+            cfpacket_create(pkt, id, node_id);
             mclmac->_trues++;
         }
     }
@@ -166,10 +169,10 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
         CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
         if (ARROW(mclmac->mac)_cf_message_received)
         {
-            uint16_t id = rand() % 256;
-            id = (id == mclmac->_nodeID ? id + 1 : id);
-            uint16_t nodeid = mclmac_get_nodeid(mclmac);
-            cfpacket_create(pkt, id, nodeid);
+            id[0] = rand();
+            id[1] = rand();
+            mclmac_get_nodeid(mclmac, node_id);
+            cfpacket_create(pkt, id, node_id);
             mclmac->_trues5++;
         }
     }
@@ -185,7 +188,9 @@ void mclmac_create_control_packet(MCLMAC_t *mclmac)
     controlpacket_clear(pkt);
 
     // Get the relevant data.
-    uint16_t nodeID = mclmac->_nodeID;
+    uint64_t node_id[2] = {0};
+    node_id[0] = mclmac->_node_id[0];
+    node_id[1] = mclmac->_node_id[1];
     uint32_t currentFrame = ARROW(ARROW(mclmac->mac)frame)current_frame;
     uint8_t currentSlot = ARROW(ARROW(mclmac->mac)frame)current_slot;
     uint8_t collisionSlot = ARROW(mclmac->mac)_collisionSlot;
@@ -194,7 +199,7 @@ void mclmac_create_control_packet(MCLMAC_t *mclmac)
     uint64_t networkTime = mclmac->_networkTime;
     uint32_t initTime = mclmac->_initTime;
 
-    controlpacket_create(pkt, nodeID, currentFrame, currentSlot, collisionSlot, collisionFrequency,
+    controlpacket_create(pkt, node_id, currentFrame, currentSlot, collisionSlot, collisionFrequency,
                         hopCount, networkTime, initTime);
 }
 
@@ -245,125 +250,181 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
     if (mclmac->_state_ctrl == 1 || mclmac->_state_ctrl == 3 || mclmac->_state_ctrl == 4 || mclmac->_state_ctrl == 5 || mclmac->_state_ctrl == 6)
     {
         // Store node id
-        bytes = (ARROW(mclmac->mac)transmiterID & 0xff00) >> 8;
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0xff00000000000000) >> 56;
         WRITE_ARRAY(REFERENCE byteString, bytes,    1);
-        bytes = (ARROW(mclmac->mac)transmiterID & 0x00ff);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00ff000000000000) >> 48;
         WRITE_ARRAY(REFERENCE byteString, bytes,    2);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000ff0000000000) >> 40;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    3);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000ff00000000) >> 32;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    4);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000ff000000) >> 24;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    5);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000000000ff0000) >> 16;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    6);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000000000ff00) >> 8;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    7);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000000000ff);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    8);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0xff00000000000000) >> 56;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    9);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00ff000000000000) >> 48;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    10);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000ff0000000000) >> 40;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    11);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000ff00000000) >> 32;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    12);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000ff000000) >> 24;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    13);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000000000ff0000) >> 16;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    14);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000000000ff00) >> 8;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    15);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000000000ff);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    16);
         // Store current frame
         uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
         bytes = (frame & 0xff000000) >> 24;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    3);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    17);
         bytes = (frame & 0x00ff0000) >> 16;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    4);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    18);
         bytes = (frame & 0x0000ff00) >> 8;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    5);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    19);
         bytes = (frame & 0x000000ff);
-        WRITE_ARRAY(REFERENCE byteString, bytes,    6);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    20);
         // Store current slot
         uint8_t slot = mclmac_get_current_slot(mclmac);
-        WRITE_ARRAY(REFERENCE byteString, slot,     7);
+        WRITE_ARRAY(REFERENCE byteString, slot,     21);
         // Store collision slot, 0
-        WRITE_ARRAY(REFERENCE byteString, 0,        8);
+        WRITE_ARRAY(REFERENCE byteString, 0,        22);
         // Store collision frequency, 0
-        WRITE_ARRAY(REFERENCE byteString, 0,        9);
-        WRITE_ARRAY(REFERENCE byteString, 0,        10);
-        WRITE_ARRAY(REFERENCE byteString, 0,        11);
-        WRITE_ARRAY(REFERENCE byteString, 0,        12);
+        WRITE_ARRAY(REFERENCE byteString, 0,        23);
+        WRITE_ARRAY(REFERENCE byteString, 0,        24);
+        WRITE_ARRAY(REFERENCE byteString, 0,        25);
+        WRITE_ARRAY(REFERENCE byteString, 0,        26);
         // Store hop count
         uint16_t hops = mclmac->_hopCount;
         bytes = (hops & 0xff00) >> 8;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    13);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    27);
         bytes = (hops & 0x00ff);
-        WRITE_ARRAY(REFERENCE byteString, bytes,    14);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    28);
         // Store network time
         uint64_t time = mclmac->_networkTime;
         bytes = (time & 0xff00000000000000) >> 56;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    15);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    29);
         bytes = (time & 0x00ff000000000000) >> 48;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    16);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    30);
         bytes = (time & 0x0000ff0000000000) >> 40;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    17);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    31);
         bytes = (time & 0x000000ff00000000) >> 32;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    18);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    32);
         bytes = (time & 0x00000000ff000000) >> 24;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    19);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    33);
         bytes = (time & 0x0000000000ff0000) >> 16;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    20);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    34);
         bytes = (time & 0x000000000000ff00) >> 8;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    21);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    35);
         bytes = (time & 0x00000000000000ff);
-        WRITE_ARRAY(REFERENCE byteString, bytes,    22);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    36);
         // Store init time
         uint32_t init_time = mclmac->_initTime;
         bytes = (init_time & 0xff000000) >> 24;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    23);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    37);
         bytes = (init_time & 0x00ff0000) >> 16;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    24);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    38);
         bytes = (init_time & 0x0000ff00) >> 8;
-        WRITE_ARRAY(REFERENCE byteString, bytes,    25);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    39);
         bytes = (init_time & 0x000000ff);
-        WRITE_ARRAY(REFERENCE byteString, bytes,    26);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    40);
         if (mclmac->_state_ctrl == 3)
         {
-            // Store collision slot, 0
+            // Store collision slot
             bytes = ARROW(mclmac->mac)selectedSlot;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    8);
-            // Store collision frequency, 0
+            WRITE_ARRAY(REFERENCE byteString, bytes,    22);
+            // Store collision frequency
             uint32_t freq = ARROW(mclmac->mac)transmitChannel;
             bytes = (freq & 0xff000000) >> 24;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    9);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    23);
             bytes = (freq & 0x00ff0000) >> 16;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    10);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    24);
             bytes = (freq & 0x0000ff00) >> 8;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    11);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    25);
             bytes = (freq & 0x000000ff);
-            WRITE_ARRAY(REFERENCE byteString, bytes,    12);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    26);
         }
         else if (mclmac->_state_ctrl == 4)
         {
-            WRITE_ARRAY(REFERENCE byteString, slot + 1, 7);
+            WRITE_ARRAY(REFERENCE byteString, slot + 1, 21);
         }
         else if (mclmac->_state_ctrl == 5)
         {
             uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame + 1;
             bytes = (frame & 0xff000000) >> 24;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    3);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    17);
             bytes = (frame & 0x00ff0000) >> 16;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    4);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    18);
             bytes = (frame & 0x0000ff00) >> 8;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    5);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    19);
             bytes = (frame & 0x000000ff);
-            WRITE_ARRAY(REFERENCE byteString, bytes,    6);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    20);
         }
         else if (mclmac->_state_ctrl == 6)
         {
             uint64_t time = mclmac->_networkTime + 1;
             bytes = (time & 0xff00000000000000) >> 56;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    15);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    29);
             bytes = (time & 0x00ff000000000000) >> 48;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    16);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    30);
             bytes = (time & 0x0000ff0000000000) >> 40;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    17);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    31);
             bytes = (time & 0x000000ff00000000) >> 32;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    18);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    32);
             bytes = (time & 0x00000000ff000000) >> 24;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    19);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    33);
             bytes = (time & 0x0000000000ff0000) >> 16;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    20);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    34);
             bytes = (time & 0x000000000000ff00) >> 8;
-            WRITE_ARRAY(REFERENCE byteString, bytes,    21);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    35);
             bytes = (time & 0x00000000000000ff);
-            WRITE_ARRAY(REFERENCE byteString, bytes,    22);
+            WRITE_ARRAY(REFERENCE byteString, bytes,    36);
         }
     }
 
     else if (mclmac->_state_ctrl == 2)
     {
         // Store node id
-        bytes = (ARROW(mclmac->mac)transmiterID & 0xff00) >> 8;
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0xff00000000000000) >> 56;
         WRITE_ARRAY(REFERENCE byteString, bytes,    1);
-        bytes = (ARROW(mclmac->mac)transmiterID & 0x00ff);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00ff000000000000) >> 48;
         WRITE_ARRAY(REFERENCE byteString, bytes,    2);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000ff0000000000) >> 40;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    3);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000ff00000000) >> 32;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    4);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000ff000000) >> 24;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    5);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000000000ff0000) >> 16;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    6);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000000000ff00) >> 8;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    7);
+        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000000000ff);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    8);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0xff00000000000000) >> 56;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    9);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00ff000000000000) >> 48;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    10);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000ff0000000000) >> 40;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    11);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000ff00000000) >> 32;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    12);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000ff000000) >> 24;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    13);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000000000ff0000) >> 16;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    14);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000000000ff00) >> 8;
+        WRITE_ARRAY(REFERENCE byteString, bytes,    15);
+        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000000000ff);
+        WRITE_ARRAY(REFERENCE byteString, bytes,    16);
     }
 
     ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
@@ -422,13 +483,41 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
 #endif
     WRITE_ARRAY(REFERENCE byteString, 2, 0);
     uint8_t bytes = 0;
-    bytes = (mclmac->_nodeID & 0xff00) >> 8;
-    WRITE_ARRAY(REFERENCE byteString, bytes, 1);
-    bytes = (mclmac->_nodeID & 0x00ff);
-    WRITE_ARRAY(REFERENCE byteString, bytes, 2);
-    uint8_t size = rand() % (PACKET_SIZE_MAC - 4);
-    WRITE_ARRAY(REFERENCE byteString, size, 3);
-    for (int i = 4; i < PACKET_SIZE_MAC; i++)
+    bytes = (mclmac->_node_id[0] & 0xff00000000000000) >> 56;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    1);
+    bytes = (mclmac->_node_id[0] & 0x00ff000000000000) >> 48;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    2);
+    bytes = (mclmac->_node_id[0] & 0x0000ff0000000000) >> 40;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    3);
+    bytes = (mclmac->_node_id[0] & 0x000000ff00000000) >> 32;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    4);
+    bytes = (mclmac->_node_id[0] & 0x00000000ff000000) >> 24;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    5);
+    bytes = (mclmac->_node_id[0] & 0x0000000000ff0000) >> 16;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    6);
+    bytes = (mclmac->_node_id[0] & 0x000000000000ff00) >> 8;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    7);
+    bytes = (mclmac->_node_id[0] & 0x00000000000000ff);
+    WRITE_ARRAY(REFERENCE byteString, bytes,    8);
+    bytes = (mclmac->_node_id[1] & 0xff00000000000000) >> 56;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    9);
+    bytes = (mclmac->_node_id[1] & 0x00ff000000000000) >> 48;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    10);
+    bytes = (mclmac->_node_id[1] & 0x0000ff0000000000) >> 40;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    11);
+    bytes = (mclmac->_node_id[1] & 0x000000ff00000000) >> 32;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    12);
+    bytes = (mclmac->_node_id[1] & 0x00000000ff000000) >> 24;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    13);
+    bytes = (mclmac->_node_id[1] & 0x0000000000ff0000) >> 16;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    14);
+    bytes = (mclmac->_node_id[1] & 0x000000000000ff00) >> 8;
+    WRITE_ARRAY(REFERENCE byteString, bytes,    15);
+    bytes = (mclmac->_node_id[1] & 0x00000000000000ff);
+    WRITE_ARRAY(REFERENCE byteString, bytes,    16);
+    uint8_t size = rand() % (PACKET_SIZE_MAC - 17);
+    WRITE_ARRAY(REFERENCE byteString, size, 17);
+    for (int i = 18; i < PACKET_SIZE_MAC; i++)
     {
         WRITE_ARRAY(REFERENCE byteString, rand(), i);
     }

@@ -27,7 +27,7 @@
 typedef struct {
     int8_t      type;
     uint8_t     size;
-    uint16_t    destination_id;
+    uint64_t    destination_id[2];
     ARRAY       data;
 }DataPacket_t;
 
@@ -57,7 +57,7 @@ void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt);
  * @param data 
  * @param size 
  */
-void datapacket_create(DataPacket_t *pkt, int8_t type, uint16_t destination_id, ARRAY* data, uint8_t size);
+void datapacket_create(DataPacket_t *pkt, int8_t type, uint64_t *destination_id, ARRAY* data, uint8_t size);
 
 /**
  * @brief Clear all the fields on the packet, and free any used memory. Set type to -1.

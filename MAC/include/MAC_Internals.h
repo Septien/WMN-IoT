@@ -61,7 +61,7 @@ typedef struct MAC_Internals
     uint32_t        transmitChannel;
     uint32_t        receiveChannel;
     uint32_t        cfChannel;
-    uint16_t        transmiterID;
+    uint64_t        transmitter_id[2];
     // Collision
     bool            _collisionDetected;
     bool            _is_internal_collision;
@@ -72,7 +72,7 @@ typedef struct MAC_Internals
     /* On position 0, store the cf message to send, on pisition 1, the cf messages to receive. */
     CFPacket_t      _cf_messages[MAX_NUMBER_CF_PACKETS];
     /* Packets to send. */
-    uint16_t        _destination_id;
+    uint64_t        _destination_id[2];
     uint8_t         _packets_to_send_message;
     uint8_t         _first_send_message;
     uint8_t         _last_send_message;

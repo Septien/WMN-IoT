@@ -216,7 +216,8 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 {
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
-                    uint16_t nodeid = mclmac_get_nodeid(mclmac);
+                    uint64_t nodeid[2] = {0};
+                    mclmac_get_nodeid(mclmac, nodeid);
                     cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_id);
                     stub_mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
@@ -227,8 +228,10 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 {
                     /* Create the cf packet and send it. */
                     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
-                    uint16_t nodeid = mclmac_get_nodeid(mclmac);
-                    cfpacket_create(cfpkt, nodeid, 0);
+                    uint64_t nodeid[2] = {0};
+                    uint64_t nodeid2[2] = {0};
+                    mclmac_get_nodeid(mclmac, nodeid);
+                    cfpacket_create(cfpkt, nodeid, nodeid2);
                     stub_mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
                     send = true;
@@ -239,11 +242,15 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             else if (stub_mclmac_receive_cf_message(mclmac))
             {
                 CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
-                uint16_t destinationid = cfpacket_get_destinationid(pkt);
-                if (destinationid == mclmac->_nodeID || destinationid == 0) // destinationID = 0 means a broadcast.
+                uint64_t destinationid[2] = {0};
+                cfpacket_get_destinationid(pkt, destinationid);
+                bool need_broadcast = (destinationid[0] == 0) && (destinationid[1] == 0); // destination_id = 0 => broadcast
+                bool destination_is_current = (destinationid[0] == mclmac->_node_id[0]) && (destinationid[1] == mclmac->_node_id[1]);
+                if (destination_is_current || need_broadcast)
                 {
-                    uint16_t transmiterid = cfpacket_get_nodeid(pkt);
-                    mclmac_set_transmiterid(mclmac, transmiterid);
+                    uint64_t transmitter_id[2] = {0};
+                    cfpacket_get_nodeid(pkt, transmitter_id);
+                    mclmac_set_transmiterid(mclmac, transmitter_id);
                     uint32_t channel = mclmac_get_frequency(mclmac, current_cf_slot);
                     mclmac_set_reception_channel(mclmac, channel);
                     packets++;
@@ -368,7 +375,8 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         break;
 
     case FINISHP:   ;
-        ARROW(mclmac->mac)_destination_id = 0;
+        ARROW(mclmac->mac)_destination_id[0] = 0;
+        ARROW(mclmac->mac)_destination_id[1] = 0;
         ARROW(mclmac->mac)_packets_to_send_message = 0;
         ARROW(mclmac->mac)_first_send_message = 0;
         ARROW(mclmac->mac)_last_send_message = 0;

@@ -28,14 +28,15 @@ struct statemachine_data {
 #ifdef __RIOT__
     sx127x_t radio;
 #endif
-    uint16_t nodeid;
+    uint64_t node_id[2];
 };
 
 void setup_statemachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    data->nodeid = rand();
-    MCLMAC_init(&data->mclmac, &data->radio, data->nodeid);
+    data->node_id[0] = rand();
+    data->node_id[1] = rand();
+    MCLMAC_init(&data->mclmac, &data->radio, data->node_id);
 }
 
 void teardown_statemachine(void *arg)

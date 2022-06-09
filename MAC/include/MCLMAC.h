@@ -82,7 +82,7 @@ typedef struct MCLMAC
 
     // Private members
     bool                _is_first_node;
-    uint16_t            _nodeID;
+    uint64_t            _node_id[2];
     uint64_t            _networkTime;
     uint8_t             _nSlots;
     uint8_t             _nChannels;
@@ -119,7 +119,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #ifdef __RIOT__
     sx127x_t *radio,
 #endif
-    uint16_t nodeid
+    uint64_t *node_id
 );
 
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);
@@ -149,8 +149,8 @@ uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac);
 uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index);
 
 // Properties and configuration
-uint16_t mclmac_get_nodeid(MCLMAC_t *mclmac);
-void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint16_t id);
+void mclmac_get_nodeid(MCLMAC_t *mclmac, uint64_t *node_id);
+void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint64_t *transmitter_id);
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot);
 uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac);
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number);

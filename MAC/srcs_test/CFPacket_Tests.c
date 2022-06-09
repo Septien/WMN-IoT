@@ -34,8 +34,10 @@ void test_cfpacket_init(void *arg)
     assert(cfpkt != NULL);
 #endif
 #ifdef __RIOT__
-    assert(cfpkt.nodeID == 0);
-    assert(cfpkt.destinationID == 0);
+    assert(data->cfpkt.node_id[0] == 0);
+    assert(data->cfpkt.node_id[1] == 0);
+    assert(data->cfpkt.destination_id[0] == 0);
+    assert(data->cfpkt.destination_id[1] == 0);
 #endif
 }
 
@@ -48,8 +50,10 @@ void test_cfpacket_destroy(void *arg)
     assert(data->cfpkt == NULL);
 #endif
 #ifdef __RIOT__
-    assert(data->cfpkt.nodeID == 0);
-    assert(data->cfpkt.destinationID == 0);
+    assert(data->cfpkt.node_id[0] == 0);
+    assert(data->cfpkt.node_id[1] == 0);
+    assert(data->cfpkt.destination_id[0] == 0);
+    assert(data->cfpkt.destination_id[1] == 0);
 #endif
     cfpacket_init(&data->cfpkt);
 }
@@ -59,13 +63,19 @@ void test_cfpacket_create(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t nodeID = (uint16_t)rand();
-    uint16_t destinationID = (uint16_t)rand();
+    uint64_t node_id[2] = {0};
+    uint64_t destination_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    destination_id[0] = rand();
+    destination_id[1] = rand();
 
-    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
+    cfpacket_create(REFERENCE cfpkt, node_id, destination_id);
 
-    assert(ARROW(cfpkt)nodeID == nodeID);
-    assert(ARROW(cfpkt)destinationID == destinationID);
+    assert(ARROW(cfpkt)node_id[0] == node_id[0]);
+    assert(ARROW(cfpkt)node_id[1] == node_id[1]);
+    assert(ARROW(cfpkt)destination_id[0] == destination_id[0]);
+    assert(ARROW(cfpkt)destination_id[1] == destination_id[1]);
 }
 
 void test_cfpacket_clear(void *arg)
@@ -73,15 +83,21 @@ void test_cfpacket_clear(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t nodeID = (uint16_t)rand();
-    uint16_t destinationID = (uint16_t)rand();
+    uint64_t node_id[2] = {0};
+    uint64_t destination_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    destination_id[0] = rand();
+    destination_id[1] = rand();
 
-    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
+    cfpacket_create(REFERENCE cfpkt, node_id, destination_id);
 
     cfpacket_clear(REFERENCE cfpkt);
 
-    assert(ARROW(cfpkt)nodeID == 0);
-    assert(ARROW(cfpkt)destinationID == 0);
+    assert(ARROW(cfpkt)node_id[0] == 0);
+    assert(ARROW(cfpkt)node_id[1] == 0);
+    assert(ARROW(cfpkt)destination_id[0] == 0);
+    assert(ARROW(cfpkt)destination_id[1] == 0);
 }
 
 void test_cfpacket_set_nodeid(void *arg)
@@ -89,9 +105,12 @@ void test_cfpacket_set_nodeid(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t nodeID = rand();
-    cfpacket_set_nodeid(REFERENCE cfpkt, nodeID);
-    assert(ARROW(cfpkt)nodeID == nodeID);
+    uint64_t node_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    cfpacket_set_nodeid(REFERENCE cfpkt, node_id);
+    assert(ARROW(cfpkt)node_id[0] == node_id[0]);
+    assert(ARROW(cfpkt)node_id[1] == node_id[1]);
 }
 
 void test_cfpacket_get_nodeid(void *arg)
@@ -99,12 +118,15 @@ void test_cfpacket_get_nodeid(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t nodeID = rand();
-    cfpacket_set_nodeid(REFERENCE cfpkt, nodeID);
+    uint64_t node_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    cfpacket_set_nodeid(REFERENCE cfpkt, node_id);
     
-    uint16_t nodeIDR;
-    nodeIDR = cfpacket_get_nodeid(REFERENCE cfpkt);
-    assert(nodeIDR == ARROW(cfpkt)nodeID);
+    uint64_t node_id_r[2];
+    cfpacket_get_nodeid(REFERENCE cfpkt, node_id_r);
+    assert(node_id_r[0] == ARROW(cfpkt)node_id[0]);
+    assert(node_id_r[1] == ARROW(cfpkt)node_id[1]);
 }
 
 void test_cfpacket_set_destinationid(void *arg)
@@ -112,9 +134,12 @@ void test_cfpacket_set_destinationid(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t destinationID = (uint16_t)rand();
-    cfpacket_set_destinationid(REFERENCE cfpkt, destinationID);
-    assert(ARROW(cfpkt)destinationID == destinationID);
+    uint64_t destination_id[2] = {0};
+    destination_id[0] = rand();
+    destination_id[1] = rand();
+    cfpacket_set_destinationid(REFERENCE cfpkt, destination_id);
+    assert(ARROW(cfpkt)destination_id[0] == destination_id[0]);
+    assert(ARROW(cfpkt)destination_id[1] == destination_id[1]);
 }
 
 void test_cfpacket_get_destinationid(void *arg)
@@ -122,12 +147,17 @@ void test_cfpacket_get_destinationid(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t destinationID = (uint16_t)rand();
-    cfpacket_set_destinationid(REFERENCE cfpkt, destinationID);
+    uint64_t destination_id[2] = {0};
+    destination_id[0] = rand();
+    destination_id[1] = rand();
+    cfpacket_set_destinationid(REFERENCE cfpkt, destination_id);
 
-    uint16_t dIDF = cfpacket_get_destinationid(REFERENCE cfpkt);
-    assert(dIDF == destinationID);
-    assert(dIDF == ARROW(cfpkt)destinationID);
+    uint64_t destination_id_df[2] = {0};
+    cfpacket_get_destinationid(REFERENCE cfpkt, destination_id_df);
+    assert(destination_id_df[0] == destination_id[0]);
+    assert(destination_id_df[1] == destination_id[1]);
+    assert(destination_id_df[0] == ARROW(cfpkt)destination_id[0]);
+    assert(destination_id_df[1] == ARROW(cfpkt)destination_id[1]);
 }
 
 void test_cfpacket_get_packet_bytestring(void *arg)
@@ -135,9 +165,14 @@ void test_cfpacket_get_packet_bytestring(void *arg)
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
 
-    uint16_t nodeID = (uint16_t)rand();
-    uint16_t destinationID = (uint16_t)rand();
-    cfpacket_create(REFERENCE cfpkt, nodeID, destinationID);
+    uint64_t node_id[2] = {0};
+    uint64_t destination_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    destination_id[0] = rand();
+    destination_id[1] = rand();
+
+    cfpacket_create(REFERENCE cfpkt, node_id, destination_id);
 
     ARRAY byteString;
 
@@ -146,12 +181,47 @@ void test_cfpacket_get_packet_bytestring(void *arg)
     assert(byteString != NULL);
 #endif
 
-    assert(READ_ARRAY(REFERENCE byteString, 0) == 0);   // Type 0 packet, cf
-    assert(READ_ARRAY(REFERENCE byteString, 1) == ((nodeID & 0xff00) >> 8));
-    assert(READ_ARRAY(REFERENCE byteString, 2) == (nodeID & 0x00ff));
-    assert(READ_ARRAY(REFERENCE byteString, 3) == (destinationID & 0xff00) >> 8);
-    assert(READ_ARRAY(REFERENCE byteString, 4) == (destinationID & 0x00ff));
+    uint64_t node_id1 = 0;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 1)) << 56;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 2)) << 48;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 3)) << 40;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 4)) << 32;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 5)) << 24;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 6)) << 16;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 7)) << 8;
+    node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 8));
+    uint64_t node_id2 = 0;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 9)) << 56;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 10)) << 48;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 11)) << 40;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 12)) << 32;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 13)) << 24;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 14)) << 16;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 15)) << 8;
+    node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 16));
+    uint64_t destination_id1 = 0;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 17)) << 56;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 18)) << 48;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 19)) << 40;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 20)) << 32;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 21)) << 24;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 22)) << 16;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 23)) << 8;
+    destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 24));
+    uint64_t destination_id2 = 0;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 25)) << 56;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 26)) << 48;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 27)) << 40;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 28)) << 32;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 29)) << 24;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 30)) << 16;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 31)) << 8;
+    destination_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 32));
 
+    assert(node_id1 == node_id[0]);
+    assert(node_id2 == node_id[1]);
+    assert(destination_id1 == destination_id[0]);
+    assert(destination_id2 == destination_id[1]);
 #ifdef __LINUX__
     free(byteString);
 #endif
@@ -172,20 +242,55 @@ void test_cfpacket_construct_packet_from_bytestring(void *arg)
 #ifdef __RIOT__
     create_array(&byteString, PACKET_SIZE_MAC);
 #endif
-    uint16_t nodeid = (uint16_t) rand();
-    uint16_t destinationid = (uint16_t) rand();
+    uint64_t node_id[2] = {0};
+    uint64_t destination_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    destination_id[0] = rand();
+    destination_id[1] = rand();
     WRITE_ARRAY(REFERENCE byteString, 0,                                   0);
-    WRITE_ARRAY(REFERENCE byteString, (nodeid & 0xff00) >> 8,              1);
-    WRITE_ARRAY(REFERENCE byteString, (nodeid & 0x00ff),                   2);
-    WRITE_ARRAY(REFERENCE byteString, (destinationid & 0xff00) >> 8,       3);
-    WRITE_ARRAY(REFERENCE byteString, (destinationid & 0x00ff),            4);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0xff00000000000000) >> 56,    1);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x00ff000000000000) >> 48,    2);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x0000ff0000000000) >> 40,    3);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x000000ff00000000) >> 32,    4);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x00000000ff000000) >> 24,    5);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x0000000000ff0000) >> 16,    6);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x000000000000ff00) >> 8,     7);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[0] & 0x00000000000000ff),          8);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0xff00000000000000) >> 56,    9);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x00ff000000000000) >> 48,    10);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x0000ff0000000000) >> 40,    11);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x000000ff00000000) >> 32,    12);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x00000000ff000000) >> 24,    13);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x0000000000ff0000) >> 16,    14);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x000000000000ff00) >> 8,     15);
+    WRITE_ARRAY(REFERENCE byteString, (node_id[1] & 0x00000000000000ff),          16);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0xff00000000000000) >> 56,    17);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x00ff000000000000) >> 48,    18);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x0000ff0000000000) >> 40,    19);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x000000ff00000000) >> 32,    20);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x00000000ff000000) >> 24,    21);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x0000000000ff0000) >> 16,    22);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x000000000000ff00) >> 8,     23);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0x00000000000000ff),          24);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0xff00000000000000) >> 56,    25);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x00ff000000000000) >> 48,    26);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x0000ff0000000000) >> 40,    27);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x000000ff00000000) >> 32,    28);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x00000000ff000000) >> 24,    29);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x0000000000ff0000) >> 16,    30);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x000000000000ff00) >> 8,     31);
+    WRITE_ARRAY(REFERENCE byteString, (destination_id[1] & 0x00000000000000ff),          32);
+    
     int n = rand();
-    for (int i = 5; i < PACKET_SIZE_MAC; i++)
+    for (int i = 33; i < PACKET_SIZE_MAC; i++)
         WRITE_ARRAY(REFERENCE byteString, n, i);
 
     cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString);
-    assert(ARROW(cfpkt)nodeID        == nodeid);
-    assert(ARROW(cfpkt)destinationID == destinationid);
+    assert(ARROW(cfpkt)node_id[0]        == node_id[0]);
+    assert(ARROW(cfpkt)node_id[1]        == node_id[1]);
+    assert(ARROW(cfpkt)destination_id[0] == destination_id[0]);
+    assert(ARROW(cfpkt)destination_id[1] == destination_id[1]);
 
 #ifdef __LINUX__
     free(byteString);

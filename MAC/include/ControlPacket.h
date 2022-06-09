@@ -23,7 +23,7 @@
 
 typedef struct 
 {
-    uint16_t    nodeID;
+    uint64_t    node_id[2];
     uint32_t    currentFrame;
     uint8_t     currentSlot;
     uint8_t     collisionSlot;
@@ -35,7 +35,7 @@ typedef struct
 
 void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt);
 void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt);
-void controlpacket_create(ControlPacket_t *pkt, uint16_t nodeID, uint32_t frame, uint8_t slot, uint8_t collisionSlots, uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime);
+void controlpacket_create(ControlPacket_t *pkt, uint64_t *node_id, uint32_t frame, uint8_t slot, uint8_t collisionSlots, uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime);
 void controlpacket_clear(ControlPacket_t *pkt);
 void controlpacket_set_current_frame(ControlPacket_t *pkt, uint32_t frame);
 uint32_t controlpacket_get_current_frame(ControlPacket_t *pkt);
