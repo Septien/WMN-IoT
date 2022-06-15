@@ -408,8 +408,7 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         else if (msg[0] >= 2 && msg[0] < 7)
         {
             uint8_t last = ARROW(mclmac->mac)_last_send_control;
-            DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[last];
-            datapacket_construct_from_bytestring(pkt, &byteString);
+            datapacket_construct_from_bytestring(&ARROW(mclmac->mac)_control_packets_to_send[last], &byteString);
             ARROW(mclmac->mac)_last_send_control++;
             ARROW(mclmac->mac)_packets_to_send_control++;
         }
