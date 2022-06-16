@@ -43,7 +43,7 @@ void test_MAC_internals_init(void *arg)
     assert(mac->selectedSlot == 0);
     assert(mac->transmitChannel == 0);
     assert(mac->receiveChannel == 0);
-    assert(mac->cfChannel == 0);
+    assert(mac->cfChannel == CF_FREQUENCY);
     assert(mac->_collisionDetected == false);
     assert(mac->_is_internal_collision == false);
     assert(mac->_collisionSlot == 0);

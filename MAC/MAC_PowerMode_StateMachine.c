@@ -123,8 +123,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         ARROW(mclmac->mac)_last_send_control = 0;
         ARROW(mclmac->mac)_first_received = 0;
         ARROW(mclmac->mac)_last_received = 0;
-        
-        ARROW(mclmac->mac)cfChannel = CF_FREQUENCY;
 
         // Pass immediatly to PASSIVE state
         mclmac_set_next_powermode_state(mclmac, PASSIVE);
