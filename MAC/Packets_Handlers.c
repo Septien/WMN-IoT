@@ -370,7 +370,7 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
         }
         else if (mclmac->_state_ctrl == 6)
         {
-            uint64_t time = mclmac->_networkTime + 1;
+            uint64_t time = mclmac->_networkTime + NETWORK_TIME_EPSILON + 1;
             bytes = (time & 0xff00000000000000) >> 56;
             WRITE_ARRAY(REFERENCE byteString, bytes,    29);
             bytes = (time & 0x00ff000000000000) >> 48;

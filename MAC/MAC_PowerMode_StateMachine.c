@@ -350,7 +350,11 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         }
         uint8_t own_slot = mclmac_get_current_slot(mclmac);
         uint32_t own_frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
-        if (c_slot != own_slot  || frame != own_frame || time != mclmac->_networkTime)
+        int difference = mclmac->_networkTime - NETWORK_TIME_EPSILON;
+        uint64_t lower_value_time = (difference < 0 ? 0 : difference);
+        uint64_t upper_value_time = mclmac->_networkTime + NETWORK_TIME_EPSILON;
+        bool not_on_time = (time < lower_value_time) || (time > upper_value_time);
+        if (c_slot != own_slot  || frame != own_frame || not_on_time)
         {
             mclmac_set_next_powermode_state(mclmac, FINISHP);
             return E_PM_SYNCHRONIZATION_ERROR;

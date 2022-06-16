@@ -802,9 +802,9 @@ void test_receive_state_powermode_stmachine(void *arg)
     ret = mclmac_execute_mac_state_machine(mclmac);
     ret = mclmac_update_mac_state_machine(mclmac);
 
-    mclmac->_initTime = rand() % 100;
+    mclmac->_initTime = rand();
     mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
-    mclmac->_hopCount = rand() % 10;
+    mclmac->_hopCount = rand() % 1000;
     ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
     ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
