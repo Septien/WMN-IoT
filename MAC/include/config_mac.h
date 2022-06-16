@@ -151,6 +151,12 @@ according to the radio in use. */
 #define PACKET_SIZE_MAC         256
 #endif
 
+/* Difference in microseconds, allowing some time drift, due to channel conditions, 
+processing time, etc. */
+#ifndef NETWORK_TIME_EPSILON
+#define NETWORK_TIME_EPSILON    2000
+#endif
+
 /* Clock type for RIOT. */
 #ifdef __RIOT__
 #define CLOCK                   ZTIMER_USEC

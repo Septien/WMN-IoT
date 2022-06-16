@@ -720,7 +720,8 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac->mac)_destination_id == 0);
+    assert(ARROW(mclmac->mac)_destination_id[0] == 0);
+    assert(ARROW(mclmac->mac)_destination_id[1] == 0);
 }
 
 void test_first_node_case_mac(void *arg)
