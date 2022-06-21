@@ -43,17 +43,17 @@ As mentioned, the mobile nodes have the following restrictions/requisites:
 - Use a single-radio multiple-channel approach.
 
 So, we need a MAC protocol that saves energy, handles multiple channels on a single radio, and is as lightweight as possible. 
-The currently proposed MAC is known as Multi-Channel Lighweight Medium Access Control (MCLMAC). It
+The currently proposed MAC is known as Multi-Channel Lighweight Medium Access Control (MCLMAC) [^1]. It
 consists of two state machines: one for handling the connection of the devices to the network, and another
 for handling the power-mode of the radio and the transmission of packets.
 
 The first state machine, known as the MAC state machine, has the following states:
-   * * * * * * *            * * * * * * *            * * * * * * *            * * * * * * *
- *               *        *               *        *    Timeslot   *        *               *
-*  Initialization * ---> * Synchronization * ---> *   and channel   * ---> *      Medium     *
-*                 *      *                 *      *    selection    *      *      Accesss    * 
- *               *        *               *        *               *        *               *
-   * * * * * * *            * * * * * * *            * * * * * * *            * * * * * * * 
+   x x x x x x x            x x x x x x x            x x x x x x x            x x x x x x x
+ x               x        x               x        x    Timeslot   x        x               x
+x  Initialization x ---> x Synchronization x ---> x   and channel   x ---> x      Medium     x
+x                 x      x                 x      x    selection    x      x      Accesss    x
+ x               x        x               x        x               x        x               x
+   x x x x x x x            x x x x x x x            x x x x x x x            x x x x x x x
         ^                       ^                          |                        |
         |                       |--------No slot/channel----                        |
         ----------------------------Collision---------------------------------------|
@@ -75,28 +75,28 @@ Synchronization state.
 execute the Power Mode state machine.
 
 The PowerMode State Machine has the following states:
-                                                  * * * * * * *
-                                                *               *
-                        ----------------------*     Transmit      *
-                       /                      *                   *
-                      /                         *               *
-                     /                            * * * * * * *
+                                                  x x x x x x x
+                                                x               x
+                        ----------------------x     Transmit      x
+                       /                      x                   x
+                      /                         x               x
+                     /                            x x x x x x x
                     /                           ^
                    /                           /
                   /                           /
-   * * * * * * * v          * * * * * * *    /
- *               *        *               * /
-*     Passive     * ---> *     Active      *\
-*                 *      *                 * \
- *               *        *               *   \
-   * * * * * * * ^          * * * * * * *      \
+   x x x x x x x v          x x x x x x x    /
+ x               x        x               x /
+x     Passive     x ---> x     Active      x\
+x                 x      x                 x \
+ x               x        x               x   \
+   x x x x x x x ^          x x x x x x x      \
                   \                             v
-                   \                              * * * * * * *
-                    \                           *               *
-                     \                        *     Receive       *
-                      \ ----------------------*                   *
-                                                *               *
-                                                  * * * * * * *
+                   \                              x x x x x x x
+                    \                           x               x
+                     \                        x     Receive       x
+                      \ ----------------------x                   x
+                                                x               x
+                                                  x x x x x x x
 Each state has the following function:
 - The state _Passive_ puts the radio to sleep, to allow minimal energy consumption.
 It also read/write packets received from/send to upper layers from the queue. It will also increase
@@ -116,4 +116,4 @@ node will hear for any incoming data packet. Once all the packets are received, 
 the node will transit to the Passive state.
 
 ### References
-[^1:] Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier. 
+[^1]: Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier.
