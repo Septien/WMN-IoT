@@ -48,6 +48,7 @@ consists of two state machines: one for handling the connection of the devices t
 for handling the power-mode of the radio and the transmission of packets.
 
 The first state machine, known as the MAC state machine, has the following states:
+<pre>
    x x x x x x x            x x x x x x x            x x x x x x x            x x x x x x x
  x               x        x               x        x    Timeslot   x        x               x
 x  Initialization x ---> x Synchronization x ---> x   and channel   x ---> x      Medium     x
@@ -57,7 +58,7 @@ x                 x      x                 x      x    selection    x      x    
         ^                       ^                          |                        |
         |                       |--------No slot/channel----                        |
         ----------------------------Collision---------------------------------------|
-
+</pre>
 Each state has the following functions:
 - The _Initialization_ state will hear for incomming packets on the network. When a packet is detected, the 
 machine passes to the next state: Synchronization. If no packets are found, it is assume that the node
@@ -75,6 +76,7 @@ Synchronization state.
 execute the Power Mode state machine.
 
 The PowerMode State Machine has the following states:
+<pre>
                                                   x x x x x x x
                                                 x               x
                         ----------------------x     Transmit      x
@@ -97,6 +99,7 @@ x                 x      x                 x \
                       \ ----------------------x                   x
                                                 x               x
                                                   x x x x x x x
+</pre>
 Each state has the following function:
 - The state _Passive_ puts the radio to sleep, to allow minimal energy consumption.
 It also read/write packets received from/send to upper layers from the queue. It will also increase
@@ -114,6 +117,12 @@ packets are sent, or the timer expires, the machine transits to the Passive stat
 first for incoming control packets and check for synchronization. Once such packet is received, the 
 node will hear for any incoming data packet. Once all the packets are received, or the timer expires,
 the node will transit to the Passive state.
+
+The action of every agent <br />
+  into the world <br />
+starts <br />
+  from their physical selves. <br />
+
 
 ### References
 [^1]: Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier.
