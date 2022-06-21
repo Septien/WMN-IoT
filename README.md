@@ -118,11 +118,5 @@ first for incoming control packets and check for synchronization. Once such pack
 node will hear for any incoming data packet. Once all the packets are received, or the timer expires,
 the node will transit to the Passive state.
 
-The action of every agent <br />
-  into the world <br />
-starts <br />
-  from their physical selves. <br />
-
-
 ### References
 [^1]: Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier.
