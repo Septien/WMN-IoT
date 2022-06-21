@@ -25,7 +25,18 @@
 #include "memory_macros.h"
 
 #ifdef __RIOT__
-#include "sx127x.h"
+#include "net/netdev.h"
+#include "net/netopt.h"
+
+// Header files for the nRF24l01+
+#include "nrf24l01p_ng.h"
+#include "nrf24l01p_ng_communication.h"
+#include "nrf24l01p_ng_constants.h"
+#include "nrf24l01p_ng_diagnostics.h"
+#include "nrf24l01p_ng_netdev.h"
+#include "nrf24l01p_ng_params.h"
+#include "nrf24l01p_ng_registers.h"
+#include "nrf24l01p_ng_states.h"
 #endif
 
 /**
@@ -45,12 +56,12 @@
 typedef struct MAC_Internals
 {
     // Physical device
-#ifdef __RIOT__
-    sx127x_t *radio;
-#endif
 #ifdef __LINUX__
     uint8_t *radio;
     /* TODO: Add an implementation that runs the radio from a common computer */
+#endif
+#ifdef __RIOT__
+    netdev_t *netdev;
 #endif
     // Packets used by the protocol
     ControlPacket_t SINGLE_POINTER ctrlpkt;
@@ -93,7 +104,7 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     uint8_t *radio
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio
+    netdev_t *netdev
 #endif
 );
 void MAC_internals_clear(MAC_Internals_t *mac);

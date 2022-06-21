@@ -125,7 +125,7 @@ endif # Linux compilation
 ifdef RIOT
 unexport RIOT
 
-APPLICATION = main_test
+APPLICATION = stack_test
 
 # Default board
 BOARD ?= native
@@ -140,12 +140,15 @@ DEVELHELP ?= 1
 QUIET ?= 1
 
 USEMODULE += memarray
+USEMODULE += netdev
+USEMODULE += nrf24l01p_ng
 
 # Which features do you require? (mcu architecure, peripherals, sensors, etc.)
 ifeq ($(BOARD), esp32-wroom-32)
 FEATURES_REQUIRED += arch_esp32
 endif
 FEATURES_REQUIRED += periph_gpio
+FEATURES_REQUIRED += periph_spi
 
 include WMN-IoT.include
 

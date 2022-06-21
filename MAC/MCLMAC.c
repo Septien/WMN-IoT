@@ -9,7 +9,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     uint8_t *radio,
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio,
+    netdev_t *netdev,
 #endif
     uint64_t *node_id
 )
@@ -23,7 +23,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #endif
     memset((SINGLE_POINTER mclmac), 0, sizeof(MCLMAC_t));
 
-    MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
+    MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, netdev);
     (SINGLE_POINTER mclmac)->_node_id[0] = node_id[0];
     (SINGLE_POINTER mclmac)->_node_id[1] = node_id[1];
     (SINGLE_POINTER mclmac)->_nChannels = MAX_NUMBER_FREQS;
@@ -482,7 +482,7 @@ int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
 void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    assert(ARROW(mclmac->mac)radio != NULL);
+    assert(ARROW(mclmac->mac)netdev != NULL);
     assert(ARROW(mclmac->mac)cfChannel >= 902000000 && ARROW(mclmac->mac)cfChannel <= 928000000);
 
     // Change the radio frequency
@@ -494,7 +494,7 @@ void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac)
 void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    assert(ARROW(mclmac->mac)radio != NULL);
+    assert(ARROW(mclmac->mac)netdev != NULL);
 
     // Change the channel
     stub_mclmac_change_cf_channel(mclmac);

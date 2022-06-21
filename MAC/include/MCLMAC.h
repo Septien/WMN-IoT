@@ -30,6 +30,8 @@
 #endif
 
 #ifdef __RIOT__
+#include "net/netdev.h"
+#include "net/netopt.h"
 #include "ztimer.h"
 #include "sx127x.h"
 #include "thread.h"
@@ -117,7 +119,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     uint8_t *radio,
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio,
+    netdev_t *netdev,
 #endif
     uint64_t *node_id
 );

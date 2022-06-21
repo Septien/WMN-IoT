@@ -7,7 +7,7 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     uint8_t *radio
 #endif
 #ifdef __RIOT__
-    sx127x_t *radio
+    netdev_t *netdev
 #endif
 )
 {
@@ -24,7 +24,7 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
 #endif
     memset(REFERENCE (SINGLE_POINTER mac)->frame, 0, sizeof(Frame_t));
 
-    (SINGLE_POINTER mac)->radio = radio;
+    (SINGLE_POINTER mac)->netdev = netdev;
     (SINGLE_POINTER mac)->cfChannel = CF_FREQUENCY;
 
     // Initialize the Control packet

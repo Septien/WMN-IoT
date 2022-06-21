@@ -9,6 +9,10 @@
 
 #include "cUnit.h"
 
+#ifdef __RIOT__
+#include "net/netdev.h"
+#endif
+
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte) \
         (((byte) & 0x80) ? '1' : '0'), \
@@ -26,7 +30,8 @@ struct statemachine_data {
     uint8_t radio;
 #endif
 #ifdef __RIOT__
-    sx127x_t radio;
+    nrf24l01p_ng_t radio;
+    netdev_t *netdev;
 #endif
     uint64_t node_id[2];
 };
@@ -36,7 +41,31 @@ void setup_statemachine(void *arg)
     struct statemachine_data *data = (struct statemachine_data *) arg;
     data->node_id[0] = rand();
     data->node_id[1] = rand();
-    MCLMAC_init(&data->mclmac, &data->radio, data->node_id);
+#ifdef __LINUX__
+    MCLMAC_init(&data->mclmac, data->radio, data->node_id);
+#endif
+#ifdef __RIOT__
+    // Setup the radio
+    nrf24l01p_ng_params_t params = {
+        .spi = NRF24L01P_NG_PARAM_SPI,
+        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
+        .pin_cs = NRF24L01P_NG_PARAM_CS,
+        .pin_ce = NRF24L01P_NG_PARAM_CE,
+        .pin_irq = NRF24L01P_NG_PARAM_IRQ,
+        .config = {
+            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
+            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
+            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
+            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
+            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
+            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
+        }
+    };
+    int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
+    data->netdev = &data->radio.netdev;
+    data->radio.netdev.driver->init(data->netdev);
+    MCLMAC_init(&data->mclmac, data->netdev, data->node_id);
+#endif
 }
 
 void teardown_statemachine(void *arg)
