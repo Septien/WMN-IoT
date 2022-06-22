@@ -22,7 +22,7 @@ implemented by the radio devices and is not necessary to create one ourselves, a
 The application layer will be left to use in specific applications, we will  provide the necessary 
 interface for the application to use the network.
 
-Currently, the network is intended to run on [RIOT OS] (https://www.riot-os.org) and Linux. RIOT already provides
+Currently, the network is intended to run on [RIOT OS](https://www.riot-os.org) and Linux. RIOT already provides
 driver implementations for different radios, and provide an common interface to accessing and configuring the
 devices.
 
