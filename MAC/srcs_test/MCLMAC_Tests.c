@@ -848,10 +848,20 @@ void test_mclmac_change_cf_channel(void *arg)
 #ifdef __RIOT__
     /*uint8_t channel = (uint8_t)ARROW(mclmac->mac)cfChannel;
     uint8_t radio_channel;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&channel, sizeof(uint16_t));
 
-    assert(channel == radio_channel);*/
+    assert(channel == radio_channel);
+    // Address is broadcast address
+    uint8_t broadcast[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+    uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = {0};
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_ADDRESS, 
+                                    (void *)addr, NRF24L01P_NG_ADDR_WIDTH);
+    assert(memcmp(broadcast, addr, NRF24L01P_NG_ADDR_WIDTH) == 0);
+    netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_STANDBY);*/
 #endif
     // Check the state is standby
     // Check the channel is cf
@@ -872,8 +882,10 @@ void test_mclmac_start_cf_phase(void *arg)
     // Check the state of the radio is rx
 #ifdef __RIOT__
     /*uint8_t channel = (uint8_t)mclmac->mac.cfChannel;
-    uint8_t radio_channel = nrf24l01p_ng_get_channel(&data->radio);
-    assert(channel == radio_channel);
+    uint16_t radio_channel = 0;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&radio_channel, sizeof(uint16_t));
+    assert(channel == (uint8_t)radio_channel);
     netopt_state_t state = NETOPT_STATE_RX, radio_state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));

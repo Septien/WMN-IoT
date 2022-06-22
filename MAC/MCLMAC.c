@@ -490,6 +490,10 @@ void mclmac_change_cf_channel(MCLMAC_t *mclmac)
     uint16_t channel = mclmac->mac.cfChannel;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL, 
                                     (void *)&channel, sizeof(uint16_t));
+    /* Only for the nrf24l01p radio. */
+    uint8_t broadcast_addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_ADDRESS,
+                                    (void *)broadcast_addr, NRF24L01P_NG_ADDR_WIDTH);
     netopt_state_t state = NETOPT_STATE_STANDBY;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE, 
                                     (void *)&state, sizeof(state));
