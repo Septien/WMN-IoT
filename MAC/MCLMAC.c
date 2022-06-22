@@ -551,3 +551,14 @@ int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
 #endif
     return 1;
 }
+
+void mclmac_set_radio_sleep(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_SLEEP;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+#endif
+}

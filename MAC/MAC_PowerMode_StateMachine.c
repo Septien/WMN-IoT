@@ -132,7 +132,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 
     case PASSIVE: ;
         mclmac_set_current_cf_slot(mclmac, 0);
-        /* Set radio to sleep */
+        mclmac_set_radio_sleep(mclmac);
         bool sleep = true;
         while (sleep)
         {
