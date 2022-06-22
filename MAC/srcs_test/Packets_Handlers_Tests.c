@@ -142,9 +142,9 @@ void test_mclmac_send_cf_message(void *arg)
 
     ARROW(mclmac->mac)cfChannel = 915000000;
 
-    stub_mclmac_change_cf_channel(mclmac);
+    mclmac_change_cf_channel(mclmac);
 
-    stub_mclmac_start_cf_phase(mclmac);
+    mclmac_start_cf_phase(mclmac);
 
     /* Send the packet the destination id is already known, and the 
        cf phase is already started. */

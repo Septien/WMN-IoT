@@ -10,6 +10,10 @@
 
 #include "cUnit.h"
 
+#ifdef __RIOT__
+#include "nrf24l01p_ng.h"
+#endif
+
 #define ITERATIONS 1000
 
 struct mclmac_data {
@@ -837,10 +841,18 @@ void test_mclmac_change_cf_channel(void *arg)
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    ARROW(mclmac->mac)cfChannel = 915000000;
+    ARROW(mclmac->mac)cfChannel = 5;
 
-    stub_mclmac_change_cf_channel(mclmac);
-    
+    mclmac_change_cf_channel(mclmac);
+
+#ifdef __RIOT__
+    /*uint8_t channel = (uint8_t)ARROW(mclmac->mac)cfChannel;
+    uint8_t radio_channel;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&channel, sizeof(uint16_t));
+
+    assert(channel == radio_channel);*/
+#endif
     // Check the state is standby
     // Check the channel is cf
 }
@@ -850,15 +862,23 @@ void test_mclmac_start_cf_phase(void *arg)
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-    ARROW(mclmac->mac)cfChannel = 915000000;
+    ARROW(mclmac->mac)cfChannel = 5;
 
-    stub_mclmac_change_cf_channel(mclmac);
+    mclmac_change_cf_channel(mclmac);
 
-    stub_mclmac_start_cf_phase(mclmac);
+    mclmac_start_cf_phase(mclmac);
 
     // Check for the frequency
-
-    // Check the state of the radio is rx-single
+    // Check the state of the radio is rx
+#ifdef __RIOT__
+    /*uint8_t channel = (uint8_t)mclmac->mac.cfChannel;
+    uint8_t radio_channel = nrf24l01p_ng_get_channel(&data->radio);
+    assert(channel == radio_channel);
+    netopt_state_t state = NETOPT_STATE_RX, radio_state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == radio_state);*/
+#endif
 }
 
 void test_stub_mclmac_start_split_phase(void *arg)
@@ -876,19 +896,63 @@ void test_stub_mclmac_start_split_phase(void *arg)
      *  -Initialize and clear the control packet.
      *  -The function can only be called from within the TRANSMIT or RECEIVE states,
      */
-    int32_t ret = stub_mclmac_start_split_phase(mclmac, STARTP);
+    int32_t ret = mclmac_start_split_phase(mclmac, STARTP);
     assert(ret == -1);
-    ret = stub_mclmac_start_split_phase(mclmac, PASSIVE);
+    ret = mclmac_start_split_phase(mclmac, PASSIVE);
     assert(ret == -1);
-    ret = stub_mclmac_start_split_phase(mclmac, ACTIVE);
+    ret = mclmac_start_split_phase(mclmac, ACTIVE);
     assert(ret == -1);
-    ret = stub_mclmac_start_split_phase(mclmac, FINISHP);
+    ret = mclmac_start_split_phase(mclmac, FINISHP);
     assert(ret == -1);
 
-    ret = stub_mclmac_start_split_phase(mclmac, TRANSMIT);
+    ret = mclmac_start_split_phase(mclmac, TRANSMIT);
     assert(ret == 1);
-    ret = stub_mclmac_start_split_phase(mclmac, RECEIVE);
+#ifdef __RIOT__
+    // Check the frequency of the radio
+    /*uint16_t freq = (uint16_t)mclmac->mac.transmitChannel, channel = 0;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&channel, sizeof(uint16_t));
+    // Check the state of the radio
+    netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void*)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_TX);*/
+    // Check the contorl packet
+    ControlPacket_t *pkt = &mclmac->mac.ctrlpkt;
+    assert(pkt->node_id[0] == 0);
+    assert(pkt->node_id[1] == 0);
+    assert(pkt->currentFrame == 0);
+    assert(pkt->currentSlot == 0);
+    assert(pkt->collisionSlot == 0);
+    assert(pkt->collisionFrequency == 0);
+    assert(pkt->hopCount == 0);
+    assert(pkt->networkTime == 0);
+    assert(pkt->initTime == 0);
+#endif
+    ret = mclmac_start_split_phase(mclmac, RECEIVE);
     assert(ret == 1);
+#ifdef __RIOT__
+    // Check the frequency of the radio
+    /*uint16_t freq = (uint16_t)mclmac->mac.receiveChannel, channel = 0;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&channel, sizeof(uint16_t));
+    // Check the state of the radio
+    netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void*)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_RX);*/
+    // Check the contorl packet
+    pkt = &mclmac->mac.ctrlpkt;
+    assert(pkt->node_id[0] == 0);
+    assert(pkt->node_id[1] == 0);
+    assert(pkt->currentFrame == 0);
+    assert(pkt->currentSlot == 0);
+    assert(pkt->collisionSlot == 0);
+    assert(pkt->collisionFrequency == 0);
+    assert(pkt->hopCount == 0);
+    assert(pkt->networkTime == 0);
+    assert(pkt->initTime == 0);
+#endif
 }
 
 void executeTestsMCLMAC(void)
@@ -930,7 +994,7 @@ void executeTestsMCLMAC(void)
     cunit_add_test(tests, &test_mclmac_write_queue_element, "mclmac_write_queue_element\0");
     cunit_add_test(tests, &test_mclmac_change_cf_channel, "mclmac_change_cf_channel\0");
     cunit_add_test(tests, &test_mclmac_start_cf_phase, "mclmac_start_cf_phase\0");
-    cunit_add_test(tests, &test_stub_mclmac_start_split_phase, "stub_mclmac_start_split_phase\0");
+    cunit_add_test(tests, &test_stub_mclmac_start_split_phase, "mclmac_start_split_phase\0");
 
     cunit_execute_tests(tests);
 

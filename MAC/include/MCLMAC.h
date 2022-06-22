@@ -221,11 +221,11 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac);
 void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac);
 
 // Channel selection
-void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac);
+void mclmac_change_cf_channel(MCLMAC_t *mclmac);
 
 // Radio modes
-int32_t stub_mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state);
-void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac);
+int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state);
+void mclmac_start_cf_phase(MCLMAC_t *mclmac);
 bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
 /**

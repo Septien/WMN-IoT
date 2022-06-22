@@ -479,39 +479,71 @@ int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
     return 1;
 }
 
-void stub_mclmac_change_cf_channel(MCLMAC_t *mclmac)
+void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __RIOT__
     assert(ARROW(mclmac->mac)netdev != NULL);
-    assert(ARROW(mclmac->mac)cfChannel >= 902000000 && ARROW(mclmac->mac)cfChannel <= 928000000);
+#endif
 
-    // Change the radio frequency
+#ifdef __RIOT__
+    uint16_t channel = mclmac->mac.cfChannel;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL, 
+                                    (void *)&channel, sizeof(uint16_t));
+    netopt_state_t state = NETOPT_STATE_STANDBY;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE, 
+                                    (void *)&state, sizeof(state));
+#endif
 
+    // Change frequency to cf channel
     // Change the radio state to standby
 
 }
 
-void stub_mclmac_start_cf_phase(MCLMAC_t *mclmac)
+void mclmac_start_cf_phase(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     assert(ARROW(mclmac->mac)netdev != NULL);
 
     // Change the channel
-    stub_mclmac_change_cf_channel(mclmac);
-    // Change the radio state to rx single
+    mclmac_change_cf_channel(mclmac);
+    // Change the radio state to rx
+#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_RX;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE, 
+                                    (void *)&state, sizeof(state));
+#endif
     // Reset the cf counter to zero
     mclmac_set_current_cf_slot(mclmac, 0);
 }
 
-int32_t stub_mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
+int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
 {
     assert(mclmac != NULL);
     
     if (state != TRANSMIT && state != RECEIVE)
         return -1;
-    
-    return 1;
 
-    // Set the frequency on the radio.
-    // Set the radio on stand by.
+#ifdef __RIOT__
+    uint16_t channel = 0;
+    netopt_state_t net_state = NETOPT_STATE_OFF;
+    if (state == TRANSMIT)
+    {
+        channel = mclmac->mac.transmitChannel;
+        net_state = NETOPT_STATE_TX;
+    }
+    else if (state == RECEIVE)
+    {
+        channel = mclmac->mac.receiveChannel;
+        net_state = NETOPT_STATE_RX;
+    }
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&channel, sizeof(uint16_t));
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&net_state, sizeof(netopt_state_t));
+    ControlPacket_t *pkt;
+    pkt = &mclmac->mac.ctrlpkt;
+    controlpacket_clear(pkt);
+#endif
+    return 1;
 }

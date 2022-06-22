@@ -168,7 +168,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         break;
 
     case ACTIVE: ;
-        stub_mclmac_start_cf_phase(mclmac);
+        mclmac_start_cf_phase(mclmac);
         uint8_t current_slot = mclmac_get_current_slot(mclmac);
         uint8_t selected_slot = mclmac_get_selected_slot(mclmac);
         uint32_t selected_freq = mclmac_get_transmit_channel(mclmac);
@@ -284,7 +284,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         break;
 
     case TRANSMIT:  ;
-        stub_mclmac_start_split_phase(mclmac, TRANSMIT);
+        mclmac_start_split_phase(mclmac, TRANSMIT);
 
         /* Create and send control packet. */
         mclmac_create_control_packet(mclmac);
@@ -333,7 +333,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         break;
 
     case RECEIVE:   ;
-        stub_mclmac_start_split_phase(mclmac, RECEIVE);
+        mclmac_start_split_phase(mclmac, RECEIVE);
 
         stub_mclmac_receive_control_packet(mclmac);
 
