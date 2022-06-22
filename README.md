@@ -37,13 +37,22 @@ the environment.
 
 In the following, we describe each component of the network.
 
+## The Physical Layer
+This layer has as function the transmission of the packets through the physical medium, using whatever 
+technology or method is necessary. For RIOT, we will use an interface provided by the OS called netdev, 
+which basically abstracts the access and configuration of the radios. Through this interface, we can access
+any radio supported by it (as long as that radio does not require a special stack, like the WiFi radios.)
+The currently supported radios by this stack are the following:
+
+- Radio developed by Nordic semiconductors: nRF24l01+ [^1].
+
 ## The MAC Layer
 As mentioned, the mobile nodes have the following restrictions/requisites:
 - Are resource-constrained in nature.
 - Use a single-radio multiple-channel approach.
 
 So, we need a MAC protocol that saves energy, handles multiple channels on a single radio, and is as lightweight as possible. 
-The currently proposed MAC is known as Multi-Channel Lighweight Medium Access Control (MCLMAC) [^1]. It
+The currently proposed MAC is known as Multi-Channel Lighweight Medium Access Control (MCLMAC) [^2]. It
 consists of two state machines: one for handling the connection of the devices to the network, and another
 for handling the power-mode of the radio and the transmission of packets.
 
@@ -119,4 +128,5 @@ node will hear for any incoming data packet. Once all the packets are received, 
 the node will transit to the Passive state.
 
 ### References
-[^1]: Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier.
+[^1]: https://www.sparkfun.com/datasheets/Components/SMD/nRF24L01Pluss_Preliminary_Product_Specification_v1_0.pdf
+[^2]: Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier.
