@@ -5,6 +5,26 @@
 
 #include "MCLMAC.h"
 
+void mclmac_start_packet_detection(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+
+#ifdef __RIOT__
+    uint8_t broadcast_addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_ADDRESS,
+                                    (void *)broadcast_addr, NRF24L01P_NG_ADDR_WIDTH);
+    uint16_t channel = (uint16_t)mclmac->mac.cfChannel;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&channel, sizeof(uint16_t));
+    netopt_state_t state = NETOPT_STATE_STANDBY;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    state = NETOPT_STATE_RX;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+#endif
+}
+
 /**
  * @brief Check the presence of a valid cf packet. Use for the INITIALIZATION state.
  * 

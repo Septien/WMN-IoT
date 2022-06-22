@@ -198,6 +198,8 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac);
 void stub_mclmac_send_control_packet(MCLMAC_t *mclmac);
 void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);
 
+void mclmac_start_packet_detection(MCLMAC_t *mclmac);
+bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 /**
  * @brief For the SYNCHRONIZATION state. It will receive all the incoming 
  *      control packets from the network, one at the time, and store the received
@@ -226,7 +228,6 @@ void mclmac_change_cf_channel(MCLMAC_t *mclmac);
 // Radio modes
 int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state);
 void mclmac_start_cf_phase(MCLMAC_t *mclmac);
-bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 void mclmac_set_radio_sleep(MCLMAC_t *mclmac);
 
 /**

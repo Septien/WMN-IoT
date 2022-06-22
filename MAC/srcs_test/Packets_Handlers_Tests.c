@@ -65,6 +65,34 @@ void teardown_packet_handlers(void *arg)
     MCLMAC_destroy(&data->mclmac);
 }
 
+void test_mclmac_start_packet_detection(void *arg)
+{
+    struct packethandlers_data *data = (struct packethandlers_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+
+    /**
+     * Function used for the INITIALIZATION state of the MAC state machine.
+     * It should be called only once at the beginning of the state.
+     * Configure the radio so it can begin the detection of cf packets.
+     */
+#ifdef __RIOT__
+    /*uint8_t broadcast_addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+    uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = {0};
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_ADDRESS,
+                                    (void *)addr, NRF24L01P_NG_ADDR_WIDTH);
+    assert(memcmp(broadcast_addr, addr, NRF24L01P_NG_ADDR_WIDTH) == 0);
+    uint16_t cf_channel = (uint16_t) mclmac->mac.cfChannel;
+    uint16_t radio_channel = 0;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
+                                    (void *)&radio_channel, sizeof(uint16_t));
+    assert(radio_channel == cf_channel);
+    netopt_state_t radio_state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&radio_state, sizeof(netopt_state_t));
+    assert(radio_state == NETOPT_STATE_RX);*/
+#endif
+}
+
 void test_stub_mclmac_receive_ctrlpkt_sync(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
@@ -476,6 +504,7 @@ void executetests_packets_handlers(void)
 
     cunit_init(&tests, &setup_packet_handlers, &teardown_packet_handlers, (void *)&data);
 
+    cunit_add_test(tests, &test_mclmac_start_packet_detection, "mclmac_start_packet_detection\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_ctrlpkt_sync, "stub_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_send_control_packet, "stub_mclmac_send_control_packet\0");
