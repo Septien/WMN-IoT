@@ -93,6 +93,23 @@ void test_mclmac_start_packet_detection(void *arg)
 #endif
 }
 
+void test_stub_mclmac_cf_packet_detected(void *arg)
+{
+    struct packethandlers_data *data = (struct packethandlers_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+
+    /**
+     * This function detects cf packets on the medium. The radio should already have
+     * the broadcast address, the channel, and in state rx.
+     * It will retrieve the size of the packet on the radio, and
+     * if it is 32 bytes, it will return true. Otherwise will return false.
+     */
+    bool detected = stub_mclmac_cf_packet_detected(mclmac);
+#ifdef __RIOT__
+    (void) detected;
+#endif
+}
+
 void test_stub_mclmac_receive_ctrlpkt_sync(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;

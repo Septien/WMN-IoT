@@ -57,6 +57,22 @@ bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac)
         timeout_unset(timeout);
         return true;
     }
+#ifdef __RIOT__
+    int size = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 
+                                                NRF24L01P_NG_MAX_PAYLOAD_WIDTH, NULL);
+    if (size == 0)
+    {
+        return false;
+    }
+    else if (size > 0 && size < 32)
+    {
+        return false;
+    }
+    else if (size == 32)
+    {
+        return true;
+    }
+#endif
     return false;
 }
 
