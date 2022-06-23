@@ -173,7 +173,7 @@ For the state 4, return once true, and the other false.
 For the state 5, return true twice. 
 Have a counter indicating in which function call the function is at.
 Another variable for holding the last state of _cf_message_received. */
-bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
+bool mclmac_receive_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
@@ -251,6 +251,33 @@ bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac)
             mclmac->_trues5++;
         }
     }
+#ifdef __RIOT__
+    /*int frame_len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
+    mclmac->mac._cf_message_receive = false;
+    if (frame_len == 0) {
+        return false;
+    }
+    else if (frame_len > 0 && frame_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH) {
+        return false;
+    }
+    else if (frame_len == NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+    {
+        uint8_t frame[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+        frame_len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *) frame,
+                                                        frame_len, NULL);
+        if (frame_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+            return false;
+        mclmac->mac._cf_message_received = true;
+        array_t byte_string;
+        create_array(&byte_string, frame_len);
+        for (int i = 0; i < frame_len; i++)
+        {
+            write_element(&byte_string, frame[i], i);
+        }
+        cfpacket_construct_from_bytestring(pkt, byte_string);
+        free_array(&byte_string);
+    }*/
+#endif
 
     return ARROW(mclmac->mac)_cf_message_received;
 }

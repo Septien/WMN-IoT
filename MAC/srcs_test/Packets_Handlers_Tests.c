@@ -203,6 +203,20 @@ void test_mclmac_send_cf_message(void *arg)
 #endif
 }
 
+void test_mclmac_receive_cf_message(void *arg)
+{
+    struct packethandlers_data *data = (struct packethandlers_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+
+    bool ret = mclmac_receive_cf_message(mclmac);
+#ifdef __RIOT__
+    /*netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_RX);*/
+#endif
+}
+
 void test_stub_mclmac_send_control_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
@@ -531,6 +545,7 @@ void executetests_packets_handlers(void)
     cunit_add_test(tests, &test_mclmac_start_packet_detection, "mclmac_start_packet_detection\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_ctrlpkt_sync, "stub_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
+    cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");
     cunit_add_test(tests, &test_stub_mclmac_send_control_packet, "stub_mclmac_send_control_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_control_packet, "stub_mclmac_receive_control_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_send_data_packet, "stub_mclmac_send_data_packet\0");

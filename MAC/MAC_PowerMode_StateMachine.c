@@ -246,7 +246,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 }
             }
             /* Hear for any incoming CF packets on the medium. */
-            else if (state == 1 && stub_mclmac_receive_cf_message(mclmac))
+            else if (state == 1 && mclmac_receive_cf_message(mclmac))
             {
                 CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
                 uint64_t destinationid[2] = {0};
