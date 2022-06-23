@@ -76,7 +76,7 @@ bool mclmac_cf_packet_detected(MCLMAC_t *mclmac)
     return false;
 }
 
-void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
+void mclmac_send_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -84,10 +84,49 @@ void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
 #endif
     
     // Change radio to standby
-    // Get packet data string.
-    // Copy data to buffer.
-    // Change radio to tx and transmit.
-
+    mclmac_set_radio_standby(mclmac);
+    CFPacket_t *pkt = REFERENCE ARROW(mclmac->mac)_cf_messages[0];
+    ARRAY byte_string;
+    cfpacket_get_packet_bytestring(pkt, &byte_string);
+    uint8_t packet[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+    for (int i = 0; i < NRF24L01P_NG_MAX_PAYLOAD_WIDTH; i++)
+    {
+        packet[i] = READ_ARRAY(REFERENCE byte_string, i);
+    }
+    uint64_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+#ifdef __RIOT__
+    iolist_t data = {
+        .iol_next = NULL,
+        .iol_base = packet,
+        .iol_len = sizeof(packet)
+    };
+    iolist_t list = {
+        .iol_next = &data,
+        .iol_base = (void *)addr,
+        .iol_len = sizeof(addr)
+    };
+    int res;
+    /*while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0)
+    {
+        if (res == -EAGAIN) {
+            continue;
+        }
+        else if (res == -EBUSY) {
+            continue;
+        }
+        break;
+    }*/
+#endif
+    mclmac_set_radio_standby(mclmac);
+    // Sleep for a while before returnint
+#ifdef __LINUX__
+    usleep(1);
+    free(byte_string);
+#endif
+#ifdef __RIOT__
+    ztimer_sleep(ZTIMER_USEC, 1);
+    free_array(&byte_string);
+#endif
 }
 
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)

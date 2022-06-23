@@ -185,6 +185,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         /* Iterate over all cf slots. */
         while (!ended)
         {
+            uint8_t current_cf_slot = mclmac_get_current_cf_slot(mclmac);
+            bool current_frequency = (selected_freq == mclmac_get_frequency(mclmac, current_cf_slot));
+            int state = (is_current && current_frequency ? 0 : 1);;  // state = 0, receive cf message; state = 1 send cf message.
             /* Check whether the current cf slot finished. */
             if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)cf_timer) == 1)
             {
@@ -201,11 +204,17 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 {
                     ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
                 }
+                // If previous state was 0, set radio to rx
+                if (state == 0)
+                {
+                    mclmac_set_radio_rx(mclmac);
+                }
+                // Update state
+                state = (is_current && current_frequency ? 0 : 1);
             }
             /* If the current slot is the selected slot, and the current cf slot corresponds to the 
             selected frequency, check if a packet is ready to send. */
-            uint8_t current_cf_slot = mclmac_get_current_cf_slot(mclmac);
-            if (is_current && selected_freq == mclmac_get_frequency(mclmac, current_cf_slot))
+            if (state == 0)
             {
                 uint8_t packets_to_send_message = ARROW(mclmac->mac)_packets_to_send_message;
                 uint8_t packets_to_send_control = ARROW(mclmac->mac)_packets_to_send_control;
@@ -217,7 +226,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     uint64_t nodeid[2] = {0};
                     mclmac_get_nodeid(mclmac, nodeid);
                     cfpacket_create(cfpkt, nodeid, ARROW(mclmac->mac)_destination_id);
-                    stub_mclmac_send_cf_message(mclmac);
+                    mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
                     send = true;
                     is_current = false; // Indicate to send no more cf packets
@@ -230,14 +239,14 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     uint64_t nodeid2[2] = {0};
                     mclmac_get_nodeid(mclmac, nodeid);
                     cfpacket_create(cfpkt, nodeid, nodeid2);
-                    stub_mclmac_send_cf_message(mclmac);
+                    mclmac_send_cf_message(mclmac);
                     cfpacket_clear(cfpkt);
                     send = true;
                     is_current = false;
                 }
             }
             /* Hear for any incoming CF packets on the medium. */
-            else if (stub_mclmac_receive_cf_message(mclmac))
+            else if (state == 1 && stub_mclmac_receive_cf_message(mclmac))
             {
                 CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
                 uint64_t destinationid[2] = {0};

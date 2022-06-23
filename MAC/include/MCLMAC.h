@@ -32,6 +32,7 @@
 #ifdef __RIOT__
 #include "net/netdev.h"
 #include "net/netopt.h"
+#include "iolist.h"
 #include "ztimer.h"
 #include "sx127x.h"
 #include "thread.h"
@@ -193,7 +194,7 @@ uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac);
 
 /* Packet functions */
 void mclmac_create_control_packet(MCLMAC_t *mclmac);
-void stub_mclmac_send_cf_message(MCLMAC_t *mclmac);
+void mclmac_send_cf_message(MCLMAC_t *mclmac);
 bool stub_mclmac_receive_cf_message(MCLMAC_t *mclmac);
 void stub_mclmac_send_control_packet(MCLMAC_t *mclmac);
 void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);

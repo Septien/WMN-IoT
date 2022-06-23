@@ -193,7 +193,14 @@ void test_mclmac_send_cf_message(void *arg)
 
     /* Send the packet the destination id is already known, and the 
        cf phase is already started. */
-    stub_mclmac_send_cf_message(mclmac);
+    mclmac_send_cf_message(mclmac);
+    CFPacket_t *pkt = REFERENCE ARROW(mclmac->mac)_cf_messages[0];
+#ifdef __RIOT__
+    /*netopt_state_t radio_state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&radio_state, sizeof(netopt_state_t));
+    assert(radio_state == NETOPT_STATE_STANDBY);*/
+#endif
 }
 
 void test_stub_mclmac_send_control_packet(void *arg)
