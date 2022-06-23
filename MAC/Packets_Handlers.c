@@ -30,7 +30,7 @@ void mclmac_start_packet_detection(MCLMAC_t *mclmac)
  * 
  * @param mclmac 
  */
-bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac)
+bool mclmac_cf_packet_detected(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
@@ -74,6 +74,16 @@ bool stub_mclmac_cf_packet_detected(MCLMAC_t *mclmac)
     }
 #endif
     return false;
+}
+
+void mclmac_set_radio_standby(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_STANDBY;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));    
+#endif
 }
 
 void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)

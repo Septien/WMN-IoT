@@ -138,7 +138,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         timer = timeout_set(TIME(DETECTION_TIME));
         while (!finish)
         {
-            bool packet = stub_mclmac_cf_packet_detected(mclmac);
+            bool packet = mclmac_cf_packet_detected(mclmac);
             bool passed = timeout_passed(timer);
             if (passed == 1)
             {
@@ -156,6 +156,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             mclmac->_is_first_node = true;
         }
         timeout_unset(timer);
+        mclmac_set_radio_standby(mclmac);
         mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
         break;
 
