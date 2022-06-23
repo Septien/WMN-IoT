@@ -184,7 +184,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         uint32_t frequency = 0;
         uint8_t current_slot = 0;
 
-        // Set the current frequency
+        mclmac_set_radio_rx(mclmac);
         /* Synchornize */
         stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
         /* Get the frame. */
@@ -255,6 +255,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         timeout_unset(frame_timer);
         timeout_unset(slot_timer);
         controlpacket_destroy(&ctrlpkt);
+        mclmac_set_radio_standby(mclmac);
         mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
 
         return E_MAC_EXECUTION_SUCCESS;

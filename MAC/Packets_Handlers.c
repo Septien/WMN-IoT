@@ -86,6 +86,16 @@ void mclmac_set_radio_standby(MCLMAC_t *mclmac)
 #endif
 }
 
+void mclmac_set_radio_rx(MCLMAC_t *mclmac)
+{
+    assert(mclmac != NULL);
+#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_RX;
+    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+#endif
+}
+
 void stub_mclmac_send_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
