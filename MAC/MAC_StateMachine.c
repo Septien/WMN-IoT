@@ -262,6 +262,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         break;
     
     case TIMESLOT_AND_CHANNEL_SELECTION: ;
+        mclmac_set_radio_sleep(mclmac);
         if (mclmac->_is_first_node == true)
         {
             // Set the first slot and the first frequency

@@ -986,6 +986,37 @@ void test_mclmac_set_radio_sleep(void *arg)
 #endif
 }
 
+void test_mclmac_set_radio_standby(void *arg)
+{
+    struct mclmac_data *data = (struct mclmac_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+
+    /**
+     * Set the radio state to standby.
+     */
+    mclmac_set_radio_standby(mclmac);
+#ifdef __RIOT__
+    /*netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_STANDBY);*/
+#endif
+}
+
+void test_mclmac_set_radio_rx(void *arg)
+{
+    struct mclmac_data *data = (struct mclmac_data *) arg;
+    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+
+    mclmac_set_radio_rx(mclmac);
+#ifdef __RIOT__
+    /*netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_RX);*/
+#endif
+}
+
 void executeTestsMCLMAC(void)
 {
     init_queues();
@@ -1027,6 +1058,8 @@ void executeTestsMCLMAC(void)
     cunit_add_test(tests, &test_mclmac_start_cf_phase, "mclmac_start_cf_phase\0");
     cunit_add_test(tests, &test_stub_mclmac_start_split_phase, "mclmac_start_split_phase\0");
     cunit_add_test(tests, &test_mclmac_set_radio_sleep, "mclmac_set_radio_sleep\0");
+    cunit_add_test(tests, &test_mclmac_set_radio_standby, "mclmac_set_radio_standby\0");
+    cunit_add_test(tests, &test_mclmac_set_radio_rx, "mclmac_set_radio_rx\0");
 
     cunit_execute_tests(tests);
 
