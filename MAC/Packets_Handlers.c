@@ -305,7 +305,7 @@ void mclmac_create_control_packet(MCLMAC_t *mclmac)
                         hopCount, networkTime, initTime);
 }
 
-void stub_mclmac_send_control_packet(MCLMAC_t *mclmac)
+void mclmac_send_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 #ifdef __LINUX__
@@ -317,8 +317,44 @@ void stub_mclmac_send_control_packet(MCLMAC_t *mclmac)
     ARRAY byteStr;
 
     controlpacket_get_packet_bytestring(pkt, &byteStr);
-
-    // Send byte string
+    /*uint8_t ctrl_pkt[PACKET_SIZE_MAC];
+    size_t total_len = PACKET_SIZE_MAC;
+    // Copy the data to a static array
+    for (int i = 0; i < PACKET_SIZE_MAC; i++)
+    {
+        ctrl_pkt[i] = READ_ARRAY(REFERENCE byteStr, i);
+    }*/
+#ifdef __RIOT__
+    // Set the address to the broadcast address, so other joining nodes can access the packet
+    //uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+    // Iterate over all the string, and send the packet in chunks of 32 bytes.
+    /*for (int i = 0; i < PACKET_SIZE_MAC; i += NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+    {
+        uint8_t *ptr = &ctrl_pkt[i];
+        total_len -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        iolist_t data = {
+            .iol_next = NULL,
+            .iol_base = (void *)ptr,
+            .iol_len = (0 < total_len && total_len < 32 ? total_len : NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+        };
+        iolist_t list = {
+            .iol_next = &data,
+            .iol_base = addr,
+            .iol_len = NRF24L01P_NG_ADDR_WIDTH
+        };
+        int res;
+        while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0)
+        {
+            if (res == -EAGAIN) {
+                continue;
+            }
+            if (res == -EBUSY) {
+                continue;
+            }
+            break;
+        }
+    }*/
+#endif
 
     controlpacket_clear(pkt);
 

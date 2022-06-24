@@ -297,7 +297,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 
         /* Create and send control packet. */
         mclmac_create_control_packet(mclmac);
-        stub_mclmac_send_control_packet(mclmac);
+        mclmac_send_control_packet(mclmac);
 
         // Nodes already notify, unset flag and break
         if (ARROW(mclmac->mac)_collisionDetected == true)

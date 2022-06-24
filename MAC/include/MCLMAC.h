@@ -196,7 +196,7 @@ uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac);
 void mclmac_create_control_packet(MCLMAC_t *mclmac);
 void mclmac_send_cf_message(MCLMAC_t *mclmac);
 bool mclmac_receive_cf_message(MCLMAC_t *mclmac);
-void stub_mclmac_send_control_packet(MCLMAC_t *mclmac);
+void mclmac_send_control_packet(MCLMAC_t *mclmac);
 void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);
 
 void mclmac_start_packet_detection(MCLMAC_t *mclmac);

@@ -217,7 +217,7 @@ void test_mclmac_receive_cf_message(void *arg)
 #endif
 }
 
-void test_stub_mclmac_send_control_packet(void *arg)
+void test_mclmac_send_control_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -238,7 +238,7 @@ void test_stub_mclmac_send_control_packet(void *arg)
      * should be cleared after wards.
      */
     ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
-    stub_mclmac_send_control_packet(mclmac);
+    mclmac_send_control_packet(mclmac);
     assert(pkt->node_id[0] == 0);
     assert(pkt->node_id[1] == 0);
     assert(pkt->currentFrame == 0);
@@ -248,6 +248,12 @@ void test_stub_mclmac_send_control_packet(void *arg)
     assert(pkt->hopCount == 0);
     assert(pkt->networkTime == 0);
     assert(pkt->initTime == 0);
+#ifdef __RIOT__
+    /*netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_TX);*/
+#endif
 }
 
 void test_stub_mclmac_receive_control_packet(void *arg)
@@ -546,7 +552,7 @@ void executetests_packets_handlers(void)
     cunit_add_test(tests, &test_stub_mclmac_receive_ctrlpkt_sync, "stub_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");
-    cunit_add_test(tests, &test_stub_mclmac_send_control_packet, "stub_mclmac_send_control_packet\0");
+    cunit_add_test(tests, &test_mclmac_send_control_packet, "stub_mclmac_send_control_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_control_packet, "stub_mclmac_receive_control_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_send_data_packet, "stub_mclmac_send_data_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_data_packet, "stub_mclmac_receive_data_packet\0");
