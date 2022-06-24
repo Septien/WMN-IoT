@@ -332,7 +332,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
 
             // Send data packets only after the control ones were sent
             if (ARROW(mclmac->mac)_packets_to_send_message > 0 && ARROW(mclmac->mac)_packets_to_send_control == 0)
-                stub_mclmac_send_data_packet(mclmac);
+                mclmac_send_data_packet(mclmac);
 
             if (mclmac_available_data_packets(mclmac) == 0)
                 end = true;

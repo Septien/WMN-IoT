@@ -376,7 +376,7 @@ void test_stub_mclmac_receive_control_packet(void *arg)
     assert(ctrlpkt->initTime != mclmac->_initTime);
 }
 
-void test_stub_mclmac_send_data_packet(void *arg)
+void test_mclmac_send_data_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -403,19 +403,54 @@ void test_stub_mclmac_send_data_packet(void *arg)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[i];
         datapacket_construct_from_bytestring(pkt, &byteString);
+        pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
+        datapacket_construct_from_bytestring(pkt, &byteString);
     }
+    ARROW(mclmac->mac)_packets_to_send_control = 0;
+    mclmac_send_data_packet(mclmac);
+    assert(ARROW(mclmac->mac)_first_send_control == ARROW(mclmac->mac)_last_send_control);
     ARROW(mclmac->mac)_packets_to_send_message = 0;
-    stub_mclmac_send_data_packet(mclmac);
+    mclmac_send_data_packet(mclmac);
     assert(ARROW(mclmac->mac)_first_send_message == ARROW(mclmac->mac)_last_send_message);
 
     ARROW(mclmac->mac)_packets_to_send_message = n;
-    uint8_t first_send = ARROW(mclmac->mac)_first_send_message;
-    uint8_t last_send = ARROW(mclmac->mac)_last_send_message;
-    uint8_t packet_sent = ARROW(mclmac->mac)_packets_to_send_message;
+    ARROW(mclmac->mac)_packets_to_send_control = n;
+    uint8_t first_send = ARROW(mclmac->mac)_first_send_control;
+    uint8_t last_send = ARROW(mclmac->mac)_last_send_control;
+    uint8_t packet_sent = ARROW(mclmac->mac)_packets_to_send_control;
+    // Send the control packets
     for (i = 0; i < n; i++)
     {
-        stub_mclmac_send_data_packet(mclmac);
+        mclmac_send_data_packet(mclmac);
         packet_sent--;
+        assert(ARROW(mclmac->mac)_packets_to_send_control == packet_sent);
+        first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
+        assert(ARROW(mclmac->mac)_first_send_control == first_send);
+        DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
+        assert(pkt->type == -1);
+        assert(pkt->size == 0);
+        assert(pkt->destination_id[0] == 0);
+        assert(pkt->destination_id[1] == 0);
+#ifdef __LINUX__
+        assert(pkt->data == NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size == 0);
+#endif
+    }
+    assert(ARROW(mclmac->mac)_packets_to_send_control == 0);
+    assert(ARROW(mclmac->mac)_last_send_control == last_send);
+    // Send the data messages
+    first_send = ARROW(mclmac->mac)_first_send_message;
+    last_send = ARROW(mclmac->mac)_last_send_message;
+    packet_sent = ARROW(mclmac->mac)_packets_to_send_message;
+    // Send the control packets
+    printf("%d, %d\n", ARROW(mclmac->mac)_packets_to_send_message, packet_sent);
+    for (i = 0; i < n; i++)
+    {
+        mclmac_send_data_packet(mclmac);
+        packet_sent--;
+        printf("%d, %d\n", ARROW(mclmac->mac)_packets_to_send_message, packet_sent);
         assert(ARROW(mclmac->mac)_packets_to_send_message == packet_sent);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
         assert(ARROW(mclmac->mac)_first_send_message == first_send);
@@ -502,7 +537,7 @@ void test_stub_mclmac_send_layers_control_packet(void *arg)
         datapacket_construct_from_bytestring(pkt, &byteString);
     }
     ARROW(mclmac->mac)_packets_to_send_control = 0;
-    stub_mclmac_send_data_packet(mclmac);
+    mclmac_send_data_packet(mclmac);
     assert(ARROW(mclmac->mac)_first_send_control == ARROW(mclmac->mac)_last_send_control);
 
     ARROW(mclmac->mac)_packets_to_send_control = n;
@@ -552,9 +587,9 @@ void executetests_packets_handlers(void)
     cunit_add_test(tests, &test_stub_mclmac_receive_ctrlpkt_sync, "stub_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");
-    cunit_add_test(tests, &test_mclmac_send_control_packet, "stub_mclmac_send_control_packet\0");
-    cunit_add_test(tests, &test_stub_mclmac_receive_control_packet, "stub_mclmac_receive_control_packet\0");
-    cunit_add_test(tests, &test_stub_mclmac_send_data_packet, "stub_mclmac_send_data_packet\0");
+    cunit_add_test(tests, &test_mclmac_send_control_packet, "mclmac_send_control_packet\0");
+    cunit_add_test(tests, &test_stub_mclmac_receive_control_packet, "mclmac_receive_control_packet\0");
+    cunit_add_test(tests, &test_mclmac_send_data_packet, "mclmac_send_data_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_data_packet, "stub_mclmac_receive_data_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_send_layers_control_packet, "stub_mclmac_send_layers_control_packet\0");
     cunit_add_test(tests, &test_mclmac_send_cf_message, "mclmac_send_cf_message\0");

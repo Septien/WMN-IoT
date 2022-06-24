@@ -575,37 +575,123 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
 #endif
 }
 
-void stub_mclmac_send_data_packet(MCLMAC_t *mclmac)
+void mclmac_send_data_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    if (ARROW(mclmac->mac)_packets_to_send_message == 0)
+    if (ARROW(mclmac->mac)_packets_to_send_message == 0 && ARROW(mclmac->mac)_packets_to_send_control == 0)
         return;
     if (ARROW(mclmac->mac)_first_send_message > MAX_NUMBER_DATA_PACKETS)
         return;
+    if (ARROW(mclmac->mac)_first_send_control > MAX_NUMBER_DATA_PACKETS)
+        return;
 
-    // Get the packet pointed to by _first_send_message
-    uint8_t first_send = ARROW(mclmac->mac)_first_send_message;
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[first_send];
-
-    // Get the byte string
-    ARRAY byteString;
-    datapacket_get_packet_bytestring(pkt, &byteString);
-
-    // copy byte string to radio.
-    // Send byte string.
-
-    ARROW(mclmac->mac)_first_send_message = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-    ARROW(mclmac->mac)_packets_to_send_message--;
-
-    datapacket_clear(pkt);
-
+    // Iterate over all packets on both queues,sending first the control packets
+    if (ARROW(mclmac->mac)_packets_to_send_control > 0)
+    {
+        // Get the packet pointed to by _first_send_control
+        uint8_t first_send = ARROW(mclmac->mac)_first_send_control;
+        DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[first_send];
+        // Get the byte string
+        ARRAY byteString;
+        datapacket_get_packet_bytestring(pkt, &byteString);
+        uint8_t pkt_bytes[PACKET_SIZE_MAC] = {0};
+        for (int i = 0; i < PACKET_SIZE_MAC; i++) {
+            pkt_bytes[i] = READ_ARRAY(REFERENCE byteString, i);
+        }
+        size_t total_len = PACKET_SIZE_MAC;
+        for (int i = 0; i < PACKET_SIZE_MAC; i += 32)
+        {
+#ifdef __RIOT__
+            uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+            uint8_t *ptr = &pkt_bytes[i];
+            iolist_t data = {
+                .iol_next = NULL,
+                .iol_base = (void *)ptr,
+                .iol_len = (0 < total_len && total_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH ? total_len : NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+            };
+            iolist_t list = {
+                .iol_next = &data,
+                .iol_base = addr,
+                .iol_len = NRF24L01P_NG_ADDR_WIDTH
+            };
+            int res;
+            /*while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0) {
+                if (res == -EAGAIN) {
+                    continue;
+                }
+                else if (res == -EBUSY) {
+                    continue;
+                }
+                break;
+            }*/
+#endif
+        }
+        datapacket_clear(pkt);
+        total_len -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
+        ARROW(mclmac->mac)_first_send_control = first_send;
+        ARROW(mclmac->mac)_packets_to_send_control--;
 #ifdef __LINUX__
-    free(byteString);
+        free(byteString);
 #endif
 #ifdef __RIOT__
-    free_array(&byteString);
+        free_array(&byteString);
 #endif
+    }
+
+    else if (ARROW(mclmac->mac)_packets_to_send_message > 0)
+    {
+        // Get the packet pointed to by _first_send_message
+        uint8_t first_send = ARROW(mclmac->mac)_first_send_message;
+        DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[first_send];
+        // Get the byte string
+        ARRAY byteString;
+        datapacket_get_packet_bytestring(pkt, &byteString);
+        uint8_t pkt_bytes[PACKET_SIZE_MAC] = {0};
+        for (int i = 0; i < PACKET_SIZE_MAC; i++) {
+            pkt_bytes[i] = READ_ARRAY(REFERENCE byteString, i);
+        }
+        size_t total_len = PACKET_SIZE_MAC;
+        for (int i = 0; i < PACKET_SIZE_MAC; i += 32)
+        {
+#ifdef __RIOT__
+            uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+            uint8_t *ptr = &pkt_bytes[i];
+            iolist_t data = {
+                .iol_next = NULL,
+                .iol_base = (void *)ptr,
+                .iol_len = (0 < total_len && total_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH ? total_len : NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+            };
+            iolist_t list = {
+                .iol_next = &data,
+                .iol_base = addr,
+                .iol_len = NRF24L01P_NG_ADDR_WIDTH
+            };
+            int res;
+            /*while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0) {
+                if (res == -EAGAIN) {
+                    continue;
+                }
+                else if (res == -EBUSY) {
+                    continue;
+                }
+                break;
+            }*/
+#endif
+        }
+        datapacket_clear(pkt);
+        total_len -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
+        ARROW(mclmac->mac)_first_send_message = first_send;
+        ARROW(mclmac->mac)_packets_to_send_message--;
+#ifdef __LINUX__
+        free(byteString);
+#endif
+#ifdef __RIOT__
+        free_array(&byteString);
+#endif
+    }
 }
 
 void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
