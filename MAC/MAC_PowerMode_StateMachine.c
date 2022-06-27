@@ -364,7 +364,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         }
 
         uint packets_received = ARROW(mclmac->mac)_number_packets_received;
-        while (packets_received < MAX_ELEMENTS_ON_QUEUE)
+        while (packets_received < 2 * MAX_NUMBER_DATA_PACKETS)
         {
             /* Terminate the cycle if the timer expired, but do not remove the timer, so the PASSIVE 
             state can transit to the ACTIVE state. */
