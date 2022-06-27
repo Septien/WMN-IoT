@@ -326,13 +326,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 end = true;
                 continue;       // Do not send any more packets
             }
-            // Send control packets first
-            if (ARROW(mclmac->mac)_packets_to_send_control > 0)
-                stub_mclmac_send_layers_control_packet(mclmac);
-
-            // Send data packets only after the control ones were sent
-            if (ARROW(mclmac->mac)_packets_to_send_message > 0 && ARROW(mclmac->mac)_packets_to_send_control == 0)
-                mclmac_send_data_packet(mclmac);
+            mclmac_send_data_packet(mclmac);
 
             if (mclmac_available_data_packets(mclmac) == 0)
                 end = true;
@@ -344,7 +338,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     case RECEIVE:   ;
         mclmac_start_split_phase(mclmac, RECEIVE);
 
-        stub_mclmac_receive_control_packet(mclmac);
+        mclmac_receive_control_packet(mclmac);
 
         ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
         uint32_t frequency = controlpacket_get_collision_frequency(pkt);

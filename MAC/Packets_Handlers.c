@@ -370,7 +370,7 @@ void mclmac_send_control_packet(MCLMAC_t *mclmac)
  * State 1:
  *  A correct control packet, destined for the current node, is received.
  */
-void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
+bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     ARRAY byteString;
@@ -564,7 +564,101 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
         bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    16);
     }
+#if 0
+#ifdef __LINUX__
+    int timer;
+#endif
+#ifdef __RIOT__
+    uint32_t timer;
+#endif
+    int pos = 0;
+    int32_t remaining_bytes = PACKET_SIZE_MAC;
+    uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
+    // Limit the time for hearing the control packet to 5% of the slot duration.
+#ifdef __LINUX__
+    double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+#endif
+#ifdef __RIOT__
+    uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+#endif
+    timer = timeout_set(secs);
+    // Receive the first 32 byres.
+    bool recv = true;
+    while (recv)
+    {
+#ifdef __RIOT__
+        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+        // Get the number of bytes on the radio
+        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
+        if (len != NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+        {
+            if (timeout_passed(timer) == 1)
+            {
+                timeout_unset(timer);
+                return false;
+            }
+            continue;
+        }
+        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
+        if (len < 0) {
+            return false;
+        }
+        if (buf[0] != 1)
+        {
+            if (timeout_passed(timer) == 1)
+            {
+                timeout_unset(timer);
+                return false;
+            }
+            continue;
+        }
+        // We have the first 32 bytes, which correpspond to the expected packet.
+        memcpy(bytes_pkt, buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
+        pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+#endif
+        recv = false;
+    }
+    // Receive the rest of the packet.
+    recv = true;
+    uint8_t max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
+    do
+    {
+#ifdef __RIOT__
+        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
+        int min_number_bytes = (remaining_bytes < len ? remaining_bytes : bytes);
+        if (len < min_number_bytes)
+        {
+            if (timeout_passed(mclmac->mac.frame.slot_timer) == 1) {
+                return false;
+            }
+            if ((max_recv--) == 0) {
+                return false;
+            }
+            continue;
+        }
+        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
+        if (len < 0) {
+            return false;
+        }
+        memcpy(&bytes_pkt[pos], buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
+        pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
+        if (remaining_bytes > 0) {
+            continue;
+        }
+#endif
+        recv = false;
+    } while (recv);
 
+    //  Copy the bytes to the bytestring.
+    for (int i = 0; i < PACKET_SIZE_MAC; i++)
+    {
+        WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
+    }
+#endif
     ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
     controlpacket_construct_packet_from_bytestring(pkt, &byteString);
 #ifdef __LINUX__
@@ -573,6 +667,8 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac)
 #ifdef __RIOT__
     free_array(&byteString);
 #endif
+
+    return true;
 }
 
 void mclmac_send_data_packet(MCLMAC_t *mclmac)
@@ -750,38 +846,6 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
     datapacket_construct_from_bytestring(pkt, &byteString);
     ARROW(mclmac->mac)_last_received++;
     ARROW(mclmac->mac)_number_packets_received++;
-#ifdef __LINUX__
-    free(byteString);
-#endif
-#ifdef __RIOT__
-    free_array(&byteString);
-#endif
-}
-
-void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac)
-{
-    assert(mclmac != NULL);
-    if (ARROW(mclmac->mac)_packets_to_send_control == 0)
-        return;
-    if (ARROW(mclmac->mac)_first_send_control > MAX_NUMBER_DATA_PACKETS)
-        return;
-
-    // Get the first control packet
-    uint8_t first_send = ARROW(mclmac->mac)_first_send_control;
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[first_send];
-
-    // Get the byte string
-    ARRAY byteString;
-    datapacket_get_packet_bytestring(pkt, &byteString);
-
-    // copy the packet to the radio
-    // Send the packet
-
-    ARROW(mclmac->mac)_first_send_control = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-    ARROW(mclmac->mac)_packets_to_send_control--;
-
-    datapacket_clear(pkt);
-
 #ifdef __LINUX__
     free(byteString);
 #endif

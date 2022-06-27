@@ -198,7 +198,7 @@ void mclmac_create_control_packet(MCLMAC_t *mclmac);
 void mclmac_send_cf_message(MCLMAC_t *mclmac);
 bool mclmac_receive_cf_message(MCLMAC_t *mclmac);
 void mclmac_send_control_packet(MCLMAC_t *mclmac);
-void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);
+bool mclmac_receive_control_packet(MCLMAC_t *mclmac);
 /**
  * @brief For the SYNCHRONIZATION state. It will receive all the incoming 
  *      control packets from the network, one at the time, and store the received
@@ -219,7 +219,6 @@ void stub_mclmac_receive_control_packet(MCLMAC_t *mclmac);
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt);
 void mclmac_send_data_packet(MCLMAC_t *mclmac);
 void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac);
-void stub_mclmac_send_layers_control_packet(MCLMAC_t *mclmac);
 bool mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
 // Channel selection

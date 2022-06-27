@@ -256,7 +256,7 @@ void test_mclmac_send_control_packet(void *arg)
 #endif
 }
 
-void test_stub_mclmac_receive_control_packet(void *arg)
+void test_mclmac_receive_control_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -266,6 +266,7 @@ void test_stub_mclmac_receive_control_packet(void *arg)
     mclmac->_initTime = rand();
     mclmac_set_current_frame(mclmac, rand());
     mclmac_set_current_slot(mclmac, rand());
+    mclmac_set_slot_duration(mclmac, TIME(SLOT_DURATION));
 
     /**
      * Receive a control packet from the medium.
@@ -282,7 +283,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
      */
 
     mclmac->_state_ctrl = 1;
-    stub_mclmac_receive_control_packet(mclmac);
+    bool ret = mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     ControlPacket_t *ctrlpkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
     assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
@@ -296,7 +298,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
 
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 2;
-    stub_mclmac_receive_control_packet(mclmac);
+    mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
@@ -309,7 +312,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
 
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 3;
-    stub_mclmac_receive_control_packet(mclmac);
+    mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
@@ -323,7 +327,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
     /* current slot is differet */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 4;
-    stub_mclmac_receive_control_packet(mclmac);
+    mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
@@ -337,7 +342,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
     /* current frame is differen */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 5;
-    stub_mclmac_receive_control_packet(mclmac);
+    mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
@@ -351,7 +357,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
     /* network time */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 6;
-    stub_mclmac_receive_control_packet(mclmac);
+    mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
@@ -364,7 +371,8 @@ void test_stub_mclmac_receive_control_packet(void *arg)
 
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 0;
-    stub_mclmac_receive_control_packet(mclmac);
+    mclmac_receive_control_packet(mclmac);
+    assert(ret == true);
     assert(ctrlpkt->node_id[0] != ARROW(mclmac->mac)transmitter_id[0]);
     assert(ctrlpkt->node_id[1] != ARROW(mclmac->mac)transmitter_id[1]);
     assert(ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
@@ -374,6 +382,12 @@ void test_stub_mclmac_receive_control_packet(void *arg)
     assert(ctrlpkt->hopCount != mclmac->_hopCount);
     assert(ctrlpkt->networkTime != mclmac->_networkTime);
     assert(ctrlpkt->initTime != mclmac->_initTime);
+/*#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *) &state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_RX);
+#endif*/
 }
 
 void test_mclmac_send_data_packet(void *arg)
@@ -445,12 +459,10 @@ void test_mclmac_send_data_packet(void *arg)
     last_send = ARROW(mclmac->mac)_last_send_message;
     packet_sent = ARROW(mclmac->mac)_packets_to_send_message;
     // Send the control packets
-    printf("%d, %d\n", ARROW(mclmac->mac)_packets_to_send_message, packet_sent);
     for (i = 0; i < n; i++)
     {
         mclmac_send_data_packet(mclmac);
         packet_sent--;
-        printf("%d, %d\n", ARROW(mclmac->mac)_packets_to_send_message, packet_sent);
         assert(ARROW(mclmac->mac)_packets_to_send_message == packet_sent);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
         assert(ARROW(mclmac->mac)_first_send_message == first_send);
@@ -508,75 +520,10 @@ void test_stub_mclmac_receive_data_packet(void *arg)
     }
 }
 
-void test_stub_mclmac_send_layers_control_packet(void *arg)
-{
-    struct packethandlers_data *data = (struct packethandlers_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
-
-    size_t size = MAX_MESSAGE_SIZE;
-    uint8_t message[size];
-    // Store the type of message
-    message[0] = 2 + (rand() % 7);
-    uint i;
-    for (i = 1; i < size; i++)
-        message[i] = rand();
-    ARRAY byteString;
-#ifdef __LINUX__
-    byteString = (uint8_t *)malloc(size * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&byteString, size);
-#endif
-    for (i = 0; i < size; i++)
-        WRITE_ARRAY(REFERENCE byteString, message[i], i);
-    // Store packets on array
-    uint n = MAX_NUMBER_DATA_PACKETS;
-    for (i = 0; i < n; i++)
-    {
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
-        datapacket_construct_from_bytestring(pkt, &byteString);
-    }
-    ARROW(mclmac->mac)_packets_to_send_control = 0;
-    mclmac_send_data_packet(mclmac);
-    assert(ARROW(mclmac->mac)_first_send_control == ARROW(mclmac->mac)_last_send_control);
-
-    ARROW(mclmac->mac)_packets_to_send_control = n;
-    uint8_t first_send = ARROW(mclmac->mac)_first_send_control;
-    uint8_t last_send = ARROW(mclmac->mac)_last_send_control;
-    uint8_t packet_sent = ARROW(mclmac->mac)_packets_to_send_control;
-    for (i = 0; i < n; i++)
-    {
-        stub_mclmac_send_layers_control_packet(mclmac);
-        packet_sent--;
-        assert(ARROW(mclmac->mac)_packets_to_send_control == packet_sent);
-        first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-        assert(ARROW(mclmac->mac)_first_send_control == first_send);
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
-        assert(pkt->type == -1);
-        assert(pkt->size == 0);
-        assert(pkt->destination_id[0] == 0);
-        assert(pkt->destination_id[1] == 0);
-#ifdef __LINUX__
-        assert(pkt->data == NULL);
-#endif
-#ifdef __RIOT__
-        assert(pkt->data.size == 0);
-#endif
-    }
-    assert(ARROW(mclmac->mac)_packets_to_send_control == 0);
-    assert(ARROW(mclmac->mac)_last_send_control == last_send);
-
-#ifdef __LINUX__
-    free(byteString);
-#endif
-#ifdef __RIOT__
-    free_array(&byteString);
-#endif
-}
-
 void executetests_packets_handlers(void)
 {
     init_queues();
+    timeout_init();
 
     cUnit_t *tests;
     struct packethandlers_data data;
@@ -588,14 +535,14 @@ void executetests_packets_handlers(void)
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");
     cunit_add_test(tests, &test_mclmac_send_control_packet, "mclmac_send_control_packet\0");
-    cunit_add_test(tests, &test_stub_mclmac_receive_control_packet, "mclmac_receive_control_packet\0");
+    cunit_add_test(tests, &test_mclmac_receive_control_packet, "mclmac_receive_control_packet\0");
     cunit_add_test(tests, &test_mclmac_send_data_packet, "mclmac_send_data_packet\0");
     cunit_add_test(tests, &test_stub_mclmac_receive_data_packet, "stub_mclmac_receive_data_packet\0");
-    cunit_add_test(tests, &test_stub_mclmac_send_layers_control_packet, "stub_mclmac_send_layers_control_packet\0");
     cunit_add_test(tests, &test_mclmac_send_cf_message, "mclmac_send_cf_message\0");
 
     cunit_execute_tests(tests);
 
     cunit_terminate(&tests);
+    timeout_done();
     end_queues();
 }
