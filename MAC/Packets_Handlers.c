@@ -129,6 +129,91 @@ void mclmac_send_cf_message(MCLMAC_t *mclmac)
 #endif
 }
 
+bool _recv_first_32_bytes(MCLMAC_t *mclmac, int type, int32_t *remaining_bytes, int *pos, uint8_t *out_buf,
+#ifdef __LINUX__
+int timer
+#endif
+#ifdef __RIOT__
+uint32_t timer
+#endif
+)
+{
+    bool recv = true;
+    while (recv)
+    {
+#ifdef __RIOT__
+        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+        // Get the number of bytes on the radio
+        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
+        if (len != NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
+        {
+            if (timeout_passed(timer) == 1)
+            {
+                timeout_unset(timer);
+                return false;
+            }
+            continue;
+        }
+        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
+        if (len < 0) {
+            return false;
+        }
+        if (buf[0] != type)
+        {
+            if (timeout_passed(timer) == 1)
+            {
+                timeout_unset(timer);
+                return false;
+            }
+            continue;
+        }
+        // We have the first 32 bytes, which correpspond to the expected packet.
+        memcpy(out_buf, buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
+        *pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        *remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+#endif
+        recv = false;
+    }
+    return true;
+}
+
+bool _recv_remaining_packet(MCLMAC_t *mclmac, int32_t *remaining_bytes, int *pos, int max_recv, uint8_t *out_buf)
+{
+    bool recv = true;
+    do
+    {
+#ifdef __RIOT__
+        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
+        int min_number_bytes = (*remaining_bytes < len ? *remaining_bytes : len);
+        if (len < min_number_bytes)
+        {
+            if (timeout_passed(mclmac->mac.frame.slot_timer) == 1) {
+                return false;
+            }
+            if ((max_recv--) == 0) {
+                return false;
+            }
+            continue;
+        }
+        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
+        if (len < 0) {
+            return false;
+        }
+        memcpy(&out_buf[*pos], buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
+        *pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        *remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
+        max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
+        if (*remaining_bytes > 0) {
+            continue;
+        }
+#endif
+        recv = false;
+    } while (recv);
+
+    return true;
+}
+
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
     assert(mclmac != NULL);
@@ -583,76 +668,16 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
 #endif
     timer = timeout_set(secs);
     // Receive the first 32 byres.
-    bool recv = true;
-    while (recv)
-    {
-#ifdef __RIOT__
-        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-        // Get the number of bytes on the radio
-        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
-        if (len != NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-        {
-            if (timeout_passed(timer) == 1)
-            {
-                timeout_unset(timer);
-                return false;
-            }
-            continue;
-        }
-        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
-        if (len < 0) {
-            return false;
-        }
-        if (buf[0] != 1)
-        {
-            if (timeout_passed(timer) == 1)
-            {
-                timeout_unset(timer);
-                return false;
-            }
-            continue;
-        }
-        // We have the first 32 bytes, which correpspond to the expected packet.
-        memcpy(bytes_pkt, buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
-        pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-#endif
-        recv = false;
+    bool ret = _receive_recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
+    if (!ret) {
+        return false;
     }
     // Receive the rest of the packet.
-    recv = true;
-    uint8_t max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
-    do
-    {
-#ifdef __RIOT__
-        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
-        int min_number_bytes = (remaining_bytes < len ? remaining_bytes : bytes);
-        if (len < min_number_bytes)
-        {
-            if (timeout_passed(mclmac->mac.frame.slot_timer) == 1) {
-                return false;
-            }
-            if ((max_recv--) == 0) {
-                return false;
-            }
-            continue;
-        }
-        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
-        if (len < 0) {
-            return false;
-        }
-        memcpy(&bytes_pkt[pos], buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
-        pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
-        if (remaining_bytes > 0) {
-            continue;
-        }
-#endif
-        recv = false;
-    } while (recv);
-
+    int max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
+    ret = _recv_remaining_packet(mclmac, &remaining_bytes, &pos, max_recv, bytes_pkt);
+    if (!ret) {
+        return false;
+    }
     //  Copy the bytes to the bytestring.
     for (int i = 0; i < PACKET_SIZE_MAC; i++)
     {
