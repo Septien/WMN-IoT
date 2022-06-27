@@ -61,7 +61,7 @@
 #endif
 
 #ifndef DETECTION_TIME
-#define DETECTION_TIME          1000000
+#define DETECTION_TIME          1000000U
 #endif
 
 #ifndef MAX_NUMBER_FREQS
@@ -75,7 +75,7 @@
 /* The following three variables are in microseconds, the value can later 
     be chaned of units. */
 #ifndef FRAME_DURATION
-#define FRAME_DURATION          1280000
+#define FRAME_DURATION          1280000U
 #endif
 
 /* The slot duration depends on the frame duration and the desired number of slots. */
@@ -84,7 +84,7 @@
 #endif
 
 #ifndef INITIALIZATION_TIMEOUT
-#define INITIALIZATION_TIMEOUT  30000000
+#define INITIALIZATION_TIMEOUT  30000000U
 #endif
 
 #ifndef CF_PHASE_PERCENTAGE
@@ -96,44 +96,44 @@
 #endif
 
 #ifndef CTRL_PACKET_QUEUE_SIZE
-#define CTRL_PACKET_QUEUE_SIZE   5
+#define CTRL_PACKET_QUEUE_SIZE   5U
 #endif
 
 #ifndef DATA_PACKET_QUEUE_SIZE
-#define DATA_PACKET_QUEUE_SIZE  5
+#define DATA_PACKET_QUEUE_SIZE  5U
 #endif
 
 #ifndef CF_PACKET_QUEUE_SIZE
-#define CF_PACKET_QUEUE_SIZE    5
+#define CF_PACKET_QUEUE_SIZE    5U
 #endif
 
 #ifndef CF_FREQUENCY
-#define CF_FREQUENCY            902000000
+#define CF_FREQUENCY            902000000U
 #endif
 
 #ifndef FREQ1
-#define FREQ1                   903000000
+#define FREQ1                   903000000U
 #endif
 #ifndef FREQ2
-#define FREQ2                   905000000
+#define FREQ2                   905000000U
 #endif
 #ifndef FREQ3
-#define FREQ3                   907000000
+#define FREQ3                   907000000U
 #endif
 #ifndef FREQ4
-#define FREQ4                   912000000
+#define FREQ4                   912000000U
 #endif
 #ifndef FREQ5
-#define FREQ5                   917000000
+#define FREQ5                   917000000U
 #endif
 #ifndef FREQ6
-#define FREQ6                   922000000
+#define FREQ6                   922000000U
 #endif
 #ifndef FREQ7
-#define FREQ7                   927000000
+#define FREQ7                   927000000U
 #endif
 #ifndef FREQ8
-#define FREQ8                   928000000
+#define FREQ8                   928000000U
 #endif
 
 /* Configuration for the PowerMode state machine. */
