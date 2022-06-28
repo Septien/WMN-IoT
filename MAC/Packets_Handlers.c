@@ -668,7 +668,7 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
 #endif
     timer = timeout_set(secs);
     // Receive the first 32 byres.
-    bool ret = _receive_recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
+    bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
     if (!ret) {
         return false;
     }
