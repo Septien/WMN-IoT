@@ -138,6 +138,9 @@ uint32_t timer
 #endif
 )
 {
+    if (timer == TIMEOUT_SET_ERROR) {
+        return false;
+    }
     bool recv = true;
     while (recv)
     {
@@ -650,20 +653,16 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
         WRITE_ARRAY(REFERENCE byteString, bytes,    16);
     }
 #if 0
-#ifdef __LINUX__
-    int timer;
-#endif
-#ifdef __RIOT__
-    uint32_t timer;
-#endif
     int pos = 0;
     int32_t remaining_bytes = PACKET_SIZE_MAC;
     uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
     // Limit the time for hearing the control packet to 5% of the slot duration.
 #ifdef __LINUX__
+    int timer;
     double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
 #endif
 #ifdef __RIOT__
+    uint32_t timer;
     uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
 #endif
     timer = timeout_set(secs);
@@ -815,7 +814,7 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
     }
 }
 
-void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
+bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
@@ -866,10 +865,42 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
     {
         WRITE_ARRAY(REFERENCE byteString, rand(), i);
     }
-    uint pos = ARROW(mclmac->mac)_last_received;
+    // Receive the first 32 bytes
+    int pos = 0;
+    /*int32_t remaining_bytes = PACKET_SIZE_MAC;
+    uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
+    // Limit the time for hearing the control packet to 5% of the slot duration.
+#ifdef __LINUX__
+    int timer;
+    double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+#endif
+#ifdef __RIOT__
+    uint32_t timer;
+    uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+#endif
+    timer = timeout_set(secs);
+    printf("%d\n", timer);
+    // Receive the first 32 byres.
+    bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
+    if (!ret) {
+        return false;
+    }
+    // Receive the rest of the packet.
+    int max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
+    ret = _recv_remaining_packet(mclmac, &remaining_bytes, &pos, max_recv, bytes_pkt);
+    if (!ret) {
+        return false;
+    }
+    //  Copy the bytes to the bytestring.
+    for (int i = 0; i < PACKET_SIZE_MAC; i++)
+    {
+        WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
+    }*/
+    pos = ARROW(mclmac->mac)_last_received;
     DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[pos];
     datapacket_construct_from_bytestring(pkt, &byteString);
-    ARROW(mclmac->mac)_last_received++;
+    pos = (pos + 1) % (MAX_ELEMENTS_ON_QUEUE);
+    ARROW(mclmac->mac)_last_received = pos;
     ARROW(mclmac->mac)_number_packets_received++;
 #ifdef __LINUX__
     free(byteString);
@@ -877,4 +908,5 @@ void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac)
 #ifdef __RIOT__
     free_array(&byteString);
 #endif
+    return true;
 }

@@ -489,21 +489,25 @@ void test_mclmac_send_data_packet(void *arg)
 #endif
 }
 
-void test_stub_mclmac_receive_data_packet(void *arg)
+void test_mclmac_receive_data_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    mclmac_set_slot_duration(mclmac, TIME(SLOT_DURATION));
     /**
      * Fill the array _packets_received with random data, 
      * assuring that the destination_id corresponds with the node's id.
      */
     int i;
     for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
-        stub_mclmac_receive_data_packet(mclmac);
+    {
+        bool ret = mclmac_receive_data_packet(mclmac);
+        assert(ret == true);
+    }
     assert(ARROW(mclmac->mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
     assert(ARROW(mclmac->mac)_first_received == 0);
-    assert(ARROW(mclmac->mac)_last_received == MAX_ELEMENTS_ON_QUEUE);
+    assert(ARROW(mclmac->mac)_last_received == 0);
     for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
@@ -518,6 +522,12 @@ void test_stub_mclmac_receive_data_packet(void *arg)
         assert(pkt->data.size > 0);
 #endif
     }
+/*#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                    (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_RX);
+#endif*/
 }
 
 void executetests_packets_handlers(void)
@@ -537,7 +547,7 @@ void executetests_packets_handlers(void)
     cunit_add_test(tests, &test_mclmac_send_control_packet, "mclmac_send_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_control_packet, "mclmac_receive_control_packet\0");
     cunit_add_test(tests, &test_mclmac_send_data_packet, "mclmac_send_data_packet\0");
-    cunit_add_test(tests, &test_stub_mclmac_receive_data_packet, "stub_mclmac_receive_data_packet\0");
+    cunit_add_test(tests, &test_mclmac_receive_data_packet, "mclmac_receive_data_packet\0");
     cunit_add_test(tests, &test_mclmac_send_cf_message, "mclmac_send_cf_message\0");
 
     cunit_execute_tests(tests);

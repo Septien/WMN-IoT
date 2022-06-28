@@ -218,7 +218,7 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac);
  */
 bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt);
 void mclmac_send_data_packet(MCLMAC_t *mclmac);
-void stub_mclmac_receive_data_packet(MCLMAC_t *mclmac);
+bool mclmac_receive_data_packet(MCLMAC_t *mclmac);
 bool mclmac_cf_packet_detected(MCLMAC_t *mclmac);
 
 // Channel selection

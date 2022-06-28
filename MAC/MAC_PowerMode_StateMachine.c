@@ -371,7 +371,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1)
                 break;
 
-            stub_mclmac_receive_data_packet(mclmac);
+            mclmac_receive_data_packet(mclmac);
             packets_received = ARROW(mclmac->mac)_number_packets_received;
         }
 
