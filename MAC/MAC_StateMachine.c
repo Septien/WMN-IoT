@@ -186,7 +186,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
 
         mclmac_set_radio_rx(mclmac);
         /* Synchornize */
-        stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+        mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
         /* Get the frame. */
         current_frame = controlpacket_get_current_frame(REFERENCE ctrlpkt);
         /* Get the current slot. */
@@ -217,7 +217,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         {
             /* Listen for the first incoming control packet and get the data. */
             // If a packet is received, update values
-            if (stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt) == true)
+            if (mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt) == true)
             {
                 /* Get the corresponding variables. */
                 // Get the minimum number of hops

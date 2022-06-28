@@ -93,7 +93,7 @@ void test_mclmac_start_packet_detection(void *arg)
 #endif
 }
 
-void test_stub_mclmac_cf_packet_detected(void *arg)
+void test_mclmac_cf_packet_detected(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -110,7 +110,7 @@ void test_stub_mclmac_cf_packet_detected(void *arg)
 #endif
 }
 
-void test_stub_mclmac_receive_ctrlpkt_sync(void *arg)
+void test_mclmac_receive_ctrlpkt_sync(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -132,12 +132,19 @@ void test_stub_mclmac_receive_ctrlpkt_sync(void *arg)
     mclmac->_hopCount = rand() % 10;
     ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
     ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
-    stub_mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+    mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
     assert(ARROW(ctrlpkt)networkTime == mclmac->_networkTime);
     assert(ARROW(ctrlpkt)hopCount == mclmac->_hopCount);
     assert(ARROW(ctrlpkt)initTime == mclmac->_initTime);
     assert(ARROW(ctrlpkt)currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
     assert(ARROW(ctrlpkt)currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+
+/*#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_OFF;
+    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
+                                        (void *)&state, sizeof(netopt_state_t));
+    assert(state == NETOPT_STATE_RX);
+#endif*/
 
     controlpacket_destroy(&ctrlpkt);
 }
@@ -541,7 +548,7 @@ void executetests_packets_handlers(void)
     cunit_init(&tests, &setup_packet_handlers, &teardown_packet_handlers, (void *)&data);
 
     cunit_add_test(tests, &test_mclmac_start_packet_detection, "mclmac_start_packet_detection\0");
-    cunit_add_test(tests, &test_stub_mclmac_receive_ctrlpkt_sync, "stub_mclmac_receive_ctrlpkt_sync\0");
+    cunit_add_test(tests, &test_mclmac_receive_ctrlpkt_sync, "_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");
     cunit_add_test(tests, &test_mclmac_send_control_packet, "mclmac_send_control_packet\0");

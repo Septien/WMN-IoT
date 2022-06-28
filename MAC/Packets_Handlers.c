@@ -217,11 +217,54 @@ bool _recv_remaining_packet(MCLMAC_t *mclmac, int32_t *remaining_bytes, int *pos
     return true;
 }
 
-bool stub_mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
+bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
     assert(mclmac != NULL);
     assert(ctrlpkt != NULL);
 
+/*    ARRAY byteString;
+#ifdef __LINUX__
+    byteString = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
+#endif
+#ifdef __RIOT__
+    create_array(&byteString, PACKET_SIZE_MAC);
+#endif
+    int pos = 0;
+    int32_t remaining_bytes = PACKET_SIZE_MAC;
+    uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
+    // Limit the time for hearing the control packet to 5% of the slot duration.
+#ifdef __LINUX__
+    int timer;
+    double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+#endif
+#ifdef __RIOT__
+    uint32_t timer;
+    uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+#endif
+    timer = timeout_set(secs);
+    // Receive the first 32 byres.
+    bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
+    if (!ret) {
+        return false;
+    }
+    // Receive the rest of the packet.
+    int max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
+    ret = _recv_remaining_packet(mclmac, &remaining_bytes, &pos, max_recv, bytes_pkt);
+    if (!ret) {
+        return false;
+    }
+    //  Copy the bytes to the bytestring.
+    for (int i = 0; i < PACKET_SIZE_MAC; i++)
+    {
+        WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
+    }
+    controlpacket_construct_packet_from_bytestring(ctrlpkt, &byteString);
+#ifdef __LINUX__
+    free(byteString);
+#endif
+#ifdef __RIOT__
+    free_array(&byteString);
+#endif*/
     uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
     uint8_t slot = ARROW(ARROW(mclmac->mac)frame)current_slot;
     uint8_t hopCount = mclmac->_hopCount;
