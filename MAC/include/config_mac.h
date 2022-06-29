@@ -111,29 +111,18 @@
 #define CF_FREQUENCY            902000000U
 #endif
 
-#ifndef FREQ1
-#define FREQ1                   903000000U
+#ifndef FREQUENCIES
+#define FREQUENCIES             {903000000U, 905000000U, 907000000U, 912000000U, 917000000U, 922000000U, 927000000U, 928000000U}
 #endif
-#ifndef FREQ2
-#define FREQ2                   905000000U
+
+/* Used for telling there is no collision frequency. Impossible frequency with current settings. */
+#ifndef NO_COLLISION_FREQ
+#define NO_COLLISION_FREQ       2620000000U
 #endif
-#ifndef FREQ3
-#define FREQ3                   907000000U
-#endif
-#ifndef FREQ4
-#define FREQ4                   912000000U
-#endif
-#ifndef FREQ5
-#define FREQ5                   917000000U
-#endif
-#ifndef FREQ6
-#define FREQ6                   922000000U
-#endif
-#ifndef FREQ7
-#define FREQ7                   927000000U
-#endif
-#ifndef FREQ8
-#define FREQ8                   928000000U
+
+/* Used for telling there is no collision slot. One greater than the available slots. */
+#ifndef NO_COLLISION_SLOT
+#define NO_COLLISION_SLOT       MAX_NUMBER_SLOTS + 1
 #endif
 
 /* Configuration for the PowerMode state machine. */

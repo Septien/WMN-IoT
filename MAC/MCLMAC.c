@@ -44,14 +44,8 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
             (SINGLE_POINTER mclmac)->_occupied_frequencies_slots[i][j] = 0;
-    (SINGLE_POINTER mclmac)->_frequencies[0] = FREQ1;
-    (SINGLE_POINTER mclmac)->_frequencies[1] = FREQ2;
-    (SINGLE_POINTER mclmac)->_frequencies[2] = FREQ3;
-    (SINGLE_POINTER mclmac)->_frequencies[3] = FREQ4;
-    (SINGLE_POINTER mclmac)->_frequencies[4] = FREQ5;
-    (SINGLE_POINTER mclmac)->_frequencies[5] = FREQ6;
-    (SINGLE_POINTER mclmac)->_frequencies[6] = FREQ7;
-    (SINGLE_POINTER mclmac)->_frequencies[7] = FREQ8;
+    uint32_t frequencies[MAX_NUMBER_FREQS] = FREQUENCIES;
+    memcpy(&(SINGLE_POINTER mclmac)->_frequencies, frequencies, sizeof(frequencies));
 
     (SINGLE_POINTER mclmac)->_mac_queue_id = create_queue(QUEUE_SIZE, MAX_MESSAGE_SIZE, MAX_ELEMENTS_ON_QUEUE, &(SINGLE_POINTER mclmac)->stack);
 }
