@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <time.h>
+#include <string.h>
 
 #include "ControlPacket.h"
 
@@ -83,8 +84,17 @@ void test_controlpacket_create(void *arg)
     uint16_t hopCount = 3;
     uint64_t netTime = rand();
     uint32_t initTime = rand();
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    uint8_t occupied_slots[freqs][slots];
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            occupied_slots[i][j] = rand();
+        }
+    }
 
-    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime);
+    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlot, collisionFrequency, 
+                        hopCount, netTime, initTime, (uint8_t *)occupied_slots);
 
 #ifdef __LINUX__
     assert(pkt != NULL);
@@ -98,6 +108,7 @@ void test_controlpacket_create(void *arg)
     assert(ARROW(pkt)hopCount == hopCount);
     assert(ARROW(pkt)networkTime == netTime);
     assert(ARROW(pkt)initTime == initTime);
+    assert(memcmp(ARROW(pkt)occupied_slots, occupied_slots, sizeof(occupied_slots)) == 0);
 }
 
 void test_controlpacket_clear(void *arg)
@@ -115,8 +126,16 @@ void test_controlpacket_clear(void *arg)
     uint16_t hopCount = 3;
     uint64_t netTime = rand();
     uint32_t initTime = rand();
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    uint8_t occupied_slots[freqs][slots];
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            occupied_slots[i][j] = rand();
+        }
+    }
 
-    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime);
+    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlot, collisionFrequency, hopCount, netTime, initTime, (uint8_t *)occupied_slots);
     
     controlpacket_clear(REFERENCE pkt);
 
@@ -293,6 +312,38 @@ void test_controlpacket_get_init_time(void *arg)
     }
 }
 
+void test_controlpacket_get_occupied_slots(void *arg)
+{
+    struct controlpacket_data *data = (struct controlpacket_data *) arg;
+    ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
+
+    uint64_t node_id[2] = {0};
+    node_id[0] = rand();
+    node_id[1] = rand();
+    uint32_t frame = 20;
+    uint8_t slot = 8;
+    uint8_t collisionSlot = 10;
+    uint32_t collisionFrequency = 915;
+    uint16_t hopCount = 3;
+    uint64_t netTime = rand();
+    uint32_t initTime = rand();
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    uint8_t occupied_slots[freqs][slots];
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            occupied_slots[i][j] = rand();
+        }
+    }
+
+    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlot, collisionFrequency, 
+                        hopCount, netTime, initTime, (uint8_t *)occupied_slots);
+
+    uint8_t occupied_slots_r[freqs][slots];
+    controlpacket_get_occupied_slots(REFERENCE pkt, (uint8_t *)occupied_slots_r);
+    assert(memcmp(occupied_slots, occupied_slots_r, sizeof(occupied_slots)) == 0);
+}
+
 void test_controlpacket_get_packet_bytestring(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
@@ -313,8 +364,16 @@ void test_controlpacket_get_packet_bytestring(void *arg)
     uint8_t time[8];
     uint32_t initTime = rand();
     uint8_t inittime[4];
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    uint8_t occupied_slots[freqs][slots];
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            occupied_slots[i][j] = rand();
+        }
+    }
     
-    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime);
+    controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlots, collisionFrequency, hopCount, netTime, initTime, (uint8_t *)occupied_slots);
 
     frames[0] = (frame & 0xff000000) >> 24;
     frames[1] = (frame & 0x00ff0000) >> 16;
@@ -386,6 +445,11 @@ void test_controlpacket_get_packet_bytestring(void *arg)
     assert(READ_ARRAY(REFERENCE byteStr, 38)     == inittime[1]);
     assert(READ_ARRAY(REFERENCE byteStr, 39)     == inittime[2]);
     assert(READ_ARRAY(REFERENCE byteStr, 40)     == inittime[3]);
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            assert(occupied_slots[i][j] == READ_ARRAY(REFERENCE byteStr, (i * slots) + j + 41));
+        }
+    }
 
 #ifdef __LINUX__
     free(byteStr);
@@ -410,6 +474,14 @@ void test_controlpacket_construct_packet_from_bytestring(void *arg)
     uint16_t hopCount = 3;
     uint64_t netTime = (uint64_t)rand();
     uint32_t initTime = rand();
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    uint8_t occupied_slots[freqs][slots];
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            occupied_slots[i][j] = rand();
+        }
+    }
 
     ARRAY byteStr;
 #ifdef __LINUX__
@@ -460,7 +532,13 @@ void test_controlpacket_construct_packet_from_bytestring(void *arg)
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x00ff0000) >> 16,                   38);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x0000ff00) >> 8,                    39);
     WRITE_ARRAY(REFERENCE byteStr, (initTime & 0x000000ff),                         40);
-    int i = 41;
+    int i, j;
+    for (i = 0; i < freqs; i++) {
+        for (j = 0; j < slots; j++) {
+            WRITE_ARRAY(REFERENCE byteStr, occupied_slots[i][j], (i * slots) + j + 41);
+        }
+    }
+    i = 41 + (freqs * slots);
     uint m = rand();
     for (; i < PACKET_SIZE_MAC; i++)
         WRITE_ARRAY(REFERENCE byteStr, m, i);
@@ -476,6 +554,7 @@ void test_controlpacket_construct_packet_from_bytestring(void *arg)
     assert(ARROW(pkt)hopCount           == hopCount);
     assert(ARROW(pkt)networkTime        == netTime);
     assert(ARROW(pkt)initTime           == initTime);
+    assert(memcmp(ARROW(pkt)occupied_slots, occupied_slots, sizeof(occupied_slots)) == 0);
 
 #ifdef __LINUX__
     free(byteStr);
@@ -508,6 +587,7 @@ void executeTestsCP(void)
     cunit_add_test(tests, &test_controlpacket_get_network_time, "controlpacket_get_network_time\0");
     cunit_add_test(tests, &test_controlpacket_set_init_time, "controlpacket_set_init_time\0");
     cunit_add_test(tests, &test_controlpacket_get_init_time, "controlpacket_get_init_time\0");
+    cunit_add_test(tests, &test_controlpacket_get_occupied_slots, "controlpacket_get_occupied_slots\0");
     cunit_add_test(tests, &test_controlpacket_get_packet_bytestring, "controlpacket_get_packet_bytestring\0");
     cunit_add_test(tests, &test_controlpacket_construct_packet_from_bytestring, "controlpacket_construct_packet_from_bytestring\0");
 

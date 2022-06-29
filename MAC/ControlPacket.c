@@ -35,20 +35,13 @@ void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
     *pkt = NULL;
 #endif
 #ifdef __RIOT__
-    pkt->node_id[0] = 0;
-    pkt->node_id[1] = 0;
-    pkt->currentFrame = 0;
-    pkt->currentSlot = 0;
-    pkt->collisionSlot = 0;
-    pkt->hopCount = 0;
-    pkt->networkTime = 0;
-    pkt->initTime = 0;
+    memset(SINGLE_POINTER pkt, 0, sizeof(ControlPacket_t));
 #endif
 }
 
 // Fill the packet with the given parameters
 void controlpacket_create(ControlPacket_t *pkt, uint64_t *node_id, uint32_t frame, uint8_t slot,uint8_t collisionSlots, 
-                          uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime)
+                          uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime, uint8_t *occupied_slots)
 {
     assert(pkt != NULL);
 
@@ -61,6 +54,7 @@ void controlpacket_create(ControlPacket_t *pkt, uint64_t *node_id, uint32_t fram
     pkt->hopCount = hopCount;
     pkt->networkTime = netTime;
     pkt->initTime = initTime;
+    memcpy(&pkt->occupied_slots, occupied_slots, sizeof(pkt->occupied_slots));
 }
 
 // Set all values of the packet to zero, and free the arrays
@@ -155,6 +149,14 @@ uint32_t controlpacket_get_init_time(ControlPacket_t *pkt)
     return pkt->initTime;
 }
 
+void controlpacket_get_occupied_slots(ControlPacket_t *pkt, uint8_t *occupied_slots)
+{
+    assert(pkt != NULL);
+    assert(occupied_slots != NULL);
+
+    memcpy(occupied_slots, &pkt->occupied_slots, sizeof(pkt->occupied_slots));
+}
+
 void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr)
 {
     assert(pkt != NULL);
@@ -210,8 +212,16 @@ void controlpacket_get_packet_bytestring(ControlPacket_t *pkt, ARRAY* byteStr)
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x00ff0000) >> 16,              38);
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x0000ff00) >> 8,               39);
     WRITE_ARRAY(SINGLE_POINTER byteStr, (pkt->initTime & 0x000000ff),                    40);
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    int i = 0, j = 0;
+    for (i = 0; i < freqs; i++) {
+        for (j = 0; j < slots; j++) {
+            WRITE_ARRAY(SINGLE_POINTER byteStr, pkt->occupied_slots[i][j], (i * slots) + j + 41);
+        }
+    }
     // Fill the rest of the string with a random value.
-    uint i = 41;
+    i = 41 + (freqs * slots);
     uint n = rand();
     for (; i < PACKET_SIZE_MAC; i++)
         WRITE_ARRAY(SINGLE_POINTER byteStr, n, i);
@@ -273,4 +283,11 @@ void controlpacket_construct_packet_from_bytestring(ControlPacket_t *pkt, ARRAY*
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,                    38) << 16;
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,                    39) << 8;
     pkt->initTime           |= READ_ARRAY(SINGLE_POINTER byteString,                    40);
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            pkt->occupied_slots[i][j] = READ_ARRAY(SINGLE_POINTER byteString, (i * slots) + j + 41);
+        }
+    }
 }

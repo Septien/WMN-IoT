@@ -179,7 +179,7 @@ void test_mclmac_create_control_packet(void *arg)
     assert(pkt->hopCount == mclmac->_hopCount);
     assert(pkt->networkTime == mclmac->_networkTime);
     assert(pkt->initTime == mclmac->_initTime);
-
+    assert(memcmp(mclmac->_occupied_frequencies_slots, pkt->occupied_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
 }
 
 void test_mclmac_send_cf_message(void *arg)

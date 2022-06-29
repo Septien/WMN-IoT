@@ -986,9 +986,18 @@ void test_finishp_state_powermode_stmachine(void *arg)
     uint64_t node_id[2] = {0};
     node_id[0] = rand();
     node_id[1] = rand();
-    controlpacket_create(ctrlpkt, node_id, rand(), rand(), rand(), rand(), rand(), rand(), rand());
+    int freqs = MAX_NUMBER_FREQS;
+    int slots = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
+    uint8_t occupied_slots[freqs][slots];
+    for (int i = 0; i < freqs; i++) {
+        for (int j = 0; j < slots; j++) {
+            occupied_slots[i][j] = rand();
+        }
+    }
+
+    controlpacket_create(ctrlpkt, node_id, rand(), rand(), rand(), rand(), rand(), rand(), rand(), (uint8_t *)occupied_slots);
     ctrlpkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
-    controlpacket_create(ctrlpkt, node_id, rand(), rand(), rand(), rand(), rand(), rand(), rand());
+    controlpacket_create(ctrlpkt, node_id, rand(), rand(), rand(), rand(), rand(), rand(), rand(), (uint8_t *)occupied_slots);
 
     CFPacket_t *cfpkt = &ARROW(mclmac->mac)_cf_messages[0];
     uint64_t node_id2[2] = {0};

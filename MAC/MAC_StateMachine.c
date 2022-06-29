@@ -217,7 +217,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         {
             /* Listen for the first incoming control packet and get the data. */
             // If a packet is received, update values
-            if (mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt) == true)
+            if (mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt))
             {
                 /* Get the corresponding variables. */
                 // Get the minimum number of hops
@@ -229,7 +229,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 uint8_t bit = 0;
                 /* For knowing the bit to set, get the remainder of current_slot module 8 (number 
                 of bits per byte, uint8_t) */
-                bit = 1U << (current_slot % 8);
+                bit = 1U << (current_slot % MAX_NUMBER_SLOTS);
                 /* For knowing on which byte to store the bit, divide current_slot by 8. */
                 mclmac->_occupied_frequencies_slots[frequency][(uint)(current_slot / 8)] |= bit;
             }
@@ -307,6 +307,9 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                     mclmac_set_selected_slot(mclmac, (m * i) + (j - 1));
                     break;
                 }
+            }
+            if (available) {
+                break;
             }
         }
         if (!available)
