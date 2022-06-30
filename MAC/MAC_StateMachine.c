@@ -195,6 +195,15 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         mclmac->_networkTime = controlpacket_get_network_time(REFERENCE ctrlpkt);
         // Get the starting time of the network
         mclmac->_initTime = controlpacket_get_init_time(REFERENCE ctrlpkt);
+        uint8_t occupied_slots[MAX_NUMBER_FREQS][(MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0)];
+        controlpacket_get_occupied_slots(REFERENCE ctrlpkt, (uint8_t *)occupied_slots);
+        // Copy the received vector to node's one
+        memcpy(mclmac->_occupied_frequencies_slots, occupied_slots, sizeof(occupied_slots));
+        // Set to occupied by neighbor the corresponding bit on _selected_slots_neighbors array
+        uint8_t bit = 0;
+        bit |= 1U << (current_slot % MAX_NUMBER_SLOTS);
+        uint8_t pos = (uint8_t)(current_slot / MAX_NUMBER_SLOTS);
+        mclmac->_selected_slots_neighbors[pos] |= bit;
         // Update wakeup_frame
         mclmac->_wakeup_frame += current_frame;
 
@@ -225,13 +234,18 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 if (hops < mclmac->_hopCount)
                     mclmac->_hopCount = hops;
 
-                // Get the information about the occupied slots per frequency
-                uint8_t bit = 0;
-                /* For knowing the bit to set, get the remainder of current_slot module 8 (number 
-                of bits per byte, uint8_t) */
-                bit = 1U << (current_slot % MAX_NUMBER_SLOTS);
-                /* For knowing on which byte to store the bit, divide current_slot by 8. */
-                mclmac->_occupied_frequencies_slots[frequency][(uint)(current_slot / 8)] |= bit;
+                controlpacket_get_occupied_slots(REFERENCE ctrlpkt, (uint8_t *)occupied_slots);
+                // For each frequency, OR all the available slots
+                for (int i = 0; i < MAX_NUMBER_FREQS; i++) {
+                    for (int j = 0; j < MAX_NUMBER_SLOTS; j++) {
+                        mclmac->_occupied_frequencies_slots[i][j] |= occupied_slots[i][j];
+                    }
+                }
+                // Store the corresponding bit
+                bit = 0;
+                bit |= 1U << (current_slot % MAX_NUMBER_SLOTS);
+                pos = (uint8_t)(current_slot / MAX_NUMBER_SLOTS);
+                mclmac->_selected_slots_neighbors[pos] |= bit;
             }
 
             /* Check if slot timer expired, if so, increase slot number */

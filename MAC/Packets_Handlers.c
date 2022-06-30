@@ -270,17 +270,19 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
     uint8_t hopCount = mclmac->_hopCount;
     uint32_t network_time = mclmac->_networkTime;
     uint32_t init_time = mclmac->_initTime;
+    uint64_t node_id[2] = {0};
 
-    controlpacket_set_current_frame(ctrlpkt, frame);
-    controlpacket_set_current_slot(ctrlpkt, slot);
-    controlpacket_set_hop_count(ctrlpkt, hopCount);
-    controlpacket_set_network_time(ctrlpkt, network_time);
-    controlpacket_set_init_time(ctrlpkt, init_time);
+    bool v = rand() <= 128;
+    if (v) {
+        int freq = rand() % MAX_NUMBER_FREQS;
+        uint8_t bit = 0;
+        bit |= 1 << (slot % MAX_NUMBER_SLOTS);
+        mclmac->_occupied_frequencies_slots[freq][(slot / MAX_NUMBER_SLOTS)] |= bit;
+    }
+    controlpacket_create(ctrlpkt, node_id, frame, slot, NO_COLLISION_SLOT, NO_COLLISION_FREQ,
+                        hopCount, network_time, init_time, (uint8_t *)mclmac->_occupied_frequencies_slots);
 
-    if (rand() > 128)
-        return false;
-
-    return true;
+    return v;
 }
 
 /* For the first test, I want this function to emulate properly the radio, that is, 

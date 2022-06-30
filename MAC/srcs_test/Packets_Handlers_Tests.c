@@ -138,6 +138,7 @@ void test_mclmac_receive_ctrlpkt_sync(void *arg)
     assert(ARROW(ctrlpkt)initTime == mclmac->_initTime);
     assert(ARROW(ctrlpkt)currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
     assert(ARROW(ctrlpkt)currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    assert(memcmp(ARROW(ctrlpkt)occupied_slots, mclmac->_occupied_frequencies_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
 
 /*#ifdef __RIOT__
     netopt_state_t state = NETOPT_STATE_OFF;

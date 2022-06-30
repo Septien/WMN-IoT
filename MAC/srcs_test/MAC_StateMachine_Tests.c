@@ -499,14 +499,13 @@ void test_synchronization_state_mac_stmachine(void *arg)
      * the network time, and the frequencies and slots occupied by each node.
      * The number of slots are already known, due to the config file.
      * The node should hear for a random number of frames of at least the 
-     * number of available slots, to ensure proper gatherig of data.
+     * number of available frequencies, to ensure proper gatherig of data.
      * The random number of frames will be stored in a variable called
      * wakeup_frame. When the current_frame equals wakeup_frame - 1,
      * pass to the next state, TIMESLOT_AND_CHANNEL_SELECTION.
      */
     ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
-    //assert(mclmac->_networkTime > 0);
     assert(mclmac->_initTime > 0);
     assert(mclmac->_hopCount > 0);
     assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
@@ -519,6 +518,9 @@ void test_synchronization_state_mac_stmachine(void *arg)
             printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_occupied_frequencies_slots[i][j]));
         }
         printf("\n");
+    }
+    for (int i = 0; i < MAX_NUMBER_SLOTS / 8; i++) {
+        printf(BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(mclmac->_selected_slots_neighbors[i]));
     }
 }
 
