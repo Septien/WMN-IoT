@@ -162,7 +162,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
 
     case SYNCHRONIZATION:   ;
         // Handle the network's first node
-        if (mclmac->_is_first_node == true)
+        if (mclmac->_is_first_node)
         {
 #ifdef __LINUX__
             mclmac->_initTime =  (uint32_t) time(NULL);
@@ -237,14 +237,14 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 controlpacket_get_occupied_slots(REFERENCE ctrlpkt, (uint8_t *)occupied_slots);
                 // For each frequency, OR all the available slots
                 for (int i = 0; i < MAX_NUMBER_FREQS; i++) {
-                    for (int j = 0; j < MAX_NUMBER_SLOTS; j++) {
+                    for (int j = 0; j < (MAX_NUMBER_SLOTS / 8) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0); j++) {
                         mclmac->_occupied_frequencies_slots[i][j] |= occupied_slots[i][j];
                     }
                 }
                 // Store the corresponding bit
-                bit = 0;
-                bit |= 1U << (current_slot % MAX_NUMBER_SLOTS);
-                pos = (uint8_t)(current_slot / MAX_NUMBER_SLOTS);
+                bit = 0x00;
+                bit |= 1U << (current_slot % 8);
+                pos = (uint8_t)(current_slot / 8);
                 mclmac->_selected_slots_neighbors[pos] |= bit;
             }
 

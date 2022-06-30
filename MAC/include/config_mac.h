@@ -69,7 +69,7 @@
 #endif
 
 #ifndef MAX_NUMBER_SLOTS
-#define MAX_NUMBER_SLOTS        8
+#define MAX_NUMBER_SLOTS        16
 #endif
 
 /* The following three variables are in microseconds, the value can later 
@@ -78,7 +78,8 @@
 #define FRAME_DURATION          1280000U
 #endif
 
-/* The slot duration depends on the frame duration and the desired number of slots. */
+/* The slot duration depends on the frame duration and the desired number of slots. The 
+FRAME_DURATION should be a multiple of MAX_NUMBER_SLOTS, in order to have correct timing. */
 #ifndef SLOT_DURATION
 #define SLOT_DURATION           (FRAME_DURATION / MAX_NUMBER_SLOTS)
 #endif

@@ -512,7 +512,7 @@ void test_synchronization_state_mac_stmachine(void *arg)
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
     {
-        printf("For the frequency %d, we have:\n", mclmac->_frequencies[i]);
+        printf("For the frequency %d, we have:", mclmac->_frequencies[i]);
         for (int j = 0; j < m; j++)
         {
             printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_occupied_frequencies_slots[i][j]));
@@ -520,8 +520,9 @@ void test_synchronization_state_mac_stmachine(void *arg)
         printf("\n");
     }
     for (int i = 0; i < MAX_NUMBER_SLOTS / 8; i++) {
-        printf(BYTE_TO_BINARY_PATTERN"\n", BYTE_TO_BINARY(mclmac->_selected_slots_neighbors[i]));
+        printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_selected_slots_neighbors[i]));
     }
+    printf("\n");
 }
 
 void test_timeslot_frequency_state_mac_stmachine(void *arg)
