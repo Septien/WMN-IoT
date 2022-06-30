@@ -789,6 +789,7 @@ void test_first_node_case_mac(void *arg)
     assert(ret == E_MAC_EXECUTION_SUCCESS);
     assert(ARROW(mclmac->mac)selectedSlot == 0);
     assert(ARROW(mclmac->mac)transmitChannel == mclmac->_frequencies[0]);
+    assert(mclmac->_occupied_frequencies_slots[0][0] == 0x80);
 
     /*mclmac_update_mac_state_machine(mclmac);
     ret = mclmac_execute_mac_state_machine(mclmac);

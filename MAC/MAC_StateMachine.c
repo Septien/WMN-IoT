@@ -283,6 +283,8 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             mclmac_set_transmit_channel(mclmac, mclmac->_frequencies[0]);
             mclmac_set_selected_slot(mclmac, 0);
             mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
+            // Set the first bit on the frequency zero to 1, to indicate is occupied the slot
+            mclmac->_occupied_frequencies_slots[0][0] = 0x80;
             return E_MAC_EXECUTION_SUCCESS;
         }
         /* Set the frame timer. */
