@@ -276,8 +276,8 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
     if (v) {
         int freq = rand() % MAX_NUMBER_FREQS;
         uint8_t bit = 0;
-        bit |= 1 << (slot % MAX_NUMBER_SLOTS);
-        mclmac->_occupied_frequencies_slots[freq][(slot / MAX_NUMBER_SLOTS)] |= bit;
+        bit |= 1 << (slot % 8);
+        mclmac->_occupied_frequencies_slots[freq][slot / 8] |= bit;
     }
     controlpacket_create(ctrlpkt, node_id, frame, slot, NO_COLLISION_SLOT, NO_COLLISION_FREQ,
                         hopCount, network_time, init_time, (uint8_t *)mclmac->_occupied_frequencies_slots);

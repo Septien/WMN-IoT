@@ -4,6 +4,17 @@
 
 #include "MCLMAC.h"
 
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte) \
+        (((byte) & 0x80) ? '1' : '0'), \
+        (((byte) & 0x40) ? '1' : '0'), \
+        (((byte) & 0x20) ? '1' : '0'), \
+        (((byte) & 0x10) ? '1' : '0'), \
+        (((byte) & 0x08) ? '1' : '0'), \
+        (((byte) & 0x04) ? '1' : '0'), \
+        (((byte) & 0x02) ? '1' : '0'), \
+        (((byte) & 0x01) ? '1' : '0')
+
 void mclmac_init_mac_state_machine(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
@@ -201,8 +212,8 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         memcpy(mclmac->_occupied_frequencies_slots, occupied_slots, sizeof(occupied_slots));
         // Set to occupied by neighbor the corresponding bit on _selected_slots_neighbors array
         uint8_t bit = 0;
-        bit |= 1U << (current_slot % MAX_NUMBER_SLOTS);
-        uint8_t pos = (uint8_t)(current_slot / MAX_NUMBER_SLOTS);
+        bit |= 1U << (current_slot % 8);
+        uint8_t pos = (uint8_t)(current_slot / 8U);
         mclmac->_selected_slots_neighbors[pos] |= bit;
         // Update wakeup_frame
         mclmac->_wakeup_frame += current_frame;
@@ -218,7 +229,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         frame_timer = timeout_set(TIME(time_remaining));
         if (slot_timer == TIMEOUT_SET_ERROR || frame_timer == TIMEOUT_SET_ERROR)
         {
-            perror("Unable to create timers. Returning\n");
+            perror("Unable to create timers. Returning.\n");
             return E_MAC_EXECUTION_FAILED;
         }
         /* Begin to receive the packets. */
