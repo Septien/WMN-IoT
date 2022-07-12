@@ -944,7 +944,7 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
     pos = ARROW(mclmac->mac)_last_received;
     DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[pos];
     datapacket_construct_from_bytestring(pkt, &byteString);
-    pos = (pos + 1) % (MAX_ELEMENTS_ON_QUEUE);
+    pos = (pos + 1) % (2 * MAX_NUMBER_DATA_PACKETS);
     ARROW(mclmac->mac)_last_received = pos;
     ARROW(mclmac->mac)_number_packets_received++;
 #ifdef __LINUX__

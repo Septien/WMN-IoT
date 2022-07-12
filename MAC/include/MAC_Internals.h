@@ -95,6 +95,8 @@ typedef struct MAC_Internals
     /* Messages received from other nodes */
     uint8_t         _first_received;
     uint8_t         _last_received;
+    /* A node can send up to 2 * MAX_NUMBER_DATA_PACKETS, so that is the number of packets
+    a node should receive. */
     DataPacket_t    _packets_received[2 * MAX_NUMBER_DATA_PACKETS];
     uint16_t        _number_packets_received;
 }MAC_Internals_t;

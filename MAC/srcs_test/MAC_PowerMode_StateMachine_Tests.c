@@ -958,7 +958,7 @@ void test_receive_state_powermode_stmachine(void *arg)
     assert(mclmac->powerMode.nextState == PASSIVE);
     assert(mclmac->powerMode.currentState == RECEIVE);
     //assert(ARROW(mclmac->mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
-    for (uint i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    for (uint i = 0; i < 2 * MAX_NUMBER_DATA_PACKETS; i++)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
         assert(pkt->destination_id[0] == mclmac->_node_id[0]);

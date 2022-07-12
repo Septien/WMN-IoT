@@ -508,12 +508,12 @@ void test_mclmac_receive_data_packet(void *arg)
      * assuring that the destination_id corresponds with the node's id.
      */
     int i;
-    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
+    for (i = 0; i < 2 * MAX_NUMBER_DATA_PACKETS; i++)
     {
         bool ret = mclmac_receive_data_packet(mclmac);
         assert(ret == true);
     }
-    assert(ARROW(mclmac->mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
+    assert(ARROW(mclmac->mac)_number_packets_received == 2 * MAX_NUMBER_DATA_PACKETS);
     assert(ARROW(mclmac->mac)_first_received == 0);
     assert(ARROW(mclmac->mac)_last_received == 0);
     for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
