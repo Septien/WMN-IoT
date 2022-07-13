@@ -408,7 +408,7 @@ void test_passive_state_powermode_stmachine(void *arg)
     msg[0] = 2;
     send_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, mclmac->_self_pid);
     ARROW(mclmac->mac)_number_packets_received = 0;
-    /**
+    /** 
      * We are now at the PASSIVE state. This state sets the radio on SLEEP mode, and
      * execute other pertinent functions:
      *  -Set the radio to SLEEP mode.
@@ -463,8 +463,9 @@ void test_passive_state_powermode_stmachine(void *arg)
     timeout_unset(ARROW(ARROW(mclmac->mac)frame)slot_timer);
 
     msg[0] = 7;
-    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
-        send_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, mclmac->_self_pid);
+    for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++) {
+        ret = send_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, mclmac->_self_pid);
+    }
     ARROW(ARROW(mclmac->mac)frame)slot_timer = timeout_set(TIME(SLOT_DURATION));
     ret = mclmac_execute_powermode_state(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);

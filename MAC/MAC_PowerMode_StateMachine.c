@@ -144,15 +144,15 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             }
             uint16_t packets_received = ARROW(mclmac->mac)_number_packets_received;
             uint32_t packets_on_queue = elements_on_queue(mclmac->_mac_queue_id);
-            if ((packets_on_queue == 0) && (packets_received == 0))
+            if ((packets_on_queue == 0) && (packets_received == 0)) {
                 continue;   // Jump right back to check timer.
+            }
 
             /* Read packets from upper layers. */
             mclmac_read_queue_element(mclmac);
             /* Write packets to upper layers. */
             mclmac_write_queue_element(mclmac);
         }
-        printf("elements on queue state: %d\n", elements_on_queue(mclmac->_mac_queue_id));
         // Increase current slot
         mclmac_increase_slot(mclmac);
         if (mclmac_get_current_slot(mclmac) == ARROW(ARROW(mclmac->mac)frame)slots_number)
@@ -178,8 +178,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         bool send = false;
         bool receive = false;
         uint8_t packets = 0;
-        if (current_slot == selected_slot)
+        if (current_slot == selected_slot) {
             is_current = true;
+        }
 
         /* Arm the cf timer. */
         ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
@@ -280,16 +281,19 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         }
         
         // Packets to send
-        if (send)
+        if (send) {
             mclmac_set_next_powermode_state(mclmac, TRANSMIT);
+        }
 
         // Packets to receive
-        if (receive)
+        if (receive) {
             mclmac_set_next_powermode_state(mclmac, RECEIVE);
+        }
  
         // If there are no packets to send
-        if (!send && !receive)
+        if (!send && !receive) {
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
+        }
 
         break;
 
@@ -329,8 +333,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             }
             mclmac_send_data_packet(mclmac);
 
-            if (mclmac_available_data_packets(mclmac) == 0)
+            if (mclmac_available_data_packets(mclmac) == 0) {
                 end = true;
+            }
         }
 
         mclmac_set_next_powermode_state(mclmac, PASSIVE);

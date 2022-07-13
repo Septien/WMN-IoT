@@ -356,13 +356,15 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
     assert(ARROW(mclmac->mac)_packets_to_send_message <= MAX_NUMBER_DATA_PACKETS);
     assert(ARROW(mclmac->mac)_packets_to_send_control <= MAX_NUMBER_DATA_PACKETS);
 
-    if (ARROW(mclmac->mac)_packets_to_send_message == MAX_NUMBER_DATA_PACKETS)
+    uint8_t to_send_msg = ARROW(mclmac->mac)_packets_to_send_message;
+    uint8_t to_send_ctrl = ARROW(mclmac->mac)_packets_to_send_control;
+    if (to_send_msg + to_send_ctrl == 2 * MAX_NUMBER_DATA_PACKETS) {
         return 0;
-    if (ARROW(mclmac->mac)_packets_to_send_control == MAX_NUMBER_DATA_PACKETS)
-        return 0;
+    }
 
-    if (elements_on_queue(mclmac->_mac_queue_id) == 0)
+    if (elements_on_queue(mclmac->_mac_queue_id) == 0) {
         return 0;
+    }
 
     bool invalid = false;
     if (elements_on_queue(mclmac->_mac_queue_id) > 0)
