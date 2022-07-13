@@ -30,7 +30,7 @@ void setup_powermode(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
 #ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, data->radio, data->node_id);
+    MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
     // Setup the radio

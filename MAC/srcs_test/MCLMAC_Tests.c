@@ -31,7 +31,7 @@ void setup_mclmac(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
 #ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, data->radio, data->node_id);
+    MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
     // Setup the radio

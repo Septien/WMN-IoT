@@ -30,7 +30,7 @@ void setup_packet_handlers(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
 #ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, data->radio, data->node_id);
+    MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
     // Setup the radio
