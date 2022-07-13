@@ -117,8 +117,9 @@ void mclmac_send_cf_message(MCLMAC_t *mclmac)
         break;
     }*/
 #endif
+    // Return radio to rx
     mclmac_set_radio_standby(mclmac);
-    // Sleep for a while before returnint
+    // Sleep for a while before returning
 #ifdef __LINUX__
     usleep(1);
     free(byte_string);
@@ -401,6 +402,10 @@ bool mclmac_receive_cf_message(MCLMAC_t *mclmac)
         if (frame_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
             return false;
         mclmac->mac._cf_message_received = true;
+        // Verify the received packet is equal to 0 (cf_message type)
+        if (frame[0] != 0) {
+            return 0;
+        }
         array_t byte_string;
         create_array(&byte_string, frame_len);
         for (int i = 0; i < frame_len; i++)
