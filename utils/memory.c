@@ -1,4 +1,5 @@
 #include "memory.h"
+#include <stdio.h>
 
 #ifdef __RIOT__
 
@@ -29,8 +30,9 @@ int create_array(array_t *array, size_t size)
 
     memory_block_t *block;
     array->size = size;
-    if ((block = (memory_block_t *)memarray_alloc(&storage)) == NULL)
+    if ((block = (memory_block_t *)memarray_alloc(&storage)) == NULL) {
         return 0;
+    }
     block->block[0] = 0;
     array->head = block;
     array->head->next = NULL;
