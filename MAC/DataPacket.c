@@ -104,14 +104,14 @@ void datapacket_get_packet_bytestring(DataPacket_t *pkt, ARRAY* byteString)
     WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[0] & 0x0000000000ff0000) >> 16, 6);
     WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[0] & 0x000000000000ff00) >> 8,  7);
     WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[0] & 0x00000000000000ff),       8);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0xff00000000000000) >> 56, 9);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x00ff000000000000) >> 48, 10);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x0000ff0000000000) >> 40, 11);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x000000ff00000000) >> 32, 12);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x00000000ff000000) >> 24, 13);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x0000000000ff0000) >> 16, 14);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x000000000000ff00) >> 8,  15);
-    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[2] & 0x00000000000000ff),       16);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0xff00000000000000) >> 56, 9);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x00ff000000000000) >> 48, 10);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x0000ff0000000000) >> 40, 11);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x000000ff00000000) >> 32, 12);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x00000000ff000000) >> 24, 13);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x0000000000ff0000) >> 16, 14);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x000000000000ff00) >> 8,  15);
+    WRITE_ARRAY(REFERENCE byteStringA, (pkt->destination_id[1] & 0x00000000000000ff),       16);
     WRITE_ARRAY(REFERENCE byteStringA, pkt->size, 17);
     uint i;
     for (i = 0; i < pkt->size; i++)
@@ -136,32 +136,34 @@ void datapacket_construct_from_bytestring(DataPacket_t *pkt, ARRAY* byteString)
 
     pkt->type = READ_ARRAY(SINGLE_POINTER byteString, 0);
     pkt->destination_id[0] = 0;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 1)) << 56;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 2)) << 48;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 3)) << 40;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 4)) << 32;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 5)) << 24;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 6)) << 16;
-    pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 7)) << 8;
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 1)) << 56);
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 2)) << 48);
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 3)) << 40);
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 4)) << 32);
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 5)) << 24);
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 6)) << 16);
+    pkt->destination_id[0] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 7)) << 8);
     pkt->destination_id[0] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 8));
     pkt->destination_id[1] = 0;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 9)) << 56;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 10)) << 48;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 11)) << 40;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 12)) << 32;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 13)) << 24;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 14)) << 16;
-    pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 15)) << 8;
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 9)) << 56);
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 10)) << 48);
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 11)) << 40);
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 12)) << 32);
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 13)) << 24);
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 14)) << 16);
+    pkt->destination_id[1] |= (((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 15)) << 8);
     pkt->destination_id[1] |= ((uint64_t) READ_ARRAY(SINGLE_POINTER byteString, 16));
     pkt->size = READ_ARRAY(SINGLE_POINTER byteString, 17);
 #ifdef __LINUX__
-    if (pkt->data != NULL)
+    if (pkt->data != NULL) {
         free(pkt->data);
+    }
     pkt->data = (uint8_t *)malloc(pkt->size * sizeof(uint8_t));
 #endif
 #ifdef __RIOT__
-    if (pkt->data.size > 0)
+    if (pkt->data.size > 0) {
         free_array(&pkt->data);
+    }
     create_array(&pkt->data, pkt->size);
 #endif
     // Copy only the data, and discard the rest.

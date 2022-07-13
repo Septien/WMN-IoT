@@ -387,10 +387,8 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         create_array(&byteString, size);
 #endif
         // Copy the message to the byte string
-        for (uint i = 0; i < size; i++)
-        {
-            uint8_t e = msg[i];
-            WRITE_ARRAY(REFERENCE byteString, e, i);
+        for (uint i = 0; i < size; i++) {
+            WRITE_ARRAY(REFERENCE byteString, msg[i], i);
         }
         if (msg[0] >= 7 && msg[0] < 10)
         {
@@ -419,7 +417,6 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
     free_array(&byteString);
 #endif
     }
-
     return (invalid ? 0 : 1);
 }
 

@@ -904,7 +904,7 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
     WRITE_ARRAY(REFERENCE byteString, bytes,    15);
     bytes = (mclmac->_node_id[1] & 0x00000000000000ff);
     WRITE_ARRAY(REFERENCE byteString, bytes,    16);
-    uint8_t size = rand() % (PACKET_SIZE_MAC - 17);
+    uint8_t size = PACKET_SIZE_MAC - 18;
     WRITE_ARRAY(REFERENCE byteString, size, 17);
     for (int i = 18; i < PACKET_SIZE_MAC; i++)
     {

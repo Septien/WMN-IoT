@@ -876,6 +876,7 @@ void test_receive_state_powermode_stmachine(void *arg)
      * types 0 or 1 (MAC control packets), that we should immediatly discard. Any other packets
      * shall be stored on the array for subsequent retransmission to upper layers. This state also
      * handle errors such as synchronization and collision notifications received from other nodes.
+     * Receive 2 + MAX_NUMBER_DATA_PACKETS.
     */
     mclmac->_state_ctrl = 1;
     assert(mclmac->powerMode.nextState == RECEIVE);
@@ -892,6 +893,23 @@ void test_receive_state_powermode_stmachine(void *arg)
     assert(ctrlpkt->hopCount == mclmac->_hopCount);
     assert(ctrlpkt->networkTime == mclmac->_networkTime);
     assert(ctrlpkt->initTime == mclmac->_initTime);
+    assert(mclmac->powerMode.nextState == PASSIVE);
+    assert(mclmac->powerMode.currentState == RECEIVE);
+    assert(ARROW(mclmac->mac)_number_packets_received == 2 * MAX_NUMBER_DATA_PACKETS);
+    for (uint i = 0; i < 2 * MAX_NUMBER_DATA_PACKETS; i++)
+    {
+        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
+        assert(pkt->destination_id[0] == mclmac->_node_id[0]);
+        assert(pkt->destination_id[1] == mclmac->_node_id[1]);
+        assert(pkt->type > 1);
+        assert(pkt->size > 0);
+#ifdef __LINUX__
+        assert(pkt->data != NULL);
+#endif
+#ifdef __RIOT__
+        assert(pkt->data.size > 0);
+#endif
+    }
 
     /**
      * Check the case when a collision is indicated in the node's selected slot and 
@@ -945,33 +963,12 @@ void test_receive_state_powermode_stmachine(void *arg)
     assert(mclmac->powerMode.nextState == FINISHP);
     assert(ctrlpkt->networkTime != mclmac->_networkTime);
 
-    /* Receive MAX_ELEMENTS_ON_QUEUE packets, and store them on the 
-    * array _packets_received. Verify all fields are different from zero.
-    * Verify number_packets_received is equal to MAX_ELEMENTS_ON_QUEUE.
-    * The next state should be PASSIVE. It should return E_PM_EXECUTION_SUCCESS.
-    */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 1;
     mclmac->powerMode.nextState = RECEIVE;
     ret = mclmac_execute_powermode_state(mclmac);
     assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(mclmac->powerMode.nextState == PASSIVE);
-    assert(mclmac->powerMode.currentState == RECEIVE);
-    //assert(ARROW(mclmac->mac)_number_packets_received == MAX_ELEMENTS_ON_QUEUE);
-    for (uint i = 0; i < 2 * MAX_NUMBER_DATA_PACKETS; i++)
-    {
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
-        assert(pkt->destination_id[0] == mclmac->_node_id[0]);
-        assert(pkt->destination_id[1] == mclmac->_node_id[1]);
-        assert(pkt->type > 1);
-        assert(pkt->size > 0);
-#ifdef __LINUX__
-        assert(pkt->data != NULL);
-#endif
-#ifdef __RIOT__
-        assert(pkt->data.size > 0);
-#endif
-    }
+    
 }
 
 void test_finishp_state_powermode_stmachine(void *arg)

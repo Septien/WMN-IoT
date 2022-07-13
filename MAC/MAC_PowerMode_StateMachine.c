@@ -152,6 +152,7 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             /* Write packets to upper layers. */
             mclmac_write_queue_element(mclmac);
         }
+        printf("elements on queue state: %d\n", elements_on_queue(mclmac->_mac_queue_id));
         // Increase current slot
         mclmac_increase_slot(mclmac);
         if (mclmac_get_current_slot(mclmac) == ARROW(ARROW(mclmac->mac)frame)slots_number)
@@ -368,9 +369,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         {
             /* Terminate the cycle if the timer expired, but do not remove the timer, so the PASSIVE 
             state can transit to the ACTIVE state. */
-            if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1)
+            if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1) {
                 break;
-
+            }
             mclmac_receive_data_packet(mclmac);
             packets_received = ARROW(mclmac->mac)_number_packets_received;
         }
@@ -398,6 +399,8 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
             datapacket_clear(pkt);
             pkt = &ARROW(mclmac->mac)_packets_received[i];
+            datapacket_clear(pkt);
+            pkt = &ARROW(mclmac->mac)_packets_received[i + MAX_NUMBER_DATA_PACKETS];
             datapacket_clear(pkt);
         }
         break;

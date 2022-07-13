@@ -540,8 +540,9 @@ void _read_queue(MCLMAC_t *mclmac)
     uint8_t message[size];
     // Store the type of message
     message[0] = 7;
-    for (uint i = 1; i < size; i++)
+    for (uint i = 1; i < size; i++) {
         message[i] = rand();
+    }
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
     assert(nelements == 1);
@@ -552,22 +553,22 @@ void _read_queue(MCLMAC_t *mclmac)
     // Incoming message
     assert(pkt->type == message[0]);
     uint64_t destination_id[2] = {0};
-    destination_id[0] = ((uint64_t)message[1]) << 56;
-    destination_id[0] = ((uint64_t)message[2]) << 48;
-    destination_id[0] = ((uint64_t)message[3]) << 40;
-    destination_id[0] = ((uint64_t)message[4]) << 32;
-    destination_id[0] = ((uint64_t)message[5]) << 24;
-    destination_id[0] = ((uint64_t)message[6]) << 16;
-    destination_id[0] = ((uint64_t)message[7]) << 8;
-    destination_id[0] = ((uint64_t)message[8]);
-    destination_id[1] = ((uint64_t)message[9])  << 56;
-    destination_id[1] = ((uint64_t)message[10]) << 48;
-    destination_id[1] = ((uint64_t)message[11]) << 40;
-    destination_id[1] = ((uint64_t)message[12]) << 32;
-    destination_id[1] = ((uint64_t)message[13]) << 24;
-    destination_id[1] = ((uint64_t)message[14]) << 16;
-    destination_id[1] = ((uint64_t)message[15]) << 8;
-    destination_id[1] = ((uint64_t)message[16]);
+    destination_id[0] |= ((uint64_t)message[1]) << 56;
+    destination_id[0] |= ((uint64_t)message[2]) << 48;
+    destination_id[0] |= ((uint64_t)message[3]) << 40;
+    destination_id[0] |= ((uint64_t)message[4]) << 32;
+    destination_id[0] |= ((uint64_t)message[5]) << 24;
+    destination_id[0] |= ((uint64_t)message[6]) << 16;
+    destination_id[0] |= ((uint64_t)message[7]) << 8;
+    destination_id[0] |= ((uint64_t)message[8]);
+    destination_id[1] |= ((uint64_t)message[9])  << 56;
+    destination_id[1] |= ((uint64_t)message[10]) << 48;
+    destination_id[1] |= ((uint64_t)message[11]) << 40;
+    destination_id[1] |= ((uint64_t)message[12]) << 32;
+    destination_id[1] |= ((uint64_t)message[13]) << 24;
+    destination_id[1] |= ((uint64_t)message[14]) << 16;
+    destination_id[1] |= ((uint64_t)message[15]) << 8;
+    destination_id[1] |= ((uint64_t)message[16]);
     assert(pkt->destination_id[0] == destination_id[0]);
     assert(pkt->destination_id[1] == destination_id[1]);
     // Only the packet's data
@@ -583,9 +584,9 @@ void _read_queue(MCLMAC_t *mclmac)
     assert(ARROW(mclmac->mac)_last_send_control == 1);
     assert(ARROW(mclmac->mac)_packets_to_send_control == 1);
     pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
-    assert(pkt->size == message[3]);
+    assert(pkt->size == message[17]);
     for (uint i = 0; i < pkt->size; i++)
-        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 4]);
+        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
     
     // Invalid packet type
     message[0] = rand() + 10;
@@ -1052,7 +1053,7 @@ void executeTestsMCLMAC(void)
     cunit_add_test(tests, &test_mclmac_set_frame_duration, "mclmac_set_frame_duration\0");
     cunit_add_test(tests, &test_mclmac_set_cf_duration, "mclmac_set_cf_duration\0");
     cunit_add_test(tests, &test_mclmac_available_data_packets, "mclmac_available_data_packets\0");
-    //cunit_add_test(tests, &test_mclmac_read_queue_element, "mclmac_read_queue_element\0");
+    cunit_add_test(tests, &test_mclmac_read_queue_element, "mclmac_read_queue_element\0");
     cunit_add_test(tests, &test_mclmac_write_queue_element, "mclmac_write_queue_element\0");
     cunit_add_test(tests, &test_mclmac_change_cf_channel, "mclmac_change_cf_channel\0");
     cunit_add_test(tests, &test_mclmac_start_cf_phase, "mclmac_start_cf_phase\0");
