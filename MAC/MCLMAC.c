@@ -6,12 +6,11 @@
 
 void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
 #ifdef __LINUX__
-    uint8_t *radio,
+    uint8_t *radio
 #endif
 #ifdef __RIOT__
-    netdev_t *netdev,
+    netdev_t *netdev
 #endif
-    uint64_t *node_id
 )
 {
 #ifdef __LINUX__
@@ -24,8 +23,9 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     memset((SINGLE_POINTER mclmac), 0, sizeof(MCLMAC_t));
 
     MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, netdev);
-    (SINGLE_POINTER mclmac)->_node_id[0] = node_id[0];
-    (SINGLE_POINTER mclmac)->_node_id[1] = node_id[1];
+    uint64_t id[2] = UUID;
+    (SINGLE_POINTER mclmac)->_node_id[0] = id[0];
+    (SINGLE_POINTER mclmac)->_node_id[1] = id[1];
     (SINGLE_POINTER mclmac)->_nChannels = MAX_NUMBER_FREQS;
     (SINGLE_POINTER mclmac)->_nSlots = MAX_NUMBER_SLOTS;
     (SINGLE_POINTER mclmac)->_hopCount = 0;

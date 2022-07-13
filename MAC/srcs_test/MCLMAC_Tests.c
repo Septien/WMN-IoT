@@ -25,14 +25,11 @@ struct mclmac_data {
     nrf24l01p_ng_t radio;
     netdev_t *netdev;
 #endif
-    uint64_t node_id[2];
 };
 
 void setup_mclmac(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    data->node_id[0] = rand();
-    data->node_id[1] = rand();
 #ifdef __LINUX__
     MCLMAC_init(&data->mclmac, data->radio, data->node_id);
 #endif
@@ -56,7 +53,7 @@ void setup_mclmac(void *arg)
     int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
     data->netdev = &data->radio.netdev;
     data->radio.netdev.driver->init(data->netdev);
-    MCLMAC_init(&data->mclmac, data->netdev, data->node_id);
+    MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
 
@@ -74,8 +71,9 @@ void test_MCLMAC_init(void *arg)
     assert(data->mclmac != NULL);
     assert(data->mclmac->mac != NULL);
 #endif
-    assert(ARROW(data->mclmac)_node_id[0] == data->node_id[0]);
-    assert(ARROW(data->mclmac)_node_id[1] == data->node_id[1]);
+    uint64_t id[2] = UUID;
+    assert(ARROW(data->mclmac)_node_id[0] == id[0]);
+    assert(ARROW(data->mclmac)_node_id[1] == id[1]);
     assert(ARROW(data->mclmac)_networkTime == 0);
     assert(ARROW(data->mclmac)_nSlots == MAX_NUMBER_SLOTS);
     assert(ARROW(data->mclmac)_nChannels == MAX_NUMBER_FREQS);
@@ -110,10 +108,10 @@ void test_MCLMAC_destroy(void *arg)
     assert(data->mclmac == NULL);
 #endif
 #ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, &data->radio, data->node_id);
+    MCLMAC_init(&data->mclmac, &data->radio);
 #endif
 #ifdef __RIOT__
-    MCLMAC_init(&data->mclmac, data->netdev, data->node_id);
+    MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
 

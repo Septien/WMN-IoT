@@ -101,7 +101,7 @@ endif
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/%.o: $(current_dir)/utils/include/%.h $(INC_DIR)/%.h
+$(OBJ_DIR)/%.o: $(current_dir)/utils/include/%.h $(INC_DIR)/%.h $(GLOBAL_DEP)
 
 ifdef TEST
 $(OBJT_DIR)/%.o: $(SRCT_DIR)/%.c

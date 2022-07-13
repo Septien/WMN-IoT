@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "config.h"
 #include "MAC_Internals.h"
 #include "memory.h"
 #include "memory_macros.h"
@@ -121,9 +122,8 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
     uint8_t *radio,
 #endif
 #ifdef __RIOT__
-    netdev_t *netdev,
+    netdev_t *netdev
 #endif
-    uint64_t *node_id
 );
 
 void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);

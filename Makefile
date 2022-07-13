@@ -23,7 +23,10 @@ CUNIT_PATH = /home/phantom/CP_Systems/Implementations/cUnit
 CUNIT_LIB_PATH = $(CUNIT_PATH)/bin/linux-x86_64/lib_cunit
 CUNIT_INCLUDE = $(CUNIT_PATH)/include
 
-CFLAGS += -I$(CUNIT_INCLUDE)
+WMN_IOT_INCLUDE = /home/phantom/CP_Systems/Implementations/WMN-IoT/include
+GLOBAL_DEP = $(WMN_IOT_INCLUDE)/config.h
+
+CFLAGS += -I$(CUNIT_INCLUDE) -I$(WMN_IOT_INCLUDE)
 endif
 # Compile each of the submodules
 include ipc-queues/Makefile.linux
@@ -138,6 +141,8 @@ DEVHELP ?= 1
 DEVELHELP ?= 1
 
 QUIET ?= 1
+
+INCLUDES += -I$(CURDIR)/include
 
 USEMODULE += memarray
 USEMODULE += netdev

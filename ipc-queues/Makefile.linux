@@ -87,7 +87,7 @@ endif
 $(OBJQ_DIR)/%.o : $(SRCQ_DIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJQ_DIR)/%.o : $(INCQ_DIR)/%.h
+$(OBJQ_DIR)/%.o : $(INCQ_DIR)/%.h $(GLOBAL_DEP)
 
 ifdef TEST
 $(OBJQT_DIR)/%.o : $(SRCQT_DIR)/%.c

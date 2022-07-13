@@ -33,14 +33,11 @@ struct statemachine_data {
     nrf24l01p_ng_t radio;
     netdev_t *netdev;
 #endif
-    uint64_t node_id[2];
 };
 
 void setup_statemachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    data->node_id[0] = rand();
-    data->node_id[1] = rand();
 #ifdef __LINUX__
     MCLMAC_init(&data->mclmac, data->radio, data->node_id);
 #endif
@@ -64,7 +61,7 @@ void setup_statemachine(void *arg)
     int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
     data->netdev = &data->radio.netdev;
     data->radio.netdev.driver->init(data->netdev);
-    MCLMAC_init(&data->mclmac, data->netdev, data->node_id);
+    MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
 

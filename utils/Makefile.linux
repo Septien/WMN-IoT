@@ -86,7 +86,7 @@ endif
 $(OBJU_DIR)/%.o: $(SRCD)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJU_DIR)/%.o: $(INC_UTILS)/%.h
+$(OBJU_DIR)/%.o: $(INC_UTILS)/%.h $(GLOBAL_DEP)
 
 ifdef TEST
 $(OBJUT_DIR)/%.o: $(SRCDT)/%.c
