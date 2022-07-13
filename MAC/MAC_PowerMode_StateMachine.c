@@ -206,11 +206,6 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                 {
                     ARROW(ARROW(mclmac->mac)frame)cf_timer = timeout_set(ARROW(ARROW(mclmac->mac)frame)cf_duration);
                 }
-                // If previous state was 0, set radio to rx
-                if (state == 0)
-                {
-                    mclmac_set_radio_rx(mclmac);
-                }
                 // Update state
                 state = (is_current && current_frequency ? 0 : 1);
             }
@@ -247,9 +242,13 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     is_current = false;
                 }
             }
-            /* Hear for any incoming CF packets on the medium. */
-            else if (state == 1 && mclmac_receive_cf_message(mclmac))
+            else if (state == 1)
             {
+                /* Hear for any incoming CF packets on the medium. */
+                bool cf_message_received = mclmac_receive_cf_message(mclmac);
+                if (!cf_message_received) {
+                    continue;
+                }
                 CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
                 uint64_t destinationid[2] = {0};
                 cfpacket_get_destinationid(pkt, destinationid);
