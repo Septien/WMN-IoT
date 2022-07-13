@@ -89,7 +89,7 @@ FRAME_DURATION should be a multiple of MAX_NUMBER_SLOTS, in order to have correc
 #endif
 
 #ifndef CF_PHASE_PERCENTAGE
-#define CF_PHASE_PERCENTAGE     0.2
+#define CF_PHASE_PERCENTAGE     0.05
 #endif
 
 #ifndef CF_SLOT_DURATION

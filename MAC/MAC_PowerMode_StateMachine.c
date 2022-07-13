@@ -343,7 +343,21 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
     case RECEIVE:   ;
         mclmac_start_split_phase(mclmac, RECEIVE);
 
-        mclmac_receive_control_packet(mclmac);
+        // Listen to the ctrl pkt up to 2 times.
+        int count = 1;
+        while (count <= 2) {
+            bool ctrlpkt_recv = mclmac_receive_control_packet(mclmac);
+            if (!ctrlpkt_recv) {
+                count++;
+                continue;
+            }
+            break;
+        }
+        // Exit the state
+        if (count >= 2) {
+            mclmac_set_next_powermode_state(mclmac, PASSIVE);
+            break;
+        }
 
         ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
         uint32_t frequency = controlpacket_get_collision_frequency(pkt);
@@ -376,7 +390,10 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
             if (timeout_passed(ARROW(ARROW(mclmac->mac)frame)slot_timer) == 1) {
                 break;
             }
-            mclmac_receive_data_packet(mclmac);
+            bool ret = mclmac_receive_data_packet(mclmac);
+            if (!ret) {
+                continue;
+            }
             packets_received = ARROW(mclmac->mac)_number_packets_received;
         }
 

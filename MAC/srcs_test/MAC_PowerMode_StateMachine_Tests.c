@@ -876,6 +876,15 @@ void test_receive_state_powermode_stmachine(void *arg)
      * handle errors such as synchronization and collision notifications received from other nodes.
      * Receive 2 + MAX_NUMBER_DATA_PACKETS.
     */
+    /* Test first the case no control packet arrives. */
+    mclmac->_state_ctrl = 7;
+    assert(mclmac->powerMode.nextState == RECEIVE);
+    assert(mclmac->powerMode.currentState == RECEIVE);
+    ret = mclmac_execute_powermode_state(mclmac);
+    assert(ret == E_PM_EXECUTION_SUCCESS);
+    assert(mclmac->powerMode.nextState == PASSIVE);
+
+    mclmac->powerMode.nextState = RECEIVE;
     mclmac->_state_ctrl = 1;
     assert(mclmac->powerMode.nextState == RECEIVE);
     assert(mclmac->powerMode.currentState == RECEIVE);

@@ -501,6 +501,12 @@ void test_synchronization_state_mac_stmachine(void *arg)
      * wakeup_frame. When the current_frame equals wakeup_frame - 1,
      * pass to the next state, TIMESLOT_AND_CHANNEL_SELECTION.
      */
+    // No control packets were received
+    mclmac->_state_ctrl = 1;
+    ret = mclmac_execute_mac_state_machine(mclmac);
+    assert(ret == E_MAC_EXECUTION_FAILED);
+
+    mclmac->_state_ctrl = 0;
     ret = mclmac_execute_mac_state_machine(mclmac);
     assert(ret == E_MAC_EXECUTION_SUCCESS);
     assert(mclmac->_initTime > 0);
@@ -620,7 +626,7 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac->_hopCount = rand() % 10;
     ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
     ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
-    /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
+    /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random,
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(mclmac);
     ret = mclmac_update_mac_state_machine(mclmac);
@@ -743,7 +749,7 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac->_trues = 0;
     mclmac->_trues5 = 0;
     mclmac->_state_cf = 2;
-    mclmac->_state_ctrl = 0;    
+    mclmac->_state_ctrl = 0;
     mclmac_set_current_slot(mclmac, 0);
     mclmac_set_current_cf_slot(mclmac, 0);
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);

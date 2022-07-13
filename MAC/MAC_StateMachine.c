@@ -167,6 +167,13 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             mclmac->_is_first_node = true;
         }
         timeout_unset(timer);
+        // Wait until the cf slot terminates
+#ifdef __LINUX__
+        usleep(0.95 * CF_SLOT_DURATION);
+#endif
+#ifdef __RIOT__
+        ztimer_sleep(ZTIMER_USEC, (uint32_t)(0.95 * CF_SLOT_DURATION));
+#endif
         mclmac_set_radio_standby(mclmac);
         mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
         break;
@@ -185,6 +192,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
             return E_MAC_EXECUTION_SUCCESS;
         }
+        mclmac_set_radio_rx(mclmac);
         /* Set hopCount to inf, and network time to zero. */
         mclmac->_hopCount = 0xffff;         // The greatest possible number for uint16_t
         mclmac->_networkTime = 0;
@@ -195,9 +203,20 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         uint32_t frequency = 0;
         uint8_t current_slot = 0;
 
-        mclmac_set_radio_rx(mclmac);
         /* Synchornize */
-        mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+        int count = 0;
+        while (count <= 10) {
+            // Try at most 3 times to listen for a control packet on the medium.
+            bool ret = mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+            if (!ret) {
+                count++;
+                continue;
+            }
+            break;
+        }
+        if (count == 11) {
+            return E_MAC_EXECUTION_FAILED;
+        }
         /* Get the frame. */
         current_frame = controlpacket_get_current_frame(REFERENCE ctrlpkt);
         /* Get the current slot. */

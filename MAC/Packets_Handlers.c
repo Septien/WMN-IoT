@@ -254,6 +254,10 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
     if (!ret) {
         return false;
     }
+    // Check whether the packet type is the expected
+    if (byte_pkt[0] != 1) {
+        return false;
+    }
     //  Copy the bytes to the bytestring.
     for (int i = 0; i < PACKET_SIZE_MAC; i++)
     {
@@ -266,6 +270,9 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 #ifdef __RIOT__
     free_array(&byteString);
 #endif*/
+    if (mclmac->_state_ctrl == 1) {
+        return false;
+    }
     uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
     uint8_t slot = ARROW(ARROW(mclmac->mac)frame)current_slot;
     uint8_t hopCount = mclmac->_hopCount;
@@ -273,17 +280,14 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
     uint32_t init_time = mclmac->_initTime;
     uint64_t node_id[2] = {0};
 
-    bool v = rand() <= 128;
-    if (v) {
-        int freq = rand() % MAX_NUMBER_FREQS;
-        uint8_t bit = 0;
-        bit |= 1 << (slot % 8);
-        mclmac->_occupied_frequencies_slots[freq][slot / 8] |= bit;
-    }
+    int freq = rand() % MAX_NUMBER_FREQS;
+    uint8_t bit = 0;
+    bit |= 1 << (slot % 8);
+    mclmac->_occupied_frequencies_slots[freq][slot / 8] |= bit;
     controlpacket_create(ctrlpkt, node_id, frame, slot, NO_COLLISION_SLOT, NO_COLLISION_FREQ,
                         hopCount, network_time, init_time, (uint8_t *)mclmac->_occupied_frequencies_slots);
 
-    return v;
+    return true;
 }
 
 /* For the first test, I want this function to emulate properly the radio, that is, 
@@ -504,13 +508,12 @@ void mclmac_send_control_packet(MCLMAC_t *mclmac)
 #endif
 }
 
-/**
- * State 1:
- *  A correct control packet, destined for the current node, is received.
- */
 bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+    if (mclmac->_state_ctrl == 7) {
+        return false;
+    }
     ARRAY byteString;
 #ifdef __LINUX__
     byteString = (uint8_t *)malloc(MAX_MESSAGE_SIZE * sizeof(uint8_t));
@@ -929,7 +932,6 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
     uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
 #endif
     timer = timeout_set(secs);
-    printf("%d\n", timer);
     // Receive the first 32 byres.
     bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
     if (!ret) {
