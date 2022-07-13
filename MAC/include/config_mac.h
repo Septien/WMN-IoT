@@ -132,7 +132,7 @@ FRAME_DURATION should be a multiple of MAX_NUMBER_SLOTS, in order to have correc
 #endif
 
 #ifndef MAX_NUMBER_DATA_PACKETS
-#define MAX_NUMBER_DATA_PACKETS 16
+#define MAX_NUMBER_DATA_PACKETS 10
 #endif
 
 /* The maximum packet size for LoRa is 256 bytes. It may change
