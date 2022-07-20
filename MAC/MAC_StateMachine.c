@@ -206,7 +206,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         /* Synchornize */
         int count = 0;
         while (count <= 10) {
-            // Try at most 3 times to listen for a control packet on the medium.
+            // Try at most 10 times to listen for a control packet on the medium.
             bool ret = mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
             if (!ret) {
                 count++;

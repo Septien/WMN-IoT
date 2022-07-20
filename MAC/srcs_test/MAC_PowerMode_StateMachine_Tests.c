@@ -21,8 +21,10 @@ struct powermode_data
     uint8_t radio;
 #endif
 #ifdef __RIOT__
-    nrf24l01p_ng_t radio;
+    nrf24l01p_ng_t *radio;
+    nrf24l01p_ng_t *radio_test;
     netdev_t *netdev;
+    netdev_t *netdev_test;
 #endif
 };
 
@@ -33,25 +35,8 @@ void setup_powermode(void *arg)
     MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
-    // Setup the radio
-    nrf24l01p_ng_params_t params = {
-        .spi = NRF24L01P_NG_PARAM_SPI,
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = NRF24L01P_NG_PARAM_CS,
-        .pin_ce = NRF24L01P_NG_PARAM_CE,
-        .pin_irq = NRF24L01P_NG_PARAM_IRQ,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
-    data->netdev = &data->radio.netdev;
-    data->radio.netdev.driver->init(data->netdev);
+    netopt_state_t state = NETOPT_STATE_STANDBY;
+    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
     MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
@@ -59,6 +44,10 @@ void setup_powermode(void *arg)
 void teardown_powermode(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
+#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_SLEEP;
+    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
     MCLMAC_destroy(&data->mclmac);
 }
 
@@ -1112,6 +1101,46 @@ void executetests_mac_powermode_statemachine(void)
 
     cUnit_t *tests;
     struct powermode_data data;
+    nrf24l01p_ng_t radio, radio_test;
+    nrf24l01p_ng_params_t params = {
+        .spi = SPI_DEV(0),
+        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
+        .pin_cs = GPIO5,
+        .pin_ce = GPIO17,
+        .pin_irq = GPIO21,
+        .config = {
+            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
+            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
+            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
+            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
+            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
+            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
+        }
+    };
+    nrf24l01p_ng_params_t params_test = {
+        .spi = SPI_DEV(1),
+        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
+        .pin_cs = GPIO15,
+        .pin_ce = GPIO2,
+        .pin_irq = GPIO4,
+        .config = {
+            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
+            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
+            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
+            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
+            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
+            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
+        }
+    };
+    data.radio = &radio;
+    data.radio_test = &radio_test;
+    nrf24l01p_ng_setup(data.radio, &params, 2);
+    nrf24l01p_ng_setup(data.radio_test, &params_test, 2);
+    // Setup netdev
+    data.netdev = &data.radio->netdev;
+    data.netdev_test = &data.radio_test->netdev;
+    data.radio->netdev.driver->init(data.netdev);
+    data.radio_test->netdev.driver->init(data.netdev_test);
 
     cunit_init(&tests, &setup_powermode, &teardown_powermode, (void *)&data);
 

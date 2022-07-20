@@ -147,6 +147,7 @@ INCLUDES += -I$(CURDIR)/include
 USEMODULE += memarray
 USEMODULE += netdev
 USEMODULE += nrf24l01p_ng
+USEMODULE += nrf24l01p_ng_diagnostics
 
 # Which features do you require? (mcu architecure, peripherals, sensors, etc.)
 ifeq ($(BOARD), esp32-wroom-32)

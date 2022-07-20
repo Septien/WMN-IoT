@@ -22,8 +22,10 @@ struct mclmac_data {
     uint8_t radio;
 #endif
 #ifdef __RIOT__
-    nrf24l01p_ng_t radio;
+    nrf24l01p_ng_t *radio;
     netdev_t *netdev;
+    nrf24l01p_ng_t *radio_test;
+    netdev_t *netdev_test;
 #endif
 };
 
@@ -34,25 +36,8 @@ void setup_mclmac(void *arg)
     MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
-    // Setup the radio
-    nrf24l01p_ng_params_t params = {
-        .spi = NRF24L01P_NG_PARAM_SPI,
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = NRF24L01P_NG_PARAM_CS,
-        .pin_ce = NRF24L01P_NG_PARAM_CE,
-        .pin_irq = NRF24L01P_NG_PARAM_IRQ,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
-    data->netdev = &data->radio.netdev;
-    data->radio.netdev.driver->init(data->netdev);
+    netopt_state_t state = NETOPT_STATE_STANDBY;
+    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
     MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
@@ -60,6 +45,10 @@ void setup_mclmac(void *arg)
 void teardown_mclmac(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
+#ifdef __RIOT__
+    netopt_state_t state = NETOPT_STATE_SLEEP;
+    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
     MCLMAC_destroy(&data->mclmac);
 }
 
@@ -1022,6 +1011,53 @@ void executeTestsMCLMAC(void)
 
     cUnit_t *tests;
     struct mclmac_data data;
+    // Setup radios
+    nrf24l01p_ng_t radio;
+    nrf24l01p_ng_t radio_test;
+    nrf24l01p_ng_params_t params = {
+        .spi = SPI_DEV(0),
+        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
+        .pin_cs = GPIO5,
+        .pin_ce = GPIO17,
+        .pin_irq = GPIO21,
+        .config = {
+            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
+            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
+            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
+            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
+            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
+            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
+        }
+    };
+    nrf24l01p_ng_params_t params_test = {
+        .spi = SPI_DEV(1),
+        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
+        .pin_cs = GPIO15,
+        .pin_ce = GPIO2,
+        .pin_irq = GPIO4,
+        .config = {
+            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
+            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
+            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
+            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
+            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
+            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
+        }
+    };
+    data.radio = &radio;
+    data.radio_test = &radio_test;
+    nrf24l01p_ng_setup(data.radio, &params, 2);
+    nrf24l01p_ng_setup(data.radio_test, &params_test, 2);
+    // Setup netdev
+    data.netdev = &data.radio->netdev;
+    data.netdev_test = &data.radio_test->netdev;
+    data.radio->netdev.driver->init(data.netdev);
+    data.radio_test->netdev.driver->init(data.netdev_test);
+
+    printf("\nRadio info:\n");
+    nrf24l01p_ng_diagnostics_print_dev_info(data.radio);
+    printf("\nRadio test info:\n");
+    nrf24l01p_ng_diagnostics_print_dev_info(data.radio_test);
 
     cunit_init(&tests, &setup_mclmac, &teardown_mclmac, (void *)&data);
 
@@ -1047,7 +1083,7 @@ void executeTestsMCLMAC(void)
     cunit_add_test(tests, &test_mclmac_set_current_cf_slot, "mclmac_set_current_cf_slot\0");
     cunit_add_test(tests, &test_mclmac_get_current_cf_slot, "mclmac_get_current_cf_slot\0");
     cunit_add_test(tests, &test_mclmac_increase_cf_slot, "mclmac_increase_cf_slot\0");
-    cunit_add_test(tests, &test_mclmac_set_slot_duration, "_mclmac_set_slot_duration\0");
+    cunit_add_test(tests, &test_mclmac_set_slot_duration, "mclmac_set_slot_duration\0");
     cunit_add_test(tests, &test_mclmac_set_frame_duration, "mclmac_set_frame_duration\0");
     cunit_add_test(tests, &test_mclmac_set_cf_duration, "mclmac_set_cf_duration\0");
     cunit_add_test(tests, &test_mclmac_available_data_packets, "mclmac_available_data_packets\0");
