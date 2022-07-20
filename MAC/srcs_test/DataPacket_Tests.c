@@ -216,8 +216,8 @@ void test_datapacket_construct_from_bytestring(void *arg)
     DataPacket_t *datapkt = REFERENCE data->datapkt;
 
     uint64_t destination_id[2] = {0};
-    destination_id[0] = rand();
-    destination_id[1] = rand();
+    destination_id[0] = 12345678901;
+    destination_id[1] = 10987654321;
     uint8_t size = rand() % (PACKET_SIZE_MAC - 2);
     int8_t type = rand() % 10;
     ARRAY data_array;
