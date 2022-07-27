@@ -109,7 +109,7 @@ FRAME_DURATION should be a multiple of MAX_NUMBER_SLOTS, in order to have correc
 #endif
 
 #ifndef CF_FREQUENCY
-#define CF_FREQUENCY            902000000U
+#define CF_FREQUENCY            0
 #endif
 
 #ifndef FREQUENCIES

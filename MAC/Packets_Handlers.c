@@ -10,13 +10,14 @@ void mclmac_start_packet_detection(MCLMAC_t *mclmac)
     assert(mclmac != NULL);
 
 #ifdef __RIOT__
-    uint8_t broadcast_addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_ADDRESS,
-                                    (void *)broadcast_addr, NRF24L01P_NG_ADDR_WIDTH);
     uint16_t channel = (uint16_t)mclmac->mac.cfChannel;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&channel, sizeof(uint16_t));
-    netopt_state_t state = NETOPT_STATE_STANDBY;
+    /* Due to implementation details on the RIOT side, it is not possible
+    to transit from STANDBY -> RX, directly. We have to set the radio to
+    SLEEP, before going to RX. To gurantee an appropiate transition, set
+    radio to sleep state.*/
+    netopt_state_t state = NETOPT_STATE_SLEEP;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
     state = NETOPT_STATE_RX;
