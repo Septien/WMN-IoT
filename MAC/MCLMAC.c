@@ -500,7 +500,9 @@ void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 void mclmac_start_cf_phase(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
+#ifdef __RIOT__
     assert(ARROW(mclmac->mac)netdev != NULL);
+#endif
 
     // Change the channel
     mclmac_change_cf_channel(mclmac);

@@ -24,7 +24,9 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
 #endif
     memset(REFERENCE (SINGLE_POINTER mac)->frame, 0, sizeof(Frame_t));
 
+#ifdef __RIOT__
     (SINGLE_POINTER mac)->netdev = netdev;
+#endif
     (SINGLE_POINTER mac)->cfChannel = CF_FREQUENCY;
 
     // Initialize the Control packet
