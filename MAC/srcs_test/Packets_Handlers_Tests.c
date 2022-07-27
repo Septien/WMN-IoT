@@ -62,20 +62,21 @@ void test_mclmac_start_packet_detection(void *arg)
      * Configure the radio so it can begin the detection of cf packets.
      */
 #ifdef __RIOT__
-    /*uint8_t broadcast_addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-    uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = {0};
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_ADDRESS,
-                                    (void *)addr, NRF24L01P_NG_ADDR_WIDTH);
-    assert(memcmp(broadcast_addr, addr, NRF24L01P_NG_ADDR_WIDTH) == 0);
+    mclmac_start_packet_detection(mclmac);
     uint16_t cf_channel = (uint16_t) mclmac->mac.cfChannel;
+    printf("Setting channel to cf frequency: %d\n", cf_channel);
     uint16_t radio_channel = 0;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&radio_channel, sizeof(uint16_t));
+    printf("Retrieved channel: %d\n", radio_channel);
     assert(radio_channel == cf_channel);
+    printf("Channel successfully set.\n");
+    printf("Setting state to RX.\n");
     netopt_state_t radio_state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&radio_state, sizeof(netopt_state_t));
-    assert(radio_state == NETOPT_STATE_RX);*/
+    assert(radio_state == NETOPT_STATE_RX);
+    printf("RX state successfully set.\n");
 #endif
 }
 
@@ -575,14 +576,14 @@ void executetests_packets_handlers(void)
     cunit_init(&tests, &setup_packet_handlers, &teardown_packet_handlers, (void *)&data);
 
     cunit_add_test(tests, &test_mclmac_start_packet_detection, "mclmac_start_packet_detection\0");
-    cunit_add_test(tests, &test_mclmac_receive_ctrlpkt_sync, "_mclmac_receive_ctrlpkt_sync\0");
+    /*cunit_add_test(tests, &test_mclmac_receive_ctrlpkt_sync, "_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");
     cunit_add_test(tests, &test_mclmac_send_control_packet, "mclmac_send_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_control_packet, "mclmac_receive_control_packet\0");
     cunit_add_test(tests, &test_mclmac_send_data_packet, "mclmac_send_data_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_data_packet, "mclmac_receive_data_packet\0");
-    cunit_add_test(tests, &test_mclmac_send_cf_message, "mclmac_send_cf_message\0");
+    cunit_add_test(tests, &test_mclmac_send_cf_message, "mclmac_send_cf_message\0");*/
 
     cunit_execute_tests(tests);
 

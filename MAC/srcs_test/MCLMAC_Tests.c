@@ -1089,12 +1089,12 @@ void executeTestsMCLMAC(void)
     cunit_add_test(tests, &test_mclmac_available_data_packets, "mclmac_available_data_packets\0");
     cunit_add_test(tests, &test_mclmac_read_queue_element, "mclmac_read_queue_element\0");
     cunit_add_test(tests, &test_mclmac_write_queue_element, "mclmac_write_queue_element\0");
-    cunit_add_test(tests, &test_mclmac_change_cf_channel, "mclmac_change_cf_channel\0");
+    /*cunit_add_test(tests, &test_mclmac_change_cf_channel, "mclmac_change_cf_channel\0");
     cunit_add_test(tests, &test_mclmac_start_cf_phase, "mclmac_start_cf_phase\0");
     cunit_add_test(tests, &test_stub_mclmac_start_split_phase, "mclmac_start_split_phase\0");
     cunit_add_test(tests, &test_mclmac_set_radio_sleep, "mclmac_set_radio_sleep\0");
     cunit_add_test(tests, &test_mclmac_set_radio_standby, "mclmac_set_radio_standby\0");
-    cunit_add_test(tests, &test_mclmac_set_radio_rx, "mclmac_set_radio_rx\0");
+    cunit_add_test(tests, &test_mclmac_set_radio_rx, "mclmac_set_radio_rx\0");*/
 
     cunit_execute_tests(tests);
 
