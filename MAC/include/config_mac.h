@@ -147,6 +147,11 @@ processing time, etc. */
 #define NETWORK_TIME_EPSILON    2000
 #endif
 
+/* Maximum number of attenpts to receive a packet before giving up. */
+#ifndef MAX_RETRIES
+#define MAX_RETRIES             10
+#endif
+
 /* Clock type for RIOT. */
 #ifdef __RIOT__
 #define CLOCK                   ZTIMER_USEC
