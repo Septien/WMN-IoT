@@ -265,8 +265,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
                     receive = true;
                 }
                 // Tell it no longer is the only one
-                if (mclmac->_is_first_node == true)
+                if (mclmac->_is_first_node == true) {
                     mclmac->_is_first_node = false;
+                }
             }
         }
 
@@ -274,8 +275,9 @@ int mclmac_execute_powermode_state(MCLMAC_t *mclmac)
         if ((send && receive) || (packets > 1))
         {
             mclmac_set_next_powermode_state(mclmac, PASSIVE);
-            if (send && receive)
+            if (send && receive) {
                 ARROW(mclmac->mac)_is_internal_collision = true;
+            }
             return E_PM_COLLISION_DETECTED;
         }
         

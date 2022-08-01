@@ -475,11 +475,11 @@ int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
 void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     assert(ARROW(mclmac->mac)netdev != NULL);
 #endif
 
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     uint16_t channel = mclmac->mac.cfChannel;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL, 
                                     (void *)&channel, sizeof(uint16_t));
@@ -500,14 +500,14 @@ void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 void mclmac_start_cf_phase(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     assert(ARROW(mclmac->mac)netdev != NULL);
 #endif
 
     // Change the channel
     mclmac_change_cf_channel(mclmac);
     // Change the radio state to rx
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_RX;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE, 
                                     (void *)&state, sizeof(state));
@@ -523,7 +523,7 @@ int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
     if (state != TRANSMIT && state != RECEIVE)
         return -1;
 
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     uint16_t channel = 0;
     netopt_state_t net_state = NETOPT_STATE_OFF;
     if (state == TRANSMIT)
@@ -551,7 +551,7 @@ void mclmac_set_radio_sleep(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_SLEEP;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
@@ -561,7 +561,7 @@ void mclmac_set_radio_sleep(MCLMAC_t *mclmac)
 void mclmac_set_radio_standby(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_STANDBY;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));    
@@ -571,7 +571,7 @@ void mclmac_set_radio_standby(MCLMAC_t *mclmac)
 void mclmac_set_radio_rx(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __RIOT__
+#if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_RX;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
