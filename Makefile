@@ -14,6 +14,7 @@ ifdef DEBUG
 endif
 ifdef TEST
 CFLAGS += -DTESTING
+CFLAGS += -DNATIVE
 endif
 CPPFLAGS += -D__LINUX__
 # Makeit available to all the files.
@@ -163,6 +164,10 @@ CFLAGS += -Wno-unused-parameter
 CFLAGS += -D__RIOT__
 ifdef TEST
 CFLAGS += -DTESTING
+endif
+ifeq ($(BOARD), native)
+CFLAGS += -DNATIVE
+$(info $$CFLAGS is $(CFLAGS))
 endif
 
 ifdef TEST
