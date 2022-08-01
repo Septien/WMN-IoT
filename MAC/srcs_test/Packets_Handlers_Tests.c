@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <time.h>
 #include "string.h"
 
@@ -18,7 +17,7 @@
 struct packethandlers_data{
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t radio;
+    uint8_t *radio;
 #endif
 #ifdef __RIOT__
     nrf24l01p_ng_t *radio;
@@ -35,8 +34,10 @@ void setup_packet_handlers(void *arg)
     MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
+#ifndef NATIVE
     netopt_state_t state = NETOPT_STATE_STANDBY;
     data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
     MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
@@ -45,13 +46,15 @@ void teardown_packet_handlers(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
 #ifdef __RIOT__
+#ifndef NATIVE
     netopt_state_t state = NETOPT_STATE_SLEEP;
     data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
 #endif
     MCLMAC_destroy(&data->mclmac);
 }
 
-void test_mclmac_start_packet_detection(void *arg)
+bool test_mclmac_start_packet_detection(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -61,26 +64,29 @@ void test_mclmac_start_packet_detection(void *arg)
      * It should be called only once at the beginning of the state.
      * Configure the radio so it can begin the detection of cf packets.
      */
-#ifdef __RIOT__
+    bool passed = true;
     mclmac_start_packet_detection(mclmac);
+#if defined __RIOT__ && !defined NATIVE
     uint16_t cf_channel = (uint16_t) mclmac->mac.cfChannel;
     printf("Setting channel to cf frequency: %d\n", cf_channel);
     uint16_t radio_channel = 0;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&radio_channel, sizeof(uint16_t));
     printf("Retrieved channel: %d\n", radio_channel);
-    assert(radio_channel == cf_channel);
+    passed = passed && (radio_channel == cf_channel);
     printf("Channel successfully set.\n");
     printf("Setting state to RX.\n");
     netopt_state_t radio_state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&radio_state, sizeof(netopt_state_t));
-    assert(radio_state == NETOPT_STATE_RX);
+    passed = passed && (radio_state == NETOPT_STATE_RX);
     printf("RX state successfully set.\n");
 #endif
+
+    return passed;
 }
 
-void test_mclmac_cf_packet_detected(void *arg)
+bool test_mclmac_cf_packet_detected(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -91,13 +97,102 @@ void test_mclmac_cf_packet_detected(void *arg)
      * It will retrieve the size of the packet on the radio, and
      * if it is 32 bytes, it will return true. Otherwise will return false.
      */
-    bool detected = mclmac_cf_packet_detected(mclmac);
-#ifdef __RIOT__
-    (void) detected;
+    /* Configure test radio. */
+    printf("Configuring test radio.\n");
+    bool passed = true;
+#ifdef __LINUX__
+    (void) mclmac;
 #endif
+#if defined __RIOT__ && !defined NATIVE
+    netopt_state_t state = NETOPT_STATE_STANDBY;
+    data->netdev_test->driver->set(data->netdev_test, NETOPT_STATE, (void *)&state, sizeof(state));
+    uint16_t channel = mclmac->mac.cfChannel;
+    data->netdev_test->driver->set(data->netdev_test, NETOPT_CHANNEL, (void *)&channel, sizeof(channel));
+    printf("\nTest radio state:\n");
+    nrf24l01p_ng_diagnostics_print_dev_info(data->radio_test);
+    printf("Configuring radio to start packet detection.\n");
+    mclmac_start_packet_detection(mclmac);
+    printf("\nMain radio state:\n");
+    nrf24l01p_ng_diagnostics_print_dev_info(data->radio);
+
+    printf("Case 0: No packet detected.\nNo packets are send with the test radio.\n");
+    bool detected = mclmac_cf_packet_detected(mclmac);
+    passed = passed && (!detected);
+    printf("No packet was detected.\n");
+
+    printf("Test case 1: A packet is received, but its size is less than 32 bytes.\n");
+    size_t size = 24;
+    uint8_t packet[size];
+    printf("Sending packet with test radio:\n");
+    for (uint i = 0; i < size; i++) {
+        packet[i] = i + 1;
+        printf("%d", packet[i]);
+    }
+    printf("\n");
+    uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
+    iolist_t data_r = {
+        .iol_next = NULL,
+        .iol_base = (void *)packet,
+        .iol_len = size
+    };
+    iolist_t list = {
+        .iol_next = &data_r,
+        .iol_base = (void *)addr,
+        .iol_len = NRF24L01P_NG_ADDR_WIDTH
+    };
+    int ret = 0;
+    while ((ret = data->netdev_test->driver->send(data->netdev_test, &list)) < 0) {
+        if (ret == -EAGAIN) {
+            continue;
+        }
+        if (ret == -EBUSY) {
+            continue;
+        }
+        break;
+    }
+    printf("\nPacket sent.\nReceiving packet with main radio:\n");
+    //detected = mclmac_cf_packet_detected(mclmac);
+    passed = passed && (!detected);
+    printf("Packet detected, but discarded.\n");
+    
+    /*printf("Test case 2: A packet is sent and is the corresponding size.\n");
+    uint8_t packet_full[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
+    printf("Sending packet:\n");
+    for (uint i = 0; i < NRF24L01P_NG_MAX_PAYLOAD_WIDTH; i++) {
+        packet_full[i] = i * 2;
+        printf("%d ", packet_full[i]);
+    }
+    printf("\n");
+    iolist_t data_f = {
+        .iol_next = NULL,
+        .iol_base = (void *)packet_full,
+        .iol_len = NRF24L01P_NG_MAX_PAYLOAD_WIDTH
+    };
+    iolist_t list_f = {
+        .iol_next = &data_f,
+        .iol_base = (void *)addr,
+        .iol_len = NRF24L01P_NG_ADDR_WIDTH
+    };
+    while ((ret = data->netdev_test->driver->send(data->netdev_test, &list_f)) < 0) {
+        if (ret == -EAGAIN) {
+            continue;
+        }
+        if (ret == -EBUSY) {
+            continue;
+        }
+        break;
+    }
+    printf("\nMain radio state:\n");
+    nrf24l01p_ng_diagnostics_print_dev_info(data->radio);
+    printf("Packet sent.\nReceiving packet with main radio.\n");
+    detected = mclmac_cf_packet_detected(mclmac);
+    passed = passed && (detected);
+    printf("Packet successfully detected.\n");*/
+#endif
+    return passed;
 }
 
-void test_mclmac_receive_ctrlpkt_sync(void *arg)
+bool test_mclmac_receive_ctrlpkt_sync(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -120,24 +215,27 @@ void test_mclmac_receive_ctrlpkt_sync(void *arg)
     ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
     ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
     mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
-    assert(ARROW(ctrlpkt)networkTime == mclmac->_networkTime);
-    assert(ARROW(ctrlpkt)hopCount == mclmac->_hopCount);
-    assert(ARROW(ctrlpkt)initTime == mclmac->_initTime);
-    assert(ARROW(ctrlpkt)currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ARROW(ctrlpkt)currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(memcmp(ARROW(ctrlpkt)occupied_slots, mclmac->_occupied_frequencies_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
+    bool passed = true;
+    passed = passed && (ARROW(ctrlpkt)networkTime == mclmac->_networkTime);
+    passed = passed && (ARROW(ctrlpkt)hopCount == mclmac->_hopCount);
+    passed = passed && (ARROW(ctrlpkt)initTime == mclmac->_initTime);
+    passed = passed && (ARROW(ctrlpkt)currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ARROW(ctrlpkt)currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (memcmp(ARROW(ctrlpkt)occupied_slots, mclmac->_occupied_frequencies_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
 
-/*#ifdef __RIOT__
+/*#if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                         (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_RX);
+    passed = passed && (state == NETOPT_STATE_RX);
 #endif*/
 
     controlpacket_destroy(&ctrlpkt);
+
+    return passed;
 }
 
-void test_mclmac_create_control_packet(void *arg)
+bool test_mclmac_create_control_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -158,19 +256,21 @@ void test_mclmac_create_control_packet(void *arg)
     ARROW(mclmac->mac)_collisionFrequency = rand();
     ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
     mclmac_create_control_packet(mclmac);
-    assert(pkt->node_id[0] == mclmac->_node_id[0]);
-    assert(pkt->node_id[1] == mclmac->_node_id[1]);
-    assert(pkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(pkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(pkt->collisionSlot == ARROW(mclmac->mac)_collisionSlot);
-    assert(pkt->collisionFrequency == ARROW(mclmac->mac)_collisionFrequency);
-    assert(pkt->hopCount == mclmac->_hopCount);
-    assert(pkt->networkTime == mclmac->_networkTime);
-    assert(pkt->initTime == mclmac->_initTime);
-    assert(memcmp(mclmac->_occupied_frequencies_slots, pkt->occupied_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
+    bool passed = true;
+    passed = passed && (pkt->node_id[0] == mclmac->_node_id[0]);
+    passed = passed && (pkt->node_id[1] == mclmac->_node_id[1]);
+    passed = passed && (pkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (pkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (pkt->collisionSlot == ARROW(mclmac->mac)_collisionSlot);
+    passed = passed && (pkt->collisionFrequency == ARROW(mclmac->mac)_collisionFrequency);
+    passed = passed && (pkt->hopCount == mclmac->_hopCount);
+    passed = passed && (pkt->networkTime == mclmac->_networkTime);
+    passed = passed && (pkt->initTime == mclmac->_initTime);
+    passed = passed && (memcmp(mclmac->_occupied_frequencies_slots, pkt->occupied_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
+    return passed;
 }
 
-void test_mclmac_send_cf_message(void *arg)
+bool test_mclmac_send_cf_message(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -189,30 +289,40 @@ void test_mclmac_send_cf_message(void *arg)
     /* Send the packet the destination id is already known, and the 
        cf phase is already started. */
     mclmac_send_cf_message(mclmac);
-    CFPacket_t *pkt = REFERENCE ARROW(mclmac->mac)_cf_messages[0];
+    CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[0];
+    bool passed = true;
+#ifdef __LINUX__
+    (void) pkt;
+#endif
 #ifdef __RIOT__
     /*netopt_state_t radio_state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&radio_state, sizeof(netopt_state_t));
-    assert(radio_state == NETOPT_STATE_STANDBY);*/
+    passed = passed && (radio_state == NETOPT_STATE_STANDBY);*/
 #endif
+
+    return passed;
 }
 
-void test_mclmac_receive_cf_message(void *arg)
+bool test_mclmac_receive_cf_message(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
     bool ret = mclmac_receive_cf_message(mclmac);
+    bool passed = true;
+    passed = passed && ret;
 #ifdef __RIOT__
     /*netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_RX);*/
+    passed = passed && (state == NETOPT_STATE_RX);*/
 #endif
+
+    return passed;
 }
 
-void test_mclmac_send_control_packet(void *arg)
+bool test_mclmac_send_control_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -234,24 +344,27 @@ void test_mclmac_send_control_packet(void *arg)
      */
     ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
     mclmac_send_control_packet(mclmac);
-    assert(pkt->node_id[0] == 0);
-    assert(pkt->node_id[1] == 0);
-    assert(pkt->currentFrame == 0);
-    assert(pkt->currentSlot == 0);
-    assert(pkt->collisionSlot == 0);
-    assert(pkt->collisionFrequency == 0);
-    assert(pkt->hopCount == 0);
-    assert(pkt->networkTime == 0);
-    assert(pkt->initTime == 0);
-#ifdef __RIOT__
+    bool passed = true;
+    passed = passed && (pkt->node_id[0] == 0);
+    passed = passed && (pkt->node_id[1] == 0);
+    passed = passed && (pkt->currentFrame == 0);
+    passed = passed && (pkt->currentSlot == 0);
+    passed = passed && (pkt->collisionSlot == 0);
+    passed = passed && (pkt->collisionFrequency == 0);
+    passed = passed && (pkt->hopCount == 0);
+    passed = passed && (pkt->networkTime == 0);
+    passed = passed && (pkt->initTime == 0);
+#if defined __RIOT__ && !defined NATIVE
     /*netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_TX);*/
+    passed = passed && (state == NETOPT_STATE_TX);*/
 #endif
+
+    return passed;
 }
 
-void test_mclmac_receive_control_packet(void *arg)
+bool test_mclmac_receive_control_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -279,113 +392,116 @@ void test_mclmac_receive_control_packet(void *arg)
 
     mclmac->_state_ctrl = 1;
     bool ret = mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
+    bool passed = true;
+    passed = passed && (ret == true);
     ControlPacket_t *ctrlpkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
-    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot == 0);
-    assert(ctrlpkt->collisionFrequency == 0);
-    assert(ctrlpkt->hopCount == mclmac->_hopCount);
-    assert(ctrlpkt->networkTime == mclmac->_networkTime);
-    assert(ctrlpkt->initTime == mclmac->_initTime);
+    passed = passed && (ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot == 0);
+    passed = passed && (ctrlpkt->collisionFrequency == 0);
+    passed = passed && (ctrlpkt->hopCount == mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime == mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime == mclmac->_initTime);
 
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 2;
     mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
-    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot != ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot != 0);
-    assert(ctrlpkt->collisionFrequency != 0);
-    assert(ctrlpkt->hopCount != mclmac->_hopCount);
-    assert(ctrlpkt->networkTime != mclmac->_networkTime);
-    assert(ctrlpkt->initTime != mclmac->_initTime);
+    passed = passed && (ret == true);
+    passed = passed && (ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot != ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot != 0);
+    passed = passed && (ctrlpkt->collisionFrequency != 0);
+    passed = passed && (ctrlpkt->hopCount != mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime != mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime != mclmac->_initTime);
 
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 3;
     mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
-    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
-    assert(ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
-    assert(ctrlpkt->hopCount == mclmac->_hopCount);
-    assert(ctrlpkt->networkTime == mclmac->_networkTime);
-    assert(ctrlpkt->initTime == mclmac->_initTime);
+    passed = passed && (ret == true);
+    passed = passed && (ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
+    passed = passed && (ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
+    passed = passed && (ctrlpkt->hopCount == mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime == mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime == mclmac->_initTime);
 
     /* current slot is differet */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 4;
     mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
-    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot != ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
-    assert(ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
-    assert(ctrlpkt->hopCount == mclmac->_hopCount);
-    assert(ctrlpkt->networkTime == mclmac->_networkTime);
-    assert(ctrlpkt->initTime == mclmac->_initTime);
+    passed = passed && (ret == true);
+    passed = passed && (ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot != ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
+    passed = passed && (ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
+    passed = passed && (ctrlpkt->hopCount == mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime == mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime == mclmac->_initTime);
 
     /* current frame is differen */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 5;
     mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
-    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
-    assert(ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
-    assert(ctrlpkt->hopCount == mclmac->_hopCount);
-    assert(ctrlpkt->networkTime == mclmac->_networkTime);
-    assert(ctrlpkt->initTime == mclmac->_initTime);
+    passed = passed && (ret == true);
+    passed = passed && (ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
+    passed = passed && (ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
+    passed = passed && (ctrlpkt->hopCount == mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime == mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime == mclmac->_initTime);
 
     /* network time */
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 6;
     mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
-    assert(ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
-    assert(ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
-    assert(ctrlpkt->hopCount == mclmac->_hopCount);
-    assert(ctrlpkt->networkTime != mclmac->_networkTime);
-    assert(ctrlpkt->initTime == mclmac->_initTime);
+    passed = passed && (ret == true);
+    passed = passed && (ctrlpkt->node_id[0] == ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] == ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame == ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot == ARROW(mclmac->mac)selectedSlot);
+    passed = passed && (ctrlpkt->collisionFrequency == ARROW(mclmac->mac)transmitChannel);
+    passed = passed && (ctrlpkt->hopCount == mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime != mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime == mclmac->_initTime);
 
     controlpacket_clear(ctrlpkt);
     mclmac->_state_ctrl = 0;
     mclmac_receive_control_packet(mclmac);
-    assert(ret == true);
-    assert(ctrlpkt->node_id[0] != ARROW(mclmac->mac)transmitter_id[0]);
-    assert(ctrlpkt->node_id[1] != ARROW(mclmac->mac)transmitter_id[1]);
-    assert(ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
-    assert(ctrlpkt->currentSlot != ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ctrlpkt->collisionSlot != 0);
-    assert(ctrlpkt->collisionFrequency != 0);
-    assert(ctrlpkt->hopCount != mclmac->_hopCount);
-    assert(ctrlpkt->networkTime != mclmac->_networkTime);
-    assert(ctrlpkt->initTime != mclmac->_initTime);
-/*#ifdef __RIOT__
+    passed = passed && (ret == true);
+    passed = passed && (ctrlpkt->node_id[0] != ARROW(mclmac->mac)transmitter_id[0]);
+    passed = passed && (ctrlpkt->node_id[1] != ARROW(mclmac->mac)transmitter_id[1]);
+    passed = passed && (ctrlpkt->currentFrame != ARROW(ARROW(mclmac->mac)frame)current_frame);
+    passed = passed && (ctrlpkt->currentSlot != ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ctrlpkt->collisionSlot != 0);
+    passed = passed && (ctrlpkt->collisionFrequency != 0);
+    passed = passed && (ctrlpkt->hopCount != mclmac->_hopCount);
+    passed = passed && (ctrlpkt->networkTime != mclmac->_networkTime);
+    passed = passed && (ctrlpkt->initTime != mclmac->_initTime);
+/*#if defind __RIOT__ && !defind NATIVE
     netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *) &state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_RX);
+    passed = passed && (state == NETOPT_STATE_RX);
 #endif*/
+
+    return passed;
 }
 
-void test_mclmac_send_data_packet(void *arg)
+bool test_mclmac_send_data_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -417,10 +533,11 @@ void test_mclmac_send_data_packet(void *arg)
     }
     ARROW(mclmac->mac)_packets_to_send_control = 0;
     mclmac_send_data_packet(mclmac);
-    assert(ARROW(mclmac->mac)_first_send_control == ARROW(mclmac->mac)_last_send_control);
+    bool passed = true;
+    passed = passed && (ARROW(mclmac->mac)_first_send_control == ARROW(mclmac->mac)_last_send_control);
     ARROW(mclmac->mac)_packets_to_send_message = 0;
     mclmac_send_data_packet(mclmac);
-    assert(ARROW(mclmac->mac)_first_send_message == ARROW(mclmac->mac)_last_send_message);
+    passed = passed && (ARROW(mclmac->mac)_first_send_message == ARROW(mclmac->mac)_last_send_message);
 
     ARROW(mclmac->mac)_packets_to_send_message = n;
     ARROW(mclmac->mac)_packets_to_send_control = n;
@@ -432,23 +549,23 @@ void test_mclmac_send_data_packet(void *arg)
     {
         mclmac_send_data_packet(mclmac);
         packet_sent--;
-        assert(ARROW(mclmac->mac)_packets_to_send_control == packet_sent);
+        passed = passed && (ARROW(mclmac->mac)_packets_to_send_control == packet_sent);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-        assert(ARROW(mclmac->mac)_first_send_control == first_send);
+        passed = passed && (ARROW(mclmac->mac)_first_send_control == first_send);
         DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[i];
-        assert(pkt->type == -1);
-        assert(pkt->size == 0);
-        assert(pkt->destination_id[0] == 0);
-        assert(pkt->destination_id[1] == 0);
+        passed = passed && (pkt->type == -1);
+        passed = passed && (pkt->size == 0);
+        passed = passed && (pkt->destination_id[0] == 0);
+        passed = passed && (pkt->destination_id[1] == 0);
 #ifdef __LINUX__
-        assert(pkt->data == NULL);
+        passed = passed && (pkt->data == NULL);
 #endif
 #ifdef __RIOT__
-        assert(pkt->data.size == 0);
+        passed = passed && (pkt->data.size == 0);
 #endif
     }
-    assert(ARROW(mclmac->mac)_packets_to_send_control == 0);
-    assert(ARROW(mclmac->mac)_last_send_control == last_send);
+    passed = passed && (ARROW(mclmac->mac)_packets_to_send_control == 0);
+    passed = passed && (ARROW(mclmac->mac)_last_send_control == last_send);
     // Send the data messages
     first_send = ARROW(mclmac->mac)_first_send_message;
     last_send = ARROW(mclmac->mac)_last_send_message;
@@ -458,23 +575,23 @@ void test_mclmac_send_data_packet(void *arg)
     {
         mclmac_send_data_packet(mclmac);
         packet_sent--;
-        assert(ARROW(mclmac->mac)_packets_to_send_message == packet_sent);
+        passed = passed && (ARROW(mclmac->mac)_packets_to_send_message == packet_sent);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-        assert(ARROW(mclmac->mac)_first_send_message == first_send);
+        passed = passed && (ARROW(mclmac->mac)_first_send_message == first_send);
         DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[i];
-        assert(pkt->type == -1);
-        assert(pkt->size == 0);
-        assert(pkt->destination_id[0] == 0);
-        assert(pkt->destination_id[1] == 0);
+        passed = passed && (pkt->type == -1);
+        passed = passed && (pkt->size == 0);
+        passed = passed && (pkt->destination_id[0] == 0);
+        passed = passed && (pkt->destination_id[1] == 0);
 #ifdef __LINUX__
-        assert(pkt->data == NULL);
+        passed = passed && (pkt->data == NULL);
 #endif
 #ifdef __RIOT__
-        assert(pkt->data.size == 0);
+        passed = passed && (pkt->data.size == 0);
 #endif
     }
-    assert(ARROW(mclmac->mac)_packets_to_send_message == 0);
-    assert(ARROW(mclmac->mac)_last_send_message == last_send);
+    passed = passed && (ARROW(mclmac->mac)_packets_to_send_message == 0);
+    passed = passed && (ARROW(mclmac->mac)_last_send_message == last_send);
 
 #ifdef __LINUX__
     free(byteString);
@@ -482,9 +599,11 @@ void test_mclmac_send_data_packet(void *arg)
 #ifdef __RIOT__
     free_array(&byteString);
 #endif
+
+    return passed;
 }
 
-void test_mclmac_receive_data_packet(void *arg)
+bool test_mclmac_receive_data_packet(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -495,34 +614,37 @@ void test_mclmac_receive_data_packet(void *arg)
      * assuring that the destination_id corresponds with the node's id.
      */
     int i;
+    bool passed = true;
     for (i = 0; i < 2 * MAX_NUMBER_DATA_PACKETS; i++)
     {
         bool ret = mclmac_receive_data_packet(mclmac);
-        assert(ret == true);
+        passed = passed && (ret == true);
     }
-    assert(ARROW(mclmac->mac)_number_packets_received == 2 * MAX_NUMBER_DATA_PACKETS);
-    assert(ARROW(mclmac->mac)_first_received == 0);
-    assert(ARROW(mclmac->mac)_last_received == 0);
+    passed = passed && (ARROW(mclmac->mac)_number_packets_received == 2 * MAX_NUMBER_DATA_PACKETS);
+    passed = passed && (ARROW(mclmac->mac)_first_received == 0);
+    passed = passed && (ARROW(mclmac->mac)_last_received == 0);
     for (i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
-        assert(pkt->type > 0);
-        assert(pkt->destination_id[0] == mclmac->_node_id[0]);
-        assert(pkt->destination_id[1] == mclmac->_node_id[1]);
-        assert(pkt->size > 0);
+        passed = passed && (pkt->type > 0);
+        passed = passed && (pkt->destination_id[0] == mclmac->_node_id[0]);
+        passed = passed && (pkt->destination_id[1] == mclmac->_node_id[1]);
+        passed = passed && (pkt->size > 0);
 #ifdef __LINUX__
-        assert(pkt->data != NULL);
+        passed = passed && (pkt->data != NULL);
 #endif
 #ifdef __RIOT__
-        assert(pkt->data.size > 0);
+        passed = passed && (pkt->data.size > 0);
 #endif
     }
-/*#ifdef __RIOT__
+/*#if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_RX);
+    passed = passed && (state == NETOPT_STATE_RX);
 #endif*/
+
+    return passed;
 }
 
 void executetests_packets_handlers(void)
@@ -532,6 +654,7 @@ void executetests_packets_handlers(void)
 
     cUnit_t *tests;
     struct packethandlers_data data;
+#if defined __RIOT__ && !defined NATIVE
     nrf24l01p_ng_t radio, radio_test;
     nrf24l01p_ng_params_t params = {
         .spi = SPI_DEV(0),
@@ -572,10 +695,19 @@ void executetests_packets_handlers(void)
     data.netdev_test = &radio_test.netdev;
     data.radio->netdev.driver->init(data.netdev);
     data.radio_test->netdev.driver->init(data.netdev_test);
+#elif defined _RIOT__ && defined NATIVE
+    data.netdev = NULL;
+    data.netdev_test = NULL;
+    data.radio = NULL;
+    data.radio_test = NULL;
+#elif defined __LINUX__
+    data.radio = NULL;
+#endif
 
     cunit_init(&tests, &setup_packet_handlers, &teardown_packet_handlers, (void *)&data);
 
     cunit_add_test(tests, &test_mclmac_start_packet_detection, "mclmac_start_packet_detection\0");
+    cunit_add_test(tests, &test_mclmac_cf_packet_detected, "mclmac_cf_packet_detected\0");
     /*cunit_add_test(tests, &test_mclmac_receive_ctrlpkt_sync, "_mclmac_receive_ctrlpkt_sync\0");
     cunit_add_test(tests, &test_mclmac_create_control_packet, "mclmac_create_control_packet\0");
     cunit_add_test(tests, &test_mclmac_receive_cf_message, "mclmac_receive_cf_message\0");

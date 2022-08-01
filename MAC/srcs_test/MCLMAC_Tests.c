@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <time.h>
 #include "string.h"
 
@@ -19,7 +18,7 @@
 struct mclmac_data {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t radio;
+    uint8_t *radio;
 #endif
 #ifdef __RIOT__
     nrf24l01p_ng_t *radio;
@@ -36,8 +35,10 @@ void setup_mclmac(void *arg)
     MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
+#ifndef NATIVE
     netopt_state_t state = NETOPT_STATE_STANDBY;
     data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
     MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
@@ -46,158 +47,185 @@ void teardown_mclmac(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
 #ifdef __RIOT__
+#ifndef NATIVE
     netopt_state_t state = NETOPT_STATE_SLEEP;
     data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
 #endif
     MCLMAC_destroy(&data->mclmac);
 }
 
-void test_MCLMAC_init(void *arg)
+bool test_MCLMAC_init(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
 
+    bool passed = true;
 #ifdef __LINUX__
-    assert(data->mclmac != NULL);
-    assert(data->mclmac->mac != NULL);
+    passed = passed && (data->mclmac != NULL);
+    passed = passed && (data->mclmac->mac != NULL);
 #endif
     uint64_t id[2] = UUID;
-    assert(ARROW(data->mclmac)_node_id[0] == id[0]);
-    assert(ARROW(data->mclmac)_node_id[1] == id[1]);
-    assert(ARROW(data->mclmac)_networkTime == 0);
-    assert(ARROW(data->mclmac)_nSlots == MAX_NUMBER_SLOTS);
-    assert(ARROW(data->mclmac)_nChannels == MAX_NUMBER_FREQS);
-    assert(ARROW(data->mclmac)_networkTime == 0);
-    assert(ARROW(data->mclmac)_hopCount == 0);
+    passed = passed && (ARROW(data->mclmac)_node_id[0] == id[0]);
+    passed = passed && (ARROW(data->mclmac)_node_id[1] == id[1]);
+    passed = passed && (ARROW(data->mclmac)_networkTime == 0);
+    passed = passed && (ARROW(data->mclmac)_nSlots == MAX_NUMBER_SLOTS);
+    passed = passed && (ARROW(data->mclmac)_nChannels == MAX_NUMBER_FREQS);
+    passed = passed && (ARROW(data->mclmac)_networkTime == 0);
+    passed = passed && (ARROW(data->mclmac)_hopCount == 0);
     int n = MAX_NUMBER_FREQS;
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < n; i++)
     {
-        assert(ARROW(data->mclmac)_frequencies[i] >= 902000000 && ARROW(data->mclmac)_frequencies[i] <= 928000000);
+        passed = passed && (ARROW(data->mclmac)_frequencies[i] >= 902000000 && ARROW(data->mclmac)_frequencies[i] <= 928000000);
         for (int j = 0; j < m; j++)
-            assert(ARROW(data->mclmac)_occupied_frequencies_slots[i][j] == 0);
+            passed = passed && (ARROW(data->mclmac)_occupied_frequencies_slots[i][j] == 0);
     }
 #ifdef __LINUX__
-    assert(data->mclmac->stack == NULL);
+    passed = passed && (data->mclmac->stack == NULL);
 #endif
 #ifdef __RIOT__
-    assert(data->mclmac.stack != NULL);
+    passed = passed && (data->mclmac.stack != NULL);
 #endif
-    assert(ARROW(data->mclmac)_mac_queue_id != 0);
-    assert(ARROW(data->mclmac)_routing_queue_id == 0);
-    assert(ARROW(data->mclmac)_transport_queue_id == 0);
-    assert(ARROW(data->mclmac)_app_queue_id == 0);
+    passed = passed && (ARROW(data->mclmac)_mac_queue_id != 0);
+    passed = passed && (ARROW(data->mclmac)_routing_queue_id == 0);
+    passed = passed && (ARROW(data->mclmac)_transport_queue_id == 0);
+    passed = passed && (ARROW(data->mclmac)_app_queue_id == 0);
+
+    return passed;
 }
 
-void test_MCLMAC_destroy(void *arg)
+bool test_MCLMAC_destroy(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
 
     MCLMAC_destroy(&data->mclmac);
+    bool passed = true;
 #ifdef __LINUX__
-    assert(data->mclmac == NULL);
+    passed = passed && (data->mclmac == NULL);
 #endif
 #ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, &data->radio);
+    MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
     MCLMAC_init(&data->mclmac, data->netdev);
 #endif
+
+    return passed;
 }
 
-void test_MCLMAC_clear(void *arg)
+bool test_MCLMAC_clear(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
     MCLMAC_clear(mclmac);
-    assert(ARROW(ARROW(mclmac->mac)frame)current_frame == 0);
-    assert(ARROW(ARROW(mclmac->mac)frame)current_slot == 0);
-    assert(ARROW(ARROW(mclmac->mac)frame)current_cf_slot == 0);
-    assert(ARROW(ARROW(mclmac->mac)frame)cf_slots_number == 0);
-    assert(ARROW(ARROW(mclmac->mac)frame)slots_number == 0);
-    assert(mclmac->powerMode.currentState == STARTP);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->_hopCount == 0);
-    assert(mclmac->_networkTime == 0);
-    assert(mclmac->_mac_queue_id == 0);
-    assert(mclmac->stack == NULL);
+    bool passed = true;
+    passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_frame == 0);
+    passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_slot == 0);
+    passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == 0);
+    passed = passed && (ARROW(ARROW(mclmac->mac)frame)cf_slots_number == 0);
+    passed = passed && (ARROW(ARROW(mclmac->mac)frame)slots_number == 0);
+    passed = passed && (mclmac->powerMode.currentState == STARTP);
+    passed = passed && (mclmac->macState.currentState == START);
+    passed = passed && (mclmac->_hopCount == 0);
+    passed = passed && (mclmac->_networkTime == 0);
+    passed = passed && (mclmac->_mac_queue_id == 0);
+    passed = passed && (mclmac->stack == NULL);
+
+    return passed;
 }
 
-void test_mclmac_set_transmit_channel(void *arg)
+bool test_mclmac_set_transmit_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t channel = (uint32_t)rand();
         mclmac_set_transmit_channel(mclmac, channel);
-        assert(ARROW(mclmac->mac)transmitChannel == channel);
+        passed = passed && (ARROW(mclmac->mac)transmitChannel == channel);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_transmit_channel(void *arg)
+bool test_mclmac_get_transmit_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t channel = (uint32_t)rand();
         mclmac_set_transmit_channel(mclmac, channel);
         uint32_t channelS = mclmac_get_transmit_channel(mclmac);
-        assert(channelS == channel);
+        passed = passed && (channelS == channel);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_reception_channel(void *arg)
+bool test_mclmac_set_reception_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t channel = (uint32_t)rand();
         mclmac_set_reception_channel(mclmac, channel);
-        assert(ARROW(mclmac->mac)receiveChannel == channel);
+        passed = passed && (ARROW(mclmac->mac)receiveChannel == channel);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_reception_channel(void *arg)
+bool test_mclmac_get_reception_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t channel = (uint32_t)rand();
         mclmac_set_reception_channel(mclmac, channel);
         uint32_t channelS = mclmac_get_reception_channel(mclmac);
-        assert(channelS == channel);
+        passed = passed && (channelS == channel);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_frequency(void *arg)
+bool test_mclmac_get_frequency(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
     {
         uint32_t freq = mclmac_get_frequency(mclmac, i);
-        assert(freq == mclmac->_frequencies[i]);
+        passed = passed && (freq == mclmac->_frequencies[i]);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_nodeid(void *arg)
+bool test_mclmac_get_nodeid(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
@@ -208,12 +236,14 @@ void test_mclmac_get_nodeid(void *arg)
         mclmac->_node_id[1] = nodeid[1];
         uint64_t node_id_r[2] = {0};
         mclmac_get_nodeid(mclmac, node_id_r);
-        assert(node_id_r[0] == nodeid[0]);
-        assert(node_id_r[1] == nodeid[1]);
+        passed = passed && (node_id_r[0] == nodeid[0]);
+        passed = passed && (node_id_r[1] == nodeid[1]);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_transmiterid(void *arg)
+bool test_mclmac_set_transmiterid(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -226,54 +256,66 @@ void test_mclmac_set_transmiterid(void *arg)
     sender_id[0] = rand();
     sender_id[1] = rand();
     mclmac_set_transmiterid(mclmac, sender_id);
-    assert(ARROW(mclmac->mac)transmitter_id[0] == sender_id[0]);
-    assert(ARROW(mclmac->mac)transmitter_id[1] == sender_id[1]);
+    bool passed = true;
+    passed = passed && (ARROW(mclmac->mac)transmitter_id[0] == sender_id[0]);
+    passed = passed && (ARROW(mclmac->mac)transmitter_id[1] == sender_id[1]);
+
+    return passed;
 }
 
-void test_mclmac_set_selected_slot(void *arg)
+bool test_mclmac_set_selected_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t slot = (uint8_t) rand() % 256;
         mclmac_set_selected_slot(mclmac, slot);
-        assert(ARROW(mclmac->mac)selectedSlot == slot);
+        passed = passed && (ARROW(mclmac->mac)selectedSlot == slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_selected_slot(void *arg)
+bool test_mclmac_get_selected_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t slot = (uint8_t) rand() % 256;
         mclmac_set_selected_slot(mclmac, slot);
         uint8_t slotR = mclmac_get_selected_slot(mclmac);
-        assert(slotR == slot);
+        passed = passed && (slotR == slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_current_frame(void *arg)
+bool test_mclmac_set_current_frame(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t frame_number = (uint32_t)rand();
         mclmac_set_current_frame(mclmac, frame_number);
-        assert(ARROW(ARROW(mclmac->mac)frame)current_frame == frame_number);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_frame == frame_number);
     }
+
+    return passed;
 }
 
-void test_mclmac_increase_frame(void *arg)
+bool test_mclmac_increase_frame(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -281,48 +323,58 @@ void test_mclmac_increase_frame(void *arg)
     uint32_t frame_number = 0;
     mclmac_set_current_frame(mclmac, frame_number);
 
+    bool passed = true;
     for (int i = 0; i < ITERATIONS; i++)
     {
         mclmac_increase_frame(mclmac);
         frame_number++;
-        assert(ARROW(ARROW(mclmac->mac)frame)current_frame == frame_number);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_frame == frame_number);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_current_slot(void *arg)
+bool test_mclmac_set_current_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t slot = (uint8_t)rand() % 256;
         mclmac_set_current_slot(mclmac, slot);
-        assert(ARROW(ARROW(mclmac->mac)frame)current_slot == slot);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_slot == slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_current_slot(void *arg)
+bool test_mclmac_get_current_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t slot = (uint8_t)rand() % 256;
         mclmac_set_current_slot(mclmac, slot);
         uint8_t current_slot = mclmac_get_current_slot(mclmac);
-        assert(current_slot == slot);
+        passed = passed && (current_slot == slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_increase_slot(void *arg)
+bool test_mclmac_increase_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     uint8_t slot = 0;
     mclmac_set_current_slot(mclmac, slot);
     int n = rand() % 512;
@@ -330,60 +382,72 @@ void test_mclmac_increase_slot(void *arg)
     {
         mclmac_increase_slot(mclmac);
         slot++;
-        assert(ARROW(ARROW(mclmac->mac)frame)current_slot == slot);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_slot == slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_slots_number(void *arg)
+bool test_mclmac_set_slots_number(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t slots_number = (uint8_t) rand();
         slots_number = (slots_number == 0 ? 1 : slots_number);
         mclmac_set_slots_number(mclmac, slots_number);
-        assert(ARROW(ARROW(mclmac->mac)frame)slots_number == slots_number);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)slots_number == slots_number);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_cf_slots_number(void *arg)
+bool test_mclmac_set_cf_slots_number(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t cf_slots_number = 1 + ((uint8_t) rand());
         cf_slots_number = (cf_slots_number == 0 ? 1 : cf_slots_number);
         mclmac_set_cf_slots_number(mclmac, cf_slots_number);
-        assert(ARROW(ARROW(mclmac->mac)frame)cf_slots_number == cf_slots_number);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)cf_slots_number == cf_slots_number);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_current_cf_slot(void *arg)
+bool test_mclmac_set_current_cf_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint8_t current_cf_slot = ((uint8_t) rand() % 256);
         current_cf_slot = (current_cf_slot == 0 ? 1 : current_cf_slot);
         mclmac_set_current_cf_slot(mclmac, current_cf_slot);
-        assert(ARROW(ARROW(mclmac->mac)frame)current_cf_slot == current_cf_slot);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == current_cf_slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_get_current_cf_slot(void *arg)
+bool test_mclmac_get_current_cf_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
@@ -391,11 +455,13 @@ void test_mclmac_get_current_cf_slot(void *arg)
         current_cf_slot = (current_cf_slot == 0 ? 1 : current_cf_slot);
         mclmac_set_current_cf_slot(mclmac, current_cf_slot);
         uint8_t slot = mclmac_get_current_cf_slot(mclmac);
-        assert(slot == current_cf_slot);
+        passed = passed && (slot == current_cf_slot);
     }
+
+    return passed;
 }
 
-void test_mclmac_increase_cf_slot(void *arg)
+bool test_mclmac_increase_cf_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -404,15 +470,18 @@ void test_mclmac_increase_cf_slot(void *arg)
     nCFSlot = (nCFSlot == 0 ? 1 : nCFSlot);
     mclmac_set_current_cf_slot(mclmac, nCFSlot);
     int n = rand() % ITERATIONS;
+    bool passed = true;
     for (int i = 0; i < n; i++)
     {
         mclmac_increase_cf_slot(mclmac);
         nCFSlot++;
-        assert(ARROW(ARROW(mclmac->mac)frame)current_cf_slot == nCFSlot);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == nCFSlot);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_slot_duration(void *arg)
+bool test_mclmac_set_slot_duration(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -424,16 +493,19 @@ void test_mclmac_set_slot_duration(void *arg)
     uint32_t slot_duration;
 #endif
 
+    bool passed = true;
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
     {
         slot_duration = rand();
         mclmac_set_slot_duration(mclmac, slot_duration);
-        assert(ARROW(ARROW(mclmac->mac)frame)slot_duration == slot_duration);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)slot_duration == slot_duration);
     }
+
+    return passed;
 }
 
-void test_mclmac_set_frame_duration(void *arg)
+bool test_mclmac_set_frame_duration(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -445,16 +517,19 @@ void test_mclmac_set_frame_duration(void *arg)
     uint32_t frame_duration;
 #endif
 
+    bool passed = true;
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
     {
         frame_duration = rand();
         mclmac_set_frame_duration(mclmac, frame_duration);
-        assert(ARROW(ARROW(mclmac->mac)frame)frame_duration == frame_duration);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)frame_duration == frame_duration);
     }
+    
+    return passed;
 }
 
-void test_mclmac_set_cf_duration(void *arg)
+bool test_mclmac_set_cf_duration(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -466,20 +541,24 @@ void test_mclmac_set_cf_duration(void *arg)
     uint32_t cf_duration;
 #endif
 
+    bool passed = true;
     int n = rand() % 1000;
     for (int i = 0; i < n; i++)
     {
         cf_duration = rand();
         mclmac_set_cf_duration(mclmac, cf_duration);
-        assert(ARROW(ARROW(mclmac->mac)frame)cf_duration == cf_duration);
+        passed = passed && (ARROW(ARROW(mclmac->mac)frame)cf_duration == cf_duration);
     }
+
+    return passed;
 }
 
-void test_mclmac_available_data_packets(void *arg)
+bool test_mclmac_available_data_packets(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
@@ -488,8 +567,10 @@ void test_mclmac_available_data_packets(void *arg)
         ARROW(mclmac->mac)_packets_to_send_message = message_packets;
         ARROW(mclmac->mac)_packets_to_send_control = control_packets;
         uint16_t total_packets = mclmac_available_data_packets(mclmac);
-        assert(total_packets == message_packets + control_packets);
+        passed = passed && (total_packets == message_packets + control_packets);
     }
+
+    return passed;
 }
 
 void _read_queue(MCLMAC_t *mclmac)
@@ -504,9 +585,14 @@ void _read_queue(MCLMAC_t *mclmac)
     ARROW(mclmac->mac)_packets_to_send_message = MAX_NUMBER_DATA_PACKETS;
     ARROW(mclmac->mac)_packets_to_send_control = MAX_NUMBER_DATA_PACKETS;
     int nelements = mclmac_read_queue_element(mclmac);
-    assert(nelements == 0);
-    assert(ARROW(mclmac->mac)_packets_to_send_message == MAX_NUMBER_DATA_PACKETS);
-    assert(ARROW(mclmac->mac)_packets_to_send_control == MAX_NUMBER_DATA_PACKETS);
+    bool passed = true;
+    passed = passed && (nelements == 0);
+    passed = passed && (ARROW(mclmac->mac)_packets_to_send_message == MAX_NUMBER_DATA_PACKETS);
+    passed = passed && (ARROW(mclmac->mac)_packets_to_send_control == MAX_NUMBER_DATA_PACKETS);
+    if (!passed) {
+        printf("Test case 1 \033[1;31mfailed\033[0m.\n");
+        passed = true;
+    }
     /** Test case 2:
      * The queue is empty. It should not increase the number of elements on the queue,
      * and the function should return 0.
@@ -514,7 +600,11 @@ void _read_queue(MCLMAC_t *mclmac)
     ARROW(mclmac->mac)_packets_to_send_message = 0;
     ARROW(mclmac->mac)_packets_to_send_control = 0;
     nelements = mclmac_read_queue_element(mclmac);
-    assert(nelements == 0);
+    passed = passed && (nelements == 0);
+    if (!passed) {
+        printf("Test case 2 \033[1;31mfailed\033[0m.\n");
+        passed = true;
+    }
     /** Test case 3:
      * There is only one element on the queue (a message). The changes should be the following:
      *      -At position zero, there should be a packet on the array _messages_packet_to_send.
@@ -532,13 +622,13 @@ void _read_queue(MCLMAC_t *mclmac)
     }
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
-    assert(nelements == 1);
-    assert(ARROW(mclmac->mac)_first_send_message == 0);
-    assert(ARROW(mclmac->mac)_last_send_message == 1);
-    assert(ARROW(mclmac->mac)_packets_to_send_message == 1);
+    passed = passed && (nelements == 1);
+    passed = passed && (ARROW(mclmac->mac)_first_send_message == 0);
+    passed = passed && (ARROW(mclmac->mac)_last_send_message == 1);
+    passed = passed && (ARROW(mclmac->mac)_packets_to_send_message == 1);
     DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[0];
     // Incoming message
-    assert(pkt->type == message[0]);
+    passed = passed && (pkt->type == message[0]);
     uint64_t destination_id[2] = {0};
     destination_id[0] |= ((uint64_t)message[1]) << 56;
     destination_id[0] |= ((uint64_t)message[2]) << 48;
@@ -556,30 +646,45 @@ void _read_queue(MCLMAC_t *mclmac)
     destination_id[1] |= ((uint64_t)message[14]) << 16;
     destination_id[1] |= ((uint64_t)message[15]) << 8;
     destination_id[1] |= ((uint64_t)message[16]);
-    assert(pkt->destination_id[0] == destination_id[0]);
-    assert(pkt->destination_id[1] == destination_id[1]);
+    passed = passed && (pkt->destination_id[0] == destination_id[0]);
+    passed = passed && (pkt->destination_id[1] == destination_id[1]);
     // Only the packet's data
-    assert(pkt->size == message[17]);
+    passed = passed && (pkt->size == message[17]);
     for (uint i = 0; i < pkt->size; i++)
-        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
+        passed = passed && (READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
+    if (!passed) {
+        printf("Test case 3.1 \033[1;31mfailed\033[0m.\n");
+        passed = true;
+    }
     // Type 1, a control packet
     message[0] = 2;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
-    assert(nelements == 1);
-    assert(ARROW(mclmac->mac)_first_send_control == 0);
-    assert(ARROW(mclmac->mac)_last_send_control == 1);
-    assert(ARROW(mclmac->mac)_packets_to_send_control == 1);
+    passed = passed && (nelements == 1);
+    passed = passed && (ARROW(mclmac->mac)_first_send_control == 0);
+    passed = passed && (ARROW(mclmac->mac)_last_send_control == 1);
+    passed = passed && (ARROW(mclmac->mac)_packets_to_send_control == 1);
     pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
-    assert(pkt->size == message[17]);
-    for (uint i = 0; i < pkt->size; i++)
-        assert(READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
-    
+    passed = passed && (pkt->size == message[17]);
+    for (uint i = 0; i < pkt->size; i++) {
+        passed = passed && (READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
+    }
+    if (!passed) {
+        printf("Test case 3.2 \033[1;31mfailed\033[0m.\n");
+        passed = true;
+    }
     // Invalid packet type
     message[0] = rand() + 10;
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
-    assert(nelements == 0);
+    passed = passed && (nelements == 0);
+    if (!passed) {
+        printf("Test case 3.3 \033[1;31mfailed\033[0m.\n");
+    }
+
+    if (!passed) {
+        printf("\033[0;31mmclmac_read_queue_element function tests failed\033[0m.\n");
+    }
 }
 #ifdef __LINUX__
 void *read_queue(void *arg)
@@ -603,7 +708,7 @@ static void* read_queue(void *arg)
     return NULL;
 }
 #endif
-void test_mclmac_read_queue_element(void *arg)
+bool test_mclmac_read_queue_element(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -629,6 +734,7 @@ void test_mclmac_read_queue_element(void *arg)
     thread_wakeup(pid);
     while (thread_getstatus(pid) == STATUS_RUNNING) ;
 #endif
+    return true;
 }
 
 void _write_queue(MCLMAC_t *mclmac)
@@ -640,7 +746,8 @@ void _write_queue(MCLMAC_t *mclmac)
      *  -The routing layer is not open yet. Return 0.
      */
     int ret = mclmac_write_queue_element(mclmac);
-    assert(ret == 0);
+    bool passed = true;
+    passed = passed && (ret == 0);
 
     /* The message will be sent to the routing layer, for the moment simulate
      that the mac queue is the routing queue. */
@@ -651,7 +758,7 @@ void _write_queue(MCLMAC_t *mclmac)
      * It should return 0.
     */
     ret = mclmac_write_queue_element(mclmac);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
 
     /**
      * Test case 2:
@@ -664,7 +771,7 @@ void _write_queue(MCLMAC_t *mclmac)
         send_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, mclmac->_self_pid);
     ARROW(mclmac->mac)_number_packets_received = 1;
     ret = mclmac_write_queue_element(mclmac);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
 #ifdef __LINUX__
     pthread_t pid;
 #endif
@@ -708,19 +815,19 @@ void _write_queue(MCLMAC_t *mclmac)
     ARROW(mclmac->mac)_number_packets_received = 1;
     ARROW(mclmac->mac)_last_received = 1;
     ret = mclmac_write_queue_element(mclmac);
-    assert(ret == 1);
-    assert(ARROW(mclmac->mac)_number_packets_received == 0);
-    assert(ARROW(mclmac->mac)_first_received == 1);
-    assert(ARROW(mclmac->mac)_last_received == 1);
-    assert(pkt->type == -1);
-    assert(pkt->destination_id[0] == 0);
-    assert(pkt->destination_id[1] == 0);
-    assert(pkt->size == 0);
+    passed = passed && (ret == 1);
+    passed = passed && (ARROW(mclmac->mac)_number_packets_received == 0);
+    passed = passed && (ARROW(mclmac->mac)_first_received == 1);
+    passed = passed && (ARROW(mclmac->mac)_last_received == 1);
+    passed = passed && (pkt->type == -1);
+    passed = passed && (pkt->destination_id[0] == 0);
+    passed = passed && (pkt->destination_id[1] == 0);
+    passed = passed && (pkt->size == 0);
 #ifdef __LINUX__
-    assert(pkt->data == NULL);
+    passed = passed && (pkt->data == NULL);
 #endif
 #ifdef __RIOT__
-    assert(pkt->data.size == 0);
+    passed = passed && (pkt->data.size == 0);
 #endif
     // Clear queue
     memset(msg, 0, MAX_MESSAGE_SIZE);
@@ -752,23 +859,23 @@ void _write_queue(MCLMAC_t *mclmac)
     {
         ret = mclmac_write_queue_element(mclmac);
         recv_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, &pid);
-        assert(ret == 1);
+        passed = passed && (ret == 1);
     }
-    assert(ARROW(mclmac->mac)_number_packets_received == 0);
-    assert(ARROW(mclmac->mac)_first_received == 0);
-    assert(ARROW(mclmac->mac)_last_received == 0);
+    passed = passed && (ARROW(mclmac->mac)_number_packets_received == 0);
+    passed = passed && (ARROW(mclmac->mac)_first_received == 0);
+    passed = passed && (ARROW(mclmac->mac)_last_received == 0);
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
         DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
-        assert(pkt->type == -1);
-        assert(pkt->destination_id[0] == 0);
-        assert(pkt->destination_id[1] == 0);
-        assert(pkt->size == 0);
+        passed = passed && (pkt->type == -1);
+        passed = passed && (pkt->destination_id[0] == 0);
+        passed = passed && (pkt->destination_id[1] == 0);
+        passed = passed && (pkt->size == 0);
 #ifdef __LINUX__
-        assert(pkt->data == NULL);
+        passed = passed && (pkt->data == NULL);
 #endif
 #ifdef __RIOT__
-        assert(pkt->data.size == 0);
+        passed = passed && (pkt->data.size == 0);
 #endif
     }
 #ifdef __LINUX__
@@ -777,6 +884,10 @@ void _write_queue(MCLMAC_t *mclmac)
 #ifdef __RIOT__
     free_array(&data);
 #endif
+
+    if (!passed) {
+        printf("\033[0;31mmclmac_read_queue_element function tests failed\033[0m.\n");
+    }
 }
 #ifdef __LINUX__
 void *write_queue(void *arg)
@@ -800,7 +911,7 @@ static void *write_queue(void *arg)
     return NULL;
 }
 #endif
-void test_mclmac_write_queue_element(void *arg)
+bool test_mclmac_write_queue_element(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -822,9 +933,11 @@ void test_mclmac_write_queue_element(void *arg)
     thread_wakeup(pid);
     while (thread_getstatus(pid) == STATUS_RUNNING) ;
 #endif
+
+    return true;
 }
 
-void test_mclmac_change_cf_channel(void *arg)
+bool test_mclmac_change_cf_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -833,29 +946,32 @@ void test_mclmac_change_cf_channel(void *arg)
 
     mclmac_change_cf_channel(mclmac);
 
+    bool passed = true;
 #ifdef __RIOT__
     /*uint8_t channel = (uint8_t)ARROW(mclmac->mac)cfChannel;
     uint8_t radio_channel;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&channel, sizeof(uint16_t));
 
-    assert(channel == radio_channel);
+    passed = passed && (channel == radio_channel);
     // Address is broadcast address
     uint8_t broadcast[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
     uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = {0};
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_ADDRESS, 
                                     (void *)addr, NRF24L01P_NG_ADDR_WIDTH);
-    assert(memcmp(broadcast, addr, NRF24L01P_NG_ADDR_WIDTH) == 0);
+    passed = passed && (memcmp(broadcast, addr, NRF24L01P_NG_ADDR_WIDTH) == 0);
     netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_STANDBY);*/
+    passed = passed && (state == NETOPT_STATE_STANDBY);*/
 #endif
     // Check the state is standby
     // Check the channel is cf
+
+    return passed;
 }
 
-void test_mclmac_start_cf_phase(void *arg)
+bool test_mclmac_start_cf_phase(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -868,20 +984,23 @@ void test_mclmac_start_cf_phase(void *arg)
 
     // Check for the frequency
     // Check the state of the radio is rx
+    bool passed = true;
 #ifdef __RIOT__
     /*uint8_t channel = (uint8_t)mclmac->mac.cfChannel;
     uint16_t radio_channel = 0;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&radio_channel, sizeof(uint16_t));
-    assert(channel == (uint8_t)radio_channel);
+    passed = passed && (channel == (uint8_t)radio_channel);
     netopt_state_t state = NETOPT_STATE_RX, radio_state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == radio_state);*/
+    passed = passed && (state == radio_state);*/
 #endif
+
+    return passed;
 }
 
-void test_stub_mclmac_start_split_phase(void *arg)
+bool test_mclmac_start_split_phase(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -897,16 +1016,17 @@ void test_stub_mclmac_start_split_phase(void *arg)
      *  -The function can only be called from within the TRANSMIT or RECEIVE states,
      */
     int32_t ret = mclmac_start_split_phase(mclmac, STARTP);
-    assert(ret == -1);
+    bool passed = true;
+    passed = passed && (ret == -1);
     ret = mclmac_start_split_phase(mclmac, PASSIVE);
-    assert(ret == -1);
+    passed = passed && (ret == -1);
     ret = mclmac_start_split_phase(mclmac, ACTIVE);
-    assert(ret == -1);
+    passed = passed && (ret == -1);
     ret = mclmac_start_split_phase(mclmac, FINISHP);
-    assert(ret == -1);
+    passed = passed && (ret == -1);
 
     ret = mclmac_start_split_phase(mclmac, TRANSMIT);
-    assert(ret == 1);
+    passed = passed && (ret == 1);
 #ifdef __RIOT__
     // Check the frequency of the radio
     /*uint16_t freq = (uint16_t)mclmac->mac.transmitChannel, channel = 0;
@@ -916,21 +1036,21 @@ void test_stub_mclmac_start_split_phase(void *arg)
     netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void*)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_TX);*/
+    passed = passed && (state == NETOPT_STATE_TX);*/
     // Check the contorl packet
     ControlPacket_t *pkt = &mclmac->mac.ctrlpkt;
-    assert(pkt->node_id[0] == 0);
-    assert(pkt->node_id[1] == 0);
-    assert(pkt->currentFrame == 0);
-    assert(pkt->currentSlot == 0);
-    assert(pkt->collisionSlot == 0);
-    assert(pkt->collisionFrequency == 0);
-    assert(pkt->hopCount == 0);
-    assert(pkt->networkTime == 0);
-    assert(pkt->initTime == 0);
+    passed = passed && (pkt->node_id[0] == 0);
+    passed = passed && (pkt->node_id[1] == 0);
+    passed = passed && (pkt->currentFrame == 0);
+    passed = passed && (pkt->currentSlot == 0);
+    passed = passed && (pkt->collisionSlot == 0);
+    passed = passed && (pkt->collisionFrequency == 0);
+    passed = passed && (pkt->hopCount == 0);
+    passed = passed && (pkt->networkTime == 0);
+    passed = passed && (pkt->initTime == 0);
 #endif
     ret = mclmac_start_split_phase(mclmac, RECEIVE);
-    assert(ret == 1);
+    passed = passed && (ret == 1);
 #ifdef __RIOT__
     // Check the frequency of the radio
     /*uint16_t freq = (uint16_t)mclmac->mac.receiveChannel, channel = 0;
@@ -940,22 +1060,24 @@ void test_stub_mclmac_start_split_phase(void *arg)
     netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void*)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_RX);*/
+    passed = passed && (state == NETOPT_STATE_RX);*/
     // Check the contorl packet
     pkt = &mclmac->mac.ctrlpkt;
-    assert(pkt->node_id[0] == 0);
-    assert(pkt->node_id[1] == 0);
-    assert(pkt->currentFrame == 0);
-    assert(pkt->currentSlot == 0);
-    assert(pkt->collisionSlot == 0);
-    assert(pkt->collisionFrequency == 0);
-    assert(pkt->hopCount == 0);
-    assert(pkt->networkTime == 0);
-    assert(pkt->initTime == 0);
+    passed = passed && (pkt->node_id[0] == 0);
+    passed = passed && (pkt->node_id[1] == 0);
+    passed = passed && (pkt->currentFrame == 0);
+    passed = passed && (pkt->currentSlot == 0);
+    passed = passed && (pkt->collisionSlot == 0);
+    passed = passed && (pkt->collisionFrequency == 0);
+    passed = passed && (pkt->hopCount == 0);
+    passed = passed && (pkt->networkTime == 0);
+    passed = passed && (pkt->initTime == 0);
 #endif
+
+    return passed;
 }
 
-void test_mclmac_set_radio_sleep(void *arg)
+bool test_mclmac_set_radio_sleep(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -966,15 +1088,18 @@ void test_mclmac_set_radio_sleep(void *arg)
      * selected radio design.
      */
     mclmac_set_radio_sleep(mclmac);
+    bool passed = true;
 #ifdef __RIOT__
     /*netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_SLEEP);*/
+    passed = passed && (state == NETOPT_STATE_SLEEP);*/
 #endif
+
+    return passed;
 }
 
-void test_mclmac_set_radio_standby(void *arg)
+bool test_mclmac_set_radio_standby(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -983,26 +1108,32 @@ void test_mclmac_set_radio_standby(void *arg)
      * Set the radio state to standby.
      */
     mclmac_set_radio_standby(mclmac);
+    bool passed = true;
 #ifdef __RIOT__
     /*netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_STANDBY);*/
+    passed = passed && (state == NETOPT_STATE_STANDBY);*/
 #endif
+
+    return passed;
 }
 
-void test_mclmac_set_radio_rx(void *arg)
+bool test_mclmac_set_radio_rx(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
     mclmac_set_radio_rx(mclmac);
+    bool passed = true;
 #ifdef __RIOT__
     /*netopt_state_t state = NETOPT_STATE_OFF;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
                                     (void *)&state, sizeof(netopt_state_t));
-    assert(state == NETOPT_STATE_RX);*/
+    passed = passed && (state == NETOPT_STATE_RX);*/
 #endif
+
+    return passed;
 }
 
 void executeTestsMCLMAC(void)
@@ -1011,6 +1142,7 @@ void executeTestsMCLMAC(void)
 
     cUnit_t *tests;
     struct mclmac_data data;
+#if defined __RIOT__ && !defined NATIVE
     // Setup radios
     nrf24l01p_ng_t radio;
     nrf24l01p_ng_t radio_test;
@@ -1058,6 +1190,14 @@ void executeTestsMCLMAC(void)
     nrf24l01p_ng_diagnostics_print_dev_info(data.radio);
     printf("\nRadio test info:\n");
     nrf24l01p_ng_diagnostics_print_dev_info(data.radio_test);
+#elif defined _RIOT__ && defined NATIVE
+    data.netdev = NULL;
+    data.netdev_test = NULL;
+    data.radio = NULL;
+    data.radio_test = NULL;
+#elif defined __LINUX__
+    data.radio = NULL;
+#endif
 
     cunit_init(&tests, &setup_mclmac, &teardown_mclmac, (void *)&data);
 

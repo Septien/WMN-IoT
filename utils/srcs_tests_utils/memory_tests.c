@@ -12,13 +12,14 @@ void setup_mem(void *arg)
     (void) arg;
 }
 
-void test_memory_init(void *arg)
+bool test_memory_init(void *arg)
 {
     (void) arg;
-    memory_init();    
+    memory_init();
+    return true;
 }
 
-void test_create_array(void *arg)
+bool test_create_array(void *arg)
 {
     (void) arg;
     array_t array;
@@ -35,23 +36,24 @@ void test_create_array(void *arg)
     */
     size_t size = 0;
     int ret = create_array(&array, size);
-    assert(ret == 0);
+    bool passed = true;
+    passed = passed && (ret == 0);
 
     size = 1;
     ret = create_array(&array, size);
-    assert(ret == 1);
-    assert(array.head != NULL);
-    assert(array.size == 1);
-    assert(array.head->next == NULL);
+    passed = passed && (ret == 1);
+    passed = passed && (array.head != NULL);
+    passed = passed && (array.size == 1);
+    passed = passed && (array.head->next == NULL);
 
     ret = free_array(&array);
-    assert(ret == 1);
+    passed = passed && (ret == 1);
 
     size = 1 + (rand() % MAX_NUMBER_BLOCKS);
     ret = create_array(&array, size);
-    assert(ret == 1);
-    assert(array.head != NULL);
-    assert(array.size == size);
+    passed = passed && (ret == 1);
+    passed = passed && (array.head != NULL);
+    passed = passed && (array.size == size);
     memory_block_t *block;
     block = array.head;
     size_t count = 1;
@@ -65,14 +67,14 @@ void test_create_array(void *arg)
         else
             block = NULL;
     }
-    assert(count == size);
+    passed = passed && (count == size);
     free_array(&array);
 
     size = MAX_NUMBER_BLOCKS - 1;
     ret = create_array(&array, size);
-    assert(ret == 1);
-    assert(array.head != NULL);
-    assert(array.size == size);
+    passed = passed && (ret == 1);
+    passed = passed && (array.head != NULL);
+    passed = passed && (array.size == size);
     block = array.head;
     count = 1;
     while (block)
@@ -85,14 +87,14 @@ void test_create_array(void *arg)
         else
             block = NULL;
     }
-    assert(count == size);
+    passed = passed && (count == size);
     free_array(&array);
 
     size = MAX_NUMBER_BLOCKS;
     ret = create_array(&array, size);
-    assert(ret == 1);
-    assert(array.head != NULL);
-    assert(array.size == MAX_NUMBER_BLOCKS);
+    passed = passed && (ret == 1);
+    passed = passed && (array.head != NULL);
+    passed = passed && (array.size == MAX_NUMBER_BLOCKS);
     block = array.head;
     count = 1;
     while (block)
@@ -105,17 +107,19 @@ void test_create_array(void *arg)
         else
             block = NULL;
     }
-    assert(count == size);
+    passed = passed && (count == size);
     free_array(&array);
 
     size = MAX_NUMBER_BLOCKS + 1;
     ret = create_array(&array, size);
-    assert(ret == 0);
-    assert(array.head == NULL);
-    assert(array.size == 0);    
+    passed = passed && (ret == 0);
+    passed = passed && (array.head == NULL);
+    passed = passed && (array.size == 0);
+
+    return passed;
 }
 
-void test_free_array(void *arg)
+bool test_free_array(void *arg)
 {
     (void) arg;
     array_t array;
@@ -131,24 +135,27 @@ void test_free_array(void *arg)
      *  -Release an already released array, shoud return 0.
      * */
     int ret = free_array(&array);
-    assert(ret == 0);
+    bool passed = true;
+    passed = passed && (ret == 0);
 
     size = 1;
     create_array(&array, size);
     ret = free_array(&array);
-    assert(ret == 1);
-    assert(array.size == 0);
-    assert(array.head == NULL);
+    passed = passed && (ret == 1);
+    passed = passed && (array.size == 0);
+    passed = passed && (array.head == NULL);
 
     size = 1 + (rand() % (MAX_NUMBER_BLOCKS - 1));
     create_array(&array, size);
     ret = free_array(&array);
-    assert(ret == 1);
-    assert(array.size == 0);
-    assert(array.head == NULL);
+    passed = passed && (ret == 1);
+    passed = passed && (array.size == 0);
+    passed = passed && (array.head == NULL);
+
+    return passed;
 }
 
-void test_write_array(void *arg)
+bool test_write_array(void *arg)
 {
     (void) arg;
     array_t array;
@@ -168,21 +175,22 @@ void test_write_array(void *arg)
     uint8_t element = (uint8_t)rand();
     unsigned int ith = MAX_NUMBER_BLOCKS;
     int ret = write_element(&array, element, ith);
-    assert(ret == 0);
+    bool passed = true;
+    passed = passed && (ret == 0);
 
     element = (uint8_t)rand();
     ith = MAX_NUMBER_BLOCKS + 1;
     ret = write_element(&array, element, ith);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
 
     ith = 0;
     ret = write_element(&array, element, ith);
-    assert(ret == 1);
-    assert(array.head->block[0] == element);
+    passed = passed && (ret == 1);
+    passed = passed && (array.head->block[0] == element);
 
     ith = MAX_NUMBER_BLOCKS - 1;
     ret = write_element(&array, element, ith);
-    assert(ret == 1);
+    passed = passed && (ret == 1);
     unsigned int i;
     // Go to the corresponding location
     memory_block_t *block = array.head;
@@ -190,23 +198,25 @@ void test_write_array(void *arg)
     {
         block = block->next;
     }
-    assert(block->block[0] == element);
+    passed = passed && (block->block[0] == element);
 
     ith = rand() % MAX_NUMBER_BLOCKS;
     ret = write_element(&array, element, ith);
-    assert(ret == 1);
+    passed = passed && (ret == 1);
     block = array.head;
     for (i = 1; i <= ith; i++)
     {
         block = block->next;
     }
-    assert(block->block[0] == element);
+    passed = passed && (block->block[0] == element);
 
     ret = free_array(&array);
-    assert(ret == 1);
+    passed = passed && (ret == 1);
+
+    return passed;
 }
 
-void test_read_element(void *arg)
+bool test_read_element(void *arg)
 {
     (void) arg;
     array_t array;
@@ -230,8 +240,9 @@ void test_read_element(void *arg)
     */
    uint8_t elementr = 0;
    int ret = read_element(&array, &elementr, 0);
-   assert(ret == 1);
-   assert(elementr == 0);
+   bool passed = true;
+   passed = passed && (ret == 1);
+   passed = passed && (elementr == 0);
 
    ret = read_element(&array, &elementr, MAX_NUMBER_BLOCKS - 1);
    assert(ret == 1);
@@ -239,18 +250,20 @@ void test_read_element(void *arg)
 
    ith = rand() % size;
    ret = read_element(&array, &elementr, ith);
-   assert(ret == 1);
-   assert(elementr == ith % 256);
+   passed = passed && (ret == 1);
+   passed = passed && (elementr == ith % 256);
 
     ith = size;
     ret = read_element(&array, &elementr, ith);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
 
     ith = size + 1;
     ret = read_element(&array, &elementr, ith);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
 
    free_array(&array);
+
+   return passed;
 }
 
 void teardown_mem(void *arg)

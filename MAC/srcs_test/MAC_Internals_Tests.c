@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <time.h>
 
 #include "MAC_Internals.h"
@@ -16,7 +15,7 @@
 struct mac_internals_data {
     MAC_Internals_t SINGLE_POINTER mac;
 #ifdef __LINUX__
-    uint8_t radio;
+    uint8_t *radio;
 #endif
 #ifdef __RIOT__
     nrf24l01p_ng_t radio;
@@ -31,6 +30,7 @@ void setup_mac_internals(void *arg)
     MAC_internals_init(&data->mac, data->radio);
 #endif
 #ifdef __RIOT__
+#ifndef NATIVE
     // Setup the radio
     nrf24l01p_ng_params_t params = {
         .spi = NRF24L01P_NG_PARAM_SPI,
@@ -50,6 +50,7 @@ void setup_mac_internals(void *arg)
     int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
     data->netdev = &data->radio.netdev;
     data->radio.netdev.driver->init(data->netdev);
+#endif
     MAC_internals_init(&data->mac, data->netdev);
 #endif
 }
@@ -60,60 +61,69 @@ void teardown_mac_internal(void *arg)
     MAC_internals_destroy(&data->mac);
 }
 
-void test_MAC_internals_init(void *arg)
+bool test_MAC_internals_init(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
     MAC_Internals_t *mac = REFERENCE data->mac;
 
+    bool passed = true;
 #ifdef __LINUX__
-    assert(mac != NULL);
-    assert(mac->ctrlpkt != NULL);
+    passed = passed && (mac != NULL);
+    passed = passed && (mac->ctrlpkt != NULL);
 #endif
-    assert(mac->selectedSlot == 0);
-    assert(mac->transmitChannel == 0);
-    assert(mac->receiveChannel == 0);
-    assert(mac->cfChannel == CF_FREQUENCY);
-    assert(mac->_collisionDetected == false);
-    assert(mac->_is_internal_collision == false);
-    assert(mac->_collisionSlot == 0);
-    assert(mac->_collisionFrequency == 0);
-    assert(mac->_cf_message_received == false);
-    assert(mac->_packets_to_send_message == 0);
-    assert(mac->_packets_to_send_control == 0);
-    assert(mac->_last_send_control == 0);
-    assert(mac->_number_packets_received == 0);
+    passed = passed && (mac->selectedSlot == 0);
+    passed = passed && (mac->transmitChannel == 0);
+    passed = passed && (mac->receiveChannel == 0);
+    passed = passed && (mac->cfChannel == CF_FREQUENCY);
+    passed = passed && (mac->_collisionDetected == false);
+    passed = passed && (mac->_is_internal_collision == false);
+    passed = passed && (mac->_collisionSlot == 0);
+    passed = passed && (mac->_collisionFrequency == 0);
+    passed = passed && (mac->_cf_message_received == false);
+    passed = passed && (mac->_packets_to_send_message == 0);
+    passed = passed && (mac->_packets_to_send_control == 0);
+    passed = passed && (mac->_last_send_control == 0);
+    passed = passed && (mac->_number_packets_received == 0);
+
+    return passed;
 }
 
-void test_MAC_internals_destroy(void *arg)
+bool test_MAC_internals_destroy(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
 
     MAC_internals_destroy(&data->mac);
+    bool passed = true;
 #ifdef __LINUX__
-    assert(data->mac == NULL);
+    passed = passed && (data->mac == NULL);
 #endif
 #ifdef __LINUX__
-    MAC_internals_init(&data->mac, &data->radio);
+    MAC_internals_init(&data->mac, data->radio);
 #endif
 #ifdef __RIOT__
     MAC_internals_init(&data->mac, data->netdev);
 #endif
+
+    return passed;
 }
 
-void test_MAC_internals_clear(void *arg)
+bool test_MAC_internals_clear(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
     MAC_Internals_t *mac = REFERENCE data->mac;
 
     MAC_internals_clear(mac);
-    assert(mac->selectedSlot == 0);
-    assert(mac->transmitChannel == 0);
-    assert(mac->cfChannel == 0);
-    assert(mac->cfChannel == 0);
-    assert(mac->_collisionDetected == false);
-    assert(mac->_collisionSlot == 0);
-    assert(mac->_collisionFrequency == 0);
-    assert(mac->_cf_message_received == false);
+    bool passed = true;
+    passed = passed && (mac->selectedSlot == 0);
+    passed = passed && (mac->transmitChannel == 0);
+    passed = passed && (mac->cfChannel == 0);
+    passed = passed && (mac->cfChannel == 0);
+    passed = passed && (mac->_collisionDetected == false);
+    passed = passed && (mac->_collisionSlot == 0);
+    passed = passed && (mac->_collisionFrequency == 0);
+    passed = passed && (mac->_cf_message_received == false);
+
+    return passed;
 }
 
 void executeTestsMACInternals(void)

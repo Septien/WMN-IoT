@@ -32,7 +32,7 @@
         ((byte) & 0x02 ? '1' : '0'), \
         ((byte) & 0x01 ? '1' : '0')
 
-void test_init_queues(void *arg)
+bool test_init_queues(void *arg)
 {
     (void) arg;
 
@@ -44,40 +44,42 @@ void test_init_queues(void *arg)
     printf("Stack %p\n", (void *)stack);
     printf("Queue: %p\n", (void *)queue);
 #endif
+    bool passed = true;
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues->queues[i];
-        assert(q->queue_id == 0);
-        assert(q->queue_size == 0);
-        assert(q->message_size == 0);
-        assert(q->msgs_allow == 0);
+        passed = passed && (q->queue_id == 0);
+        passed = passed && (q->queue_size == 0);
+        passed = passed && (q->message_size == 0);
+        passed = passed && (q->msgs_allow == 0);
 #ifdef __RIOT__ 
-        assert(q->stack == NULL);
-        assert(q->queue == NULL);
+        passed = passed && (q->stack == NULL);
+        passed = passed && (q->queue == NULL);
 #endif
 #ifdef __LINUX__
-        assert(q->q_name == NULL);
-        assert(q->queue == (mqd_t) - 1);
+        passed = passed && (q->q_name == NULL);
+        passed = passed && (q->queue == (mqd_t) - 1);
 #endif
     }
     for (int i = 0; i < MAX_QUEUES; i++)
     {
-        assert(Queues->queues_ids[i].queue_id == 0);
-        assert(Queues->queues_ids[i].pid == 0);
+        passed = passed && (Queues->queues_ids[i].queue_id == 0);
+        passed = passed && (Queues->queues_ids[i].pid == 0);
     }
 #ifdef __RIOT__
-    assert(Queues->free_stack != NULL);
-    assert(Queues->free_queue != NULL);
+    passed = passed && (Queues->free_stack != NULL);
+    passed = passed && (Queues->free_queue != NULL);
     for (uint i = 0; i < MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE; i++)
         for (uint j = 0; j < MAX_MESSAGE_SIZE; j++)
-            assert(Queues->msg_storage[i][j] == 0);
-    assert(Queues->start_storage == 0);
-    assert(Queues->end_storage == 0);
-    assert(Queues->stored_elements == 0);
+            passed = passed && (Queues->msg_storage[i][j] == 0);
+    passed = passed && (Queues->start_storage == 0);
+    passed = passed && (Queues->end_storage == 0);
+    passed = passed && (Queues->stored_elements == 0);
 #endif
+    return passed;
 }
 
-void test_end_queues(void *arg)
+bool test_end_queues(void *arg)
 {
     (void) arg;
 
@@ -99,38 +101,41 @@ void test_end_queues(void *arg)
      *      -Sets the free_stack and free_queue pointers to zero.
      */
     end_queues();
+    bool passed = true;
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues->queues[i];
-        assert(q->queue_id == 0);
-        assert(q->queue_size == 0);
-        assert(q->message_size == 0);
-        assert(q->msgs_allow == 0);
+        passed = passed && (q->queue_id == 0);
+        passed = passed && (q->queue_size == 0);
+        passed = passed && (q->message_size == 0);
+        passed = passed && (q->msgs_allow == 0);
 #ifdef __LINUX__
-        assert(q->queue == (mqd_t) -1);
-        assert(q->q_name == NULL);
+        passed = passed && (q->queue == (mqd_t) -1);
+        passed = passed && (q->q_name == NULL);
 #endif
 #ifdef __RIOT__
-        assert(q->stack == NULL);
-        assert(q->queue == NULL);
+        passed = passed && (q->stack == NULL);
+        passed = passed && (q->queue == NULL);
 #endif
-        assert(Queues->queues_ids[i].queue_id == 0);
-        assert(Queues->queues_ids[i].pid == 0);
+        passed = passed && (Queues->queues_ids[i].queue_id == 0);
+        passed = passed && (Queues->queues_ids[i].pid == 0);
     }
 #ifdef __RIOT__
-    assert(Queues->free_stack == NULL);
-    assert(Queues->free_queue == NULL);
+    passed = passed && (Queues->free_stack == NULL);
+    passed = passed && (Queues->free_queue == NULL);
     for (uint i = 0; i < MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE; i++)
         for (uint j = 0; j < MAX_MESSAGE_SIZE; j++)
-            assert(Queues->msg_storage[i][j] == 0);
-    assert(Queues->start_storage == 0);
-    assert(Queues->end_storage == 0);
-    assert(Queues->stored_elements == 0);
+            passed = passed && (Queues->msg_storage[i][j] == 0);
+    passed = passed && (Queues->start_storage == 0);
+    passed = passed && (Queues->end_storage == 0);
+    passed = passed && (Queues->stored_elements == 0);
 #endif
     init_queues();
+
+    return passed;
 }
 
-void test_create_queue(void *arg)
+bool test_create_queue(void *arg)
 {
     (void) arg;
 
@@ -169,12 +174,13 @@ void test_create_queue(void *arg)
      */
     /* When some of the input parameters exceed its maximuma allowed (defined on header file),
     return 0 from the function. */
+    bool passed = true;
     qid = create_queue(QUEUE_SIZE + 1, message_size, msgs_allow, &stack);
-    assert(qid == 0);
+    passed = passed && (qid == 0);
     qid = create_queue(queue_size, MAX_MESSAGE_SIZE + 1, msgs_allow, &stack);
-    assert(qid == 0);
+    passed = passed && (qid == 0);
     qid = create_queue(queue_size, message_size, MAX_ELEMENTS_ON_QUEUE + 1, &stack);
-    assert(qid == 0);
+    passed = passed && (qid == 0);
 #ifdef __RIOT__
     // Get the last position from stack and queue.
     char *last_stack = Queues->free_stack;
@@ -193,26 +199,26 @@ void test_create_queue(void *arg)
         }
     }
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
-    assert(qid == _qid);
-    assert(Queues->queues_ids[qid - 1].queue_id == 1);
-    assert(Queues->queues_ids[qid - 1].pid == 0);
+    passed = passed && (qid == _qid);
+    passed = passed && (Queues->queues_ids[qid - 1].queue_id == 1);
+    passed = passed && (Queues->queues_ids[qid - 1].pid == 0);
     Queue_t *q = &Queues->queues[qid - 1];
-    assert(q->queue_size == queue_size);
-    assert(q->message_size == message_size);
-    assert(q->msgs_allow == msgs_allow);
+    passed = passed && (q->queue_size == queue_size);
+    passed = passed && (q->message_size == message_size);
+    passed = passed && (q->msgs_allow == msgs_allow);
 #ifdef __LINUX__
-    assert(stack == NULL);
+    passed = passed && (stack == NULL);
     char name[4] = { 0 };
     sprintf(name, "/%u", qid);
-    assert(strcmp(name, q->q_name) == 0);
+    passed = passed && (strcmp(name, q->q_name) == 0);
 #endif
 #ifdef __RIOT__
     printf("last_stack = %p\n", (void *)last_stack);
     printf("last_queue = %p\n", (void *)last_queue);
     printf("stack = %p\n", (void *)stack);
-    assert(stack == last_stack);
-    assert(q->stack == last_stack);
-    assert(q->queue == last_queue);
+    passed = passed && (stack == last_stack);
+    passed = passed && (q->stack == last_stack);
+    passed = passed && (q->queue == last_queue);
 #endif
 
     /**
@@ -224,15 +230,15 @@ void test_create_queue(void *arg)
     {
         qid = create_queue(queue_size, message_size, msgs_allow, &stack);
         _qid++;
-        assert(qid == _qid);
-        assert(Queues->queues_ids[i].queue_id == 1);
-        assert(Queues->queues_ids[i].pid == 0);
+        passed = passed && (qid == _qid);
+        passed = passed && (Queues->queues_ids[i].queue_id == 1);
+        passed = passed && (Queues->queues_ids[i].pid == 0);
 #ifdef __RIOT__
-        assert(stack != NULL);
-        assert(stack == last_stack + (i * THREAD_STACKSIZE_DEFAULT));
+        passed = passed && (stack != NULL);
+        passed = passed && (stack == last_stack + (i * THREAD_STACKSIZE_DEFAULT));
         Queue_t *q = &Queues->queues[qid - 1];
-        assert(q->stack == last_stack + (i * THREAD_STACKSIZE_DEFAULT));
-        assert(q->queue == last_queue + (i * QUEUE_SIZE));
+        passed = passed && (q->stack == last_stack + (i * THREAD_STACKSIZE_DEFAULT));
+        passed = passed && (q->queue == last_queue + (i * QUEUE_SIZE));
 #endif
     }
 
@@ -242,8 +248,10 @@ void test_create_queue(void *arg)
      * return 0, stack should be NULL.
      */
     qid = create_queue(queue_size, message_size, msgs_allow, &stack);
-    assert(qid == 0);
-    assert(stack == NULL);
+    passed = passed && (qid == 0);
+    passed = passed && (stack == NULL);
+
+    return passed;
 }
 #ifdef __RIOT__
 static void *func(void *arg)
@@ -252,8 +260,10 @@ static void *func(void *arg)
     kernel_pid_t pid = thread_getpid();
     open_queue(*qid, pid);
     IPC_Queues_t *Queues = get_queues_pointer();
-    assert(Queues->queues_ids[*qid - 1].pid == pid);
-
+    bool passed = (Queues->queues_ids[*qid - 1].pid == pid);
+    if (!passed) {
+        printf("\033[0;31mOpenning queue failed\033[0m.\n");
+    }
     return NULL;
 }
 #endif
@@ -265,13 +275,16 @@ void *func(void *arg)
     open_queue(*qid, pid);
     IPC_Queues_t *Queues = get_queues_pointer();
     Queue_t *q = &Queues->queues[*qid - 1];
-    assert(q->queue != -1);
-    assert(Queues->queues_ids[*qid - 1].pid == pid);
+    bool passed = (q->queue != -1);
+    passed = passed && (Queues->queues_ids[*qid - 1].pid == pid);
+    if (!passed) {
+        printf("\033[0;31mOpenning queue failed\033[0m.\n");
+    }
 
     return (NULL);
 }
 #endif
-void test_open_queue(void *arg)
+bool test_open_queue(void *arg)
 {
     (void) arg;
 
@@ -289,7 +302,8 @@ void test_open_queue(void *arg)
      * to be in a threading context for the function to work. The queue should already be created.
      */
     int ret = open_queue(MAX_QUEUES + 1, 0);
-    assert(ret == 0);
+    bool passed = true;
+    passed = passed && (ret == 0);
 #ifdef __LINUX__
     pthread_t pid;
     pthread_create(&pid, NULL, func, (void *)&qid);
@@ -301,6 +315,7 @@ void test_open_queue(void *arg)
     func, (void *)&qid, "Name");
     //while (thread_getstatus(pid) != STATUS_STOPPED) ;
 #endif
+    return passed;
 }
 
 #ifdef __LINUX__
@@ -324,12 +339,13 @@ void *recv(void *arg)
     usleep(100U);
     mq_getattr(qd, &attr);
     int count = 0;
+    bool passed = true;
     while (attr.mq_curmsgs > 0)
     {
         memset(_msg, 0, len);
         int ret = mq_receive(qd, _msg, len, NULL);
 
-        assert(ret == MAX_MESSAGE_SIZE + sizeof(pthread_t));
+        passed = passed && (ret == MAX_MESSAGE_SIZE + sizeof(pthread_t));
         s_pid = 0;
         s_pid |= ((pthread_t)_msg[0]) << 56;
         s_pid |= ((pthread_t)_msg[1]) << 48;
@@ -339,11 +355,14 @@ void *recv(void *arg)
         s_pid |= ((pthread_t)_msg[5]) << 16;
         s_pid |= ((pthread_t)_msg[6]) << 8;
         s_pid |= (pthread_t)_msg[7];
-        assert(s_pid > 0);
+        passed = passed && (s_pid > 0);
         count++;
         mq_getattr(qd, &attr);
     }    
-    assert(count > 0);
+    passed = passed && (count > 0);
+    if (!passed) {
+        printf("\033[0;31mSending messages failed\033[0m.\n");
+    }
     return (NULL);
 }
 #endif
@@ -355,22 +374,25 @@ static void *recv(void *arg)
     open_queue(*qid, pid);
     int count = 0;
     thread_sleep();
+    bool passed = true;
     while (msg_avail())
     {
         msg_t msg;
         msg_receive(&msg);
-        assert(msg.type > 0);
-        assert(msg.content.ptr != NULL);
+        passed = passed && (msg.type > 0);
+        passed = passed && (msg.content.ptr != NULL);
         printf("%d ", msg.type);
         count++;
     }
     printf("\n");
-    assert(count > 0);
-
+    passed = passed && (count > 0);
+    if (!passed) {
+        printf("\033[0;31mSending messages failed\033[0m.\n");
+    }
     return NULL;
 }
 #endif
-void test_send_message(void *arg)
+bool test_send_message(void *arg)
 {
     (void) arg;
 
@@ -408,10 +430,11 @@ void test_send_message(void *arg)
     /** Test case 1:
      *      The queue_id falls outside the allowed range. Return 0.
     */
+    bool passed = true;
     int ret = send_message(0, msg, msg_size, 0);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
     ret = send_message(MAX_QUEUES + 1, msg, msg_size, 0);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
     /** Test case 2:
      *      Create the queue, then send the message to the queue. Send it N times (random), then 
      *      receive the message on the other size. Verify that the received message is equal to 
@@ -420,9 +443,9 @@ void test_send_message(void *arg)
     int n = 10; //rand() % MAX_ELEMENTS_ON_QUEUE;
 #ifdef __LINUX__
     ret = send_message(qid, msg, msg_size, 0);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
     ret = send_message(qid, msg, msg_size, 1);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
 
     pthread_t pid;
     pthread_create(&pid, NULL, recv, (void *)&qid);
@@ -430,7 +453,7 @@ void test_send_message(void *arg)
     for (int i = 0; i < n; i++)
     {
         ret = send_message(qid, msg, msg_size, pid);
-        assert(ret == 1);
+        passed = passed && (ret == 1);
     }
     pthread_join(pid, NULL);
 #endif
@@ -442,7 +465,7 @@ void test_send_message(void *arg)
 
     Queues->stored_elements = MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE;
     ret = send_message(qid, msg, msg_size, pid);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
     Queues->stored_elements = 0;
     uint stored_elements = Queues->stored_elements;
     uint prev = Queues->end_storage;
@@ -450,12 +473,12 @@ void test_send_message(void *arg)
     {
         ret = send_message(qid, msg, msg_size, pid);
         uint8_t *storage = Queues->msg_storage[prev];
-        assert(ret == 1);
-        assert(Queues->end_storage == (prev + 1));
-        assert(Queues->stored_elements == (stored_elements + 1));
+        passed = passed && (ret == 1);
+        passed = passed && (Queues->end_storage == (prev + 1));
+        passed = passed && (Queues->stored_elements == (stored_elements + 1));
         for (int j = 0; j < MAX_MESSAGE_SIZE; j++)
         {
-            assert(msg[j] == storage[j]);
+            passed = passed && (msg[j] == storage[j]);
         }
         prev++;
         stored_elements++;
@@ -464,6 +487,7 @@ void test_send_message(void *arg)
     //while (thread_getstatus(pid) != STATUS_STOPPED) ;
     memset(Queues->msg_storage, 0, MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE * MAX_MESSAGE_SIZE);
 #endif
+    return passed;
 }
 
 #ifdef __LINUX__
@@ -483,18 +507,22 @@ void *recv_recv(void *arg)
     usleep(100U);
     mq_getattr(qd, &attr);
     int count = 0;
+    bool passed = true;
     while (attr.mq_curmsgs > 0)
     {
         int ret = recv_message(*qid, _msg, size, &s_pid);
-        assert(ret == 1);
-        assert(s_pid > 0);
+        passed = passed && (ret == 1);
+        passed = passed && (s_pid > 0);
         for (uint i = 0; i < size; i++)
-            assert(_msg[i] == 10);
+            passed = passed && (_msg[i] == 10);
         count++;
         mq_getattr(qd, &attr);
     }
-    assert(count > 0);
+    passed = passed && (count > 0);
     free(_msg);
+    if (!passed) {
+        printf("\033[0;31mReceiving messages failed\033[0m.\n");
+    }
     return (NULL);
 }
 #endif
@@ -510,6 +538,7 @@ static void *recv_recv(void *arg)
     IPC_Queues_t *Queues = get_queues_pointer();
     uint index = Queues->start_storage;
     uint stored_elements = Queues->stored_elements;
+    bool passed = true;
     while (msg_avail())
     {
         size_t msg_size = MAX_MESSAGE_SIZE;
@@ -518,31 +547,34 @@ static void *recv_recv(void *arg)
         uint8_t last_msg[msg_size];
         memcpy(last_msg, storage, msg_size);
         int ret = recv_message(*qid, msg, msg_size, &s_pid);
-        assert(s_pid > 0);
-        assert(ret == 1);
-        assert(Queues->stored_elements == stored_elements - 1);
-        assert(Queues->start_storage == (index + 1) % (MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE));
+        passed = passed && (s_pid > 0);
+        passed = passed && (ret == 1);
+        passed = passed && (Queues->stored_elements == stored_elements - 1);
+        passed = passed && (Queues->start_storage == (index + 1) % (MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE));
         uint i;
         for (i = 0; i < msg_size; i++)
-            assert(msg[i] == last_msg[i]);
+            passed = passed && (msg[i] == last_msg[i]);
         for (i = 0; i < msg_size; i++)
-            assert(Queues->msg_storage[index][i] == 0);
+            passed = passed && (Queues->msg_storage[index][i] == 0);
         for (i = 0; i < msg_size; i++)
-            assert(msg[i] == 10);
+            passed = passed && (msg[i] == 10);
         count++;
         index = (index + 1) % (MAX_QUEUES * MAX_ELEMENTS_ON_QUEUE);
         stored_elements--;
     }
-    assert(count > 0);
+    passed = passed && (count > 0);
     // In case there are no elements on the queue
     size_t msg_size = MAX_MESSAGE_SIZE;
     uint8_t msg[msg_size];
     int ret = recv_message(*qid, msg, msg_size, &s_pid);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
+    if (!passed) {
+        printf("\033[0;31mReceiving messages failed\033[0m.\n");
+    }
     return NULL;
 }
 #endif
-void test_recv_message(void *arg)
+bool test_recv_message(void *arg)
 {
     (void) arg;
 
@@ -609,14 +641,16 @@ void test_recv_message(void *arg)
         The function should return 0.
     */
     int ret = recv_message(0, _msg2, size, &_pid);
-    assert(ret == 0);
+    bool passed = (ret == 0);
     ret = recv_message(MAX_QUEUES + 1, _msg2, size, &_pid);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
     ret = recv_message(MAX_QUEUES + 1, _msg2, 0, &_pid);
-    assert(ret == 0);
+    passed = passed && (ret == 0);
+
+    return passed;
 }
 
-void test_close_queue(void *arg)
+bool test_close_queue(void *arg)
 {
     (void) arg;
 
@@ -661,28 +695,31 @@ void test_close_queue(void *arg)
      * be already stopped.
      */
     /* Test case 1:
-    *   We opened and used a queue for IPC, now we want to close it and assert that all
+    *   We opened and used a queue for IPC, now we want to close it and passed = passed &&  that all
     * all its associated variables are clear. For Linux, the name should be freed, and for
     * for RIOT, the pointers should be set to NULL.
     */
     Queue_t *q = &Queues->queues[qid - 1];
     close_queue(qid);
-    assert(q->queue_id == 0);
-    assert(q->queue_size == 0);
-    assert(q->message_size == 0);
-    assert(q->msgs_allow == 0);
+    bool passed = true;
+    passed = passed && (q->queue_id == 0);
+    passed = passed && (q->queue_size == 0);
+    passed = passed && (q->message_size == 0);
+    passed = passed && (q->msgs_allow == 0);
 #ifdef __LINUX__
-    assert(q->queue == -1);
-    assert(q->q_name == NULL);
-    assert(q->attr.mq_maxmsg == 0);
-    assert(q->attr.mq_msgsize == 0);
+    passed = passed && (q->queue == -1);
+    passed = passed && (q->q_name == NULL);
+    passed = passed && (q->attr.mq_maxmsg == 0);
+    passed = passed && (q->attr.mq_msgsize == 0);
 #endif
 #ifdef __RIOT__
-    assert(q->stack == NULL);
-    assert(q->queue == NULL);
+    passed = passed && (q->stack == NULL);
+    passed = passed && (q->queue == NULL);
 #endif
-    assert(Queues->queues_ids[qid - 1].queue_id == 0);
-    assert(Queues->queues_ids[qid - 1].pid == 0);
+    passed = passed && (Queues->queues_ids[qid - 1].queue_id == 0);
+    passed = passed && (Queues->queues_ids[qid - 1].pid == 0);
+
+    return passed;
 }
 
 #ifdef __LINUX__
@@ -696,7 +733,8 @@ void *open_q(void *arg)
      * No elements on the queue, the function should return 0.
      */
     uint32_t elements = elements_on_queue(*qid);
-    assert(elements == 0);
+    bool passed = true;
+    passed = passed && (elements == 0);
 
     size_t size = MAX_MESSAGE_SIZE;
     char *msg = (char *)malloc(size * sizeof(char));
@@ -705,13 +743,16 @@ void *open_q(void *arg)
     
     send_message(*qid, (void *)msg, size, pid);
     elements = elements_on_queue(*qid);
-    assert(elements == 1);
+    passed = passed && (elements == 1);
 
     uint n = rand() % QUEUE_SIZE;
     for (uint i = 0; i < n - 1; i++)
         send_message(*qid, (void *)msg, size, pid);
     elements = elements_on_queue(*qid);
-    assert(elements == n);
+    passed = passed && (elements == n);
+    if (!passed) {
+        printf("\033[0;31mElements on queue failed\033[0m.\n");
+    }
 
     free(msg);
 
@@ -721,7 +762,6 @@ void *open_q(void *arg)
 #ifdef __RIOT__
 static void *open_q(void *arg)
 {
-    printf("Hello.\n");
     uint32_t *qid = (uint32_t *)arg;
     kernel_pid_t pid = thread_getpid();
     open_queue(*qid, pid);
@@ -730,7 +770,8 @@ static void *open_q(void *arg)
      * No elements on the queue, the function should return 0.
      */
     uint32_t elements = elements_on_queue(*qid);
-    assert(elements == 0);
+    bool passed = true;
+    passed = passed && (elements == 0);
 
     size_t size = MAX_MESSAGE_SIZE;
     char msg[size];
@@ -740,19 +781,23 @@ static void *open_q(void *arg)
 
     send_message(*qid, (void *)_msg, size, pid);
     elements = elements_on_queue(*qid);
-    assert(elements == 1);
+    passed = passed && (elements == 1);
 
     uint n = QUEUE_SIZE;
     for (uint i = 0; i < n - 1; i++)
         send_message(*qid, (void *)_msg, size, pid);
     elements = elements_on_queue(*qid);
-    assert(elements == n);
+    passed = passed && (elements == n);
     thread_sleep();
+
+    if (!passed) {
+        printf("\033[0;31mOpenning queue failed\033[0m.\n");
+    }
 
     return NULL;
 }
 #endif
-void test_elements_on_queue(void *arg)
+bool test_elements_on_queue(void *arg)
 {
     (void) arg;
 
@@ -785,6 +830,7 @@ void test_elements_on_queue(void *arg)
     open_q, (void *)&qid, "Name");
     thread_wakeup(pid);
 #endif
+    return true;
 }
 
 void setup_ipc(void *arg)

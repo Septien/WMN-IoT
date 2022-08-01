@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #include <time.h>
 #include <string.h>
 
@@ -27,49 +26,55 @@ void teardown_controlpacket(void *arg)
     controlpacket_destroy(&data->ctrlpkt);
 }
 
-void test_controlpacket_init(void *arg)
+bool test_controlpacket_init(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
 #ifdef __LINUX__
-    assert(pkt != NULL);
+    passed = passed && (pkt != NULL);
 #endif
 #ifdef __RIOT__
-    assert(pkt.node_id[0] == 0);
-    assert(pkt.node_id[1] == 0);
-    assert(pkt.currentFrame == 0);
-    assert(pkt.currentSlot == 0);
-    assert(pkt.collisionSlot == 0);
-    assert(pkt.hopCount == 0);
-    assert(pkt.networkTime == 0);
-    assert(pkt.initTime == 0);
+    passed = passed && (pkt.node_id[0] == 0);
+    passed = passed && (pkt.node_id[1] == 0);
+    passed = passed && (pkt.currentFrame == 0);
+    passed = passed && (pkt.currentSlot == 0);
+    passed = passed && (pkt.collisionSlot == 0);
+    passed = passed && (pkt.hopCount == 0);
+    passed = passed && (pkt.networkTime == 0);
+    passed = passed && (pkt.initTime == 0);
 #endif
+
+    return passed;
 }
 
-void test_controlpacket_destroy(void *arg)
+bool test_controlpacket_destroy(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;    
 
     controlpacket_destroy(&data->ctrlpkt);
 
+    bool passed = true;
 #ifdef __LINUX__
-    assert(data->ctrlpkt == NULL);
+    passed = passed && (data->ctrlpkt == NULL);
 #endif
 #ifdef __RIOT__
-    assert(data->ctrlpkt.node_id[0] == 0);
-    assert(data->ctrlpkt.node_id[1] == 0);
-    assert(data->ctrlpkt.currentFrame == 0);
-    assert(data->ctrlpkt.currentSlot == 0);
-    assert(data->ctrlpkt.collisionSlot == 0);
-    assert(data->ctrlpkt.hopCount == 0);
-    assert(data->ctrlpkt.networkTime == 0);
-    assert(data->ctrlpkt.initTime == 0);
+    passed = passed && (data->ctrlpkt.node_id[0] == 0);
+    passed = passed && (data->ctrlpkt.node_id[1] == 0);
+    passed = passed && (data->ctrlpkt.currentFrame == 0);
+    passed = passed && (data->ctrlpkt.currentSlot == 0);
+    passed = passed && (data->ctrlpkt.collisionSlot == 0);
+    passed = passed && (data->ctrlpkt.hopCount == 0);
+    passed = passed && (data->ctrlpkt.networkTime == 0);
+    passed = passed && (data->ctrlpkt.initTime == 0);
 #endif
     controlpacket_init(&data->ctrlpkt);
+
+    return passed;
 }
 
-void test_controlpacket_create(void *arg)
+bool test_controlpacket_create(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -96,22 +101,25 @@ void test_controlpacket_create(void *arg)
     controlpacket_create(REFERENCE pkt, node_id, frame, slot, collisionSlot, collisionFrequency, 
                         hopCount, netTime, initTime, (uint8_t *)occupied_slots);
 
+    bool passed = true;
 #ifdef __LINUX__
-    assert(pkt != NULL);
+    passed = passed && (pkt != NULL);
 #endif
-    assert(ARROW(pkt)node_id[0] == node_id[0]);
-    assert(ARROW(pkt)node_id[1] == node_id[1]);
-    assert(ARROW(pkt)currentFrame == frame);
-    assert(ARROW(pkt)currentSlot == slot);
-    assert(ARROW(pkt)collisionSlot == collisionSlot);
-    assert(ARROW(pkt)collisionFrequency == collisionFrequency);
-    assert(ARROW(pkt)hopCount == hopCount);
-    assert(ARROW(pkt)networkTime == netTime);
-    assert(ARROW(pkt)initTime == initTime);
-    assert(memcmp(ARROW(pkt)occupied_slots, occupied_slots, sizeof(occupied_slots)) == 0);
+    passed = passed && (ARROW(pkt)node_id[0] == node_id[0]);
+    passed = passed && (ARROW(pkt)node_id[1] == node_id[1]);
+    passed = passed && (ARROW(pkt)currentFrame == frame);
+    passed = passed && (ARROW(pkt)currentSlot == slot);
+    passed = passed && (ARROW(pkt)collisionSlot == collisionSlot);
+    passed = passed && (ARROW(pkt)collisionFrequency == collisionFrequency);
+    passed = passed && (ARROW(pkt)hopCount == hopCount);
+    passed = passed && (ARROW(pkt)networkTime == netTime);
+    passed = passed && (ARROW(pkt)initTime == initTime);
+    passed = passed && (memcmp(ARROW(pkt)occupied_slots, occupied_slots, sizeof(occupied_slots)) == 0);
+
+    return passed;
 }
 
-void test_controlpacket_clear(void *arg)
+bool test_controlpacket_clear(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -139,74 +147,89 @@ void test_controlpacket_clear(void *arg)
     
     controlpacket_clear(REFERENCE pkt);
 
-    assert(ARROW(pkt)node_id[0] == 0);
-    assert(ARROW(pkt)node_id[0] == 0);
-    assert(ARROW(pkt)collisionFrequency == 0);
-    assert(ARROW(pkt)collisionSlot == 0);
-    assert(ARROW(pkt)hopCount == 0);
-    assert(ARROW(pkt)networkTime == 0);
-    assert(ARROW(pkt)initTime == 0);
+    bool passed = true;
+    passed = passed && (ARROW(pkt)node_id[0] == 0);
+    passed = passed && (ARROW(pkt)node_id[0] == 0);
+    passed = passed && (ARROW(pkt)collisionFrequency == 0);
+    passed = passed && (ARROW(pkt)collisionSlot == 0);
+    passed = passed && (ARROW(pkt)hopCount == 0);
+    passed = passed && (ARROW(pkt)networkTime == 0);
+    passed = passed && (ARROW(pkt)initTime == 0);
+
+    return passed;
 }
 
-void test_controlpacket_set_current_frame(void *arg)
+bool test_controlpacket_set_current_frame(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     int n = rand() % 1024;
+    bool passed = true;
     for (int i = 0; i < n; i++)
     {
         uint32_t frame = rand();
         controlpacket_set_current_frame(REFERENCE pkt, frame);
-        assert(ARROW(pkt)currentFrame == frame);
+        passed = passed && (ARROW(pkt)currentFrame == frame);
     }
+
+    return passed;
 }
 
-void test_controlpacket_get_current_frame(void *arg)
+bool test_controlpacket_get_current_frame(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand() % 1024;
     for (int i = 0; i < n; i++)
     {
         uint32_t frame = rand();
         controlpacket_set_current_frame(REFERENCE pkt, frame);
         uint32_t frameA = controlpacket_get_current_frame(REFERENCE pkt);
-        assert(frameA == frame);
+        passed = passed && (frameA == frame);
     }
+
+    return passed;
 }
 
-void test_controlpacket_set_current_slot(void *arg)
+bool test_controlpacket_set_current_slot(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand()%1024;
     for (int i = 0; i < n; i++)
     {
         uint8_t slot = rand();
         controlpacket_set_current_slot(REFERENCE pkt, slot);
-        assert(ARROW(pkt)currentSlot == slot);
+        passed = passed && (ARROW(pkt)currentSlot == slot);
     }
+
+    return passed;
 }
 
-void test_controlpacket_get_current_slot(void *arg)
+bool test_controlpacket_get_current_slot(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand()%1024;
     for (int i = 0; i < n; i++)
     {
         uint8_t slot = rand();
         controlpacket_set_current_slot(REFERENCE pkt, slot);
         uint8_t slotA = controlpacket_get_current_slot(REFERENCE pkt);
-        assert(slotA == slot);
+        passed = passed && (slotA == slot);
     }
+
+    return passed;
 }
 
-void test_controlpacket_get_collision_slot(void *arg)
+bool test_controlpacket_get_collision_slot(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -215,10 +238,11 @@ void test_controlpacket_get_collision_slot(void *arg)
     ARROW(pkt)collisionSlot = slot;
 
     slot = controlpacket_get_collision_slot(REFERENCE pkt);
-    assert(slot == ARROW(pkt)collisionSlot);
+    bool passed = (slot == ARROW(pkt)collisionSlot);
+    return passed;
 }
 
-void test_controlpacket_get_collision_frequency(void *arg)
+bool test_controlpacket_get_collision_frequency(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -227,21 +251,26 @@ void test_controlpacket_get_collision_frequency(void *arg)
     ARROW(pkt)collisionFrequency = freq;
     
     uint32_t freqr = controlpacket_get_collision_frequency(REFERENCE pkt);
-    assert(freqr == ARROW(pkt)collisionFrequency);
-    assert(freqr == freq);
+    bool passed = true;
+    passed = passed && (freqr == ARROW(pkt)collisionFrequency);
+    passed = passed && (freqr == freq);
+
+    return passed;
 }
 
-void test_controlpacket_set_hop_count(void *arg)
+bool test_controlpacket_set_hop_count(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
     uint16_t hops = 8;
     controlpacket_set_hop_count(REFERENCE pkt, hops);
-    assert(ARROW(pkt)hopCount == hops);
+    bool passed = (ARROW(pkt)hopCount == hops);
+
+    return passed;
 }
 
-void test_controlpacket_get_hop_count(void *arg)
+bool test_controlpacket_get_hop_count(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -250,69 +279,84 @@ void test_controlpacket_get_hop_count(void *arg)
     controlpacket_set_hop_count(REFERENCE pkt, hops);
     
     uint8_t hops2 = controlpacket_get_hop_count(REFERENCE pkt);
-    assert(hops2 == ARROW(pkt)hopCount);
-    assert(hops2 == hops);
+    bool passed = true;
+    passed = passed && (hops2 == ARROW(pkt)hopCount);
+    passed = passed && (hops2 == hops);
+
+    return passed;
 }
 
-void test_controlpacket_set_network_time(void *arg)
+bool test_controlpacket_set_network_time(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint64_t netTime = rand();
         controlpacket_set_network_time(REFERENCE pkt, netTime);
-        assert(ARROW(pkt)networkTime == netTime);
+        passed = passed && (ARROW(pkt)networkTime == netTime);
     }
+
+    return passed;
 }
 
-void test_controlpacket_get_network_time(void *arg)
+bool test_controlpacket_get_network_time(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint64_t time = (uint32_t)rand();
         controlpacket_set_network_time(REFERENCE pkt, time);
         uint64_t timeA = controlpacket_get_network_time(REFERENCE pkt);
-        assert(timeA == time);
+        passed = passed && (timeA == time);
     }
+
+    return passed;
 }
 
-void test_controlpacket_set_init_time(void *arg)
+bool test_controlpacket_set_init_time(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t initTime = (uint32_t)rand();
         controlpacket_set_init_time(REFERENCE pkt, initTime);
-        assert(ARROW(pkt)initTime == initTime);
+        passed = passed && (ARROW(pkt)initTime == initTime);
     }
+
+    return passed;
 }
 
-void test_controlpacket_get_init_time(void *arg)
+bool test_controlpacket_get_init_time(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
 
+    bool passed = true;
     int n = rand() % ITERATIONS;
     for (int i = 0; i < n; i++)
     {
         uint32_t initTime = (uint32_t)rand();
         controlpacket_set_init_time(REFERENCE pkt, initTime);
         uint32_t initTimeT = controlpacket_get_init_time(REFERENCE pkt);
-        assert(initTimeT == initTime);
+        passed = passed && (initTimeT == initTime);
     }
+
+    return passed;
 }
 
-void test_controlpacket_get_occupied_slots(void *arg)
+bool test_controlpacket_get_occupied_slots(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -341,10 +385,12 @@ void test_controlpacket_get_occupied_slots(void *arg)
 
     uint8_t occupied_slots_r[freqs][slots];
     controlpacket_get_occupied_slots(REFERENCE pkt, (uint8_t *)occupied_slots_r);
-    assert(memcmp(occupied_slots, occupied_slots_r, sizeof(occupied_slots)) == 0);
+    bool passed = (memcmp(occupied_slots, occupied_slots_r, sizeof(occupied_slots)) == 0);
+
+    return passed;
 }
 
-void test_controlpacket_get_packet_bytestring(void *arg)
+bool test_controlpacket_get_packet_bytestring(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -400,7 +446,8 @@ void test_controlpacket_get_packet_bytestring(void *arg)
     ARRAY byteStr;
     controlpacket_get_packet_bytestring(REFERENCE pkt, &byteStr);
 
-    assert(READ_ARRAY(REFERENCE byteStr, 0)     == 1);      // Control packet MAC, type one
+    bool passed = true;
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 0)     == 1);      // Control packet MAC, type one
     uint64_t node_id1 = 0;
     node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 1)) << 56;
     node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 2)) << 48;
@@ -410,7 +457,7 @@ void test_controlpacket_get_packet_bytestring(void *arg)
     node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 6)) << 16;
     node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 7)) << 8;
     node_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 8));
-    assert(node_id[0] == node_id1);
+    passed = passed && (node_id[0] == node_id1);
     uint64_t node_id2 = 0;
     node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 9)) << 56;
     node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 10)) << 48;
@@ -420,34 +467,34 @@ void test_controlpacket_get_packet_bytestring(void *arg)
     node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 14)) << 16;
     node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 15)) << 8;
     node_id2 |= ((uint64_t) READ_ARRAY(REFERENCE byteStr, 16));
-    assert(node_id[1] == node_id2);
-    assert(READ_ARRAY(REFERENCE byteStr, 17)     == frames[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 18)     == frames[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 19)     == frames[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 20)     == frames[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 21)     == slot);
-    assert(READ_ARRAY(REFERENCE byteStr, 22)     == collisionSlots);
-    assert(READ_ARRAY(REFERENCE byteStr, 23)     == freq[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 24)     == freq[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 25)     == freq[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 26)     == freq[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 27)     == hops[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 28)     == hops[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 29)     == time[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 30)     == time[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 31)     == time[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 32)     == time[3]);
-    assert(READ_ARRAY(REFERENCE byteStr, 33)     == time[4]);
-    assert(READ_ARRAY(REFERENCE byteStr, 34)     == time[5]);
-    assert(READ_ARRAY(REFERENCE byteStr, 35)     == time[6]);
-    assert(READ_ARRAY(REFERENCE byteStr, 36)     == time[7]);
-    assert(READ_ARRAY(REFERENCE byteStr, 37)     == inittime[0]);
-    assert(READ_ARRAY(REFERENCE byteStr, 38)     == inittime[1]);
-    assert(READ_ARRAY(REFERENCE byteStr, 39)     == inittime[2]);
-    assert(READ_ARRAY(REFERENCE byteStr, 40)     == inittime[3]);
+    passed = passed && (node_id[1] == node_id2);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 17)     == frames[0]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 18)     == frames[1]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 19)     == frames[2]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 20)     == frames[3]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 21)     == slot);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 22)     == collisionSlots);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 23)     == freq[0]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 24)     == freq[1]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 25)     == freq[2]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 26)     == freq[3]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 27)     == hops[0]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 28)     == hops[1]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 29)     == time[0]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 30)     == time[1]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 31)     == time[2]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 32)     == time[3]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 33)     == time[4]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 34)     == time[5]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 35)     == time[6]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 36)     == time[7]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 37)     == inittime[0]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 38)     == inittime[1]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 39)     == inittime[2]);
+    passed = passed && (READ_ARRAY(REFERENCE byteStr, 40)     == inittime[3]);
     for (int i = 0; i < freqs; i++) {
         for (int j = 0; j < slots; j++) {
-            assert(occupied_slots[i][j] == READ_ARRAY(REFERENCE byteStr, (i * slots) + j + 41));
+            passed = passed && (occupied_slots[i][j] == READ_ARRAY(REFERENCE byteStr, (i * slots) + j + 41));
         }
     }
 
@@ -457,9 +504,11 @@ void test_controlpacket_get_packet_bytestring(void *arg)
 #ifdef __RIOT__
     free_array(&byteStr);
 #endif
+
+    return passed;
 }
 
-void test_controlpacket_construct_packet_from_bytestring(void *arg)
+bool test_controlpacket_construct_packet_from_bytestring(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     ControlPacket_t SINGLE_POINTER pkt = data->ctrlpkt;
@@ -545,16 +594,17 @@ void test_controlpacket_construct_packet_from_bytestring(void *arg)
     
     controlpacket_construct_packet_from_bytestring(REFERENCE pkt, &byteStr);
 
-    assert(ARROW(pkt)node_id[0]         == node_id[0]);
-    assert(ARROW(pkt)node_id[1]         == node_id[1]);
-    assert(ARROW(pkt)currentFrame       == currentFrame);
-    assert(ARROW(pkt)currentSlot        == currentSlot);
-    assert(ARROW(pkt)collisionSlot      == collisionSlots);
-    assert(ARROW(pkt)collisionFrequency == collisionFrequency);
-    assert(ARROW(pkt)hopCount           == hopCount);
-    assert(ARROW(pkt)networkTime        == netTime);
-    assert(ARROW(pkt)initTime           == initTime);
-    assert(memcmp(ARROW(pkt)occupied_slots, occupied_slots, sizeof(occupied_slots)) == 0);
+    bool passed = true;
+    passed = passed && (ARROW(pkt)node_id[0]         == node_id[0]);
+    passed = passed && (ARROW(pkt)node_id[1]         == node_id[1]);
+    passed = passed && (ARROW(pkt)currentFrame       == currentFrame);
+    passed = passed && (ARROW(pkt)currentSlot        == currentSlot);
+    passed = passed && (ARROW(pkt)collisionSlot      == collisionSlots);
+    passed = passed && (ARROW(pkt)collisionFrequency == collisionFrequency);
+    passed = passed && (ARROW(pkt)hopCount           == hopCount);
+    passed = passed && (ARROW(pkt)networkTime        == netTime);
+    passed = passed && (ARROW(pkt)initTime           == initTime);
+    passed = passed && (memcmp(ARROW(pkt)occupied_slots, occupied_slots, sizeof(occupied_slots)) == 0);
 
 #ifdef __LINUX__
     free(byteStr);
@@ -562,6 +612,8 @@ void test_controlpacket_construct_packet_from_bytestring(void *arg)
 #ifdef __RIOT__
     free_array(&byteStr);
 #endif
+
+    return passed;
 }
 
 void executeTestsCP(void)

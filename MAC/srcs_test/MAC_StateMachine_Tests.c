@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <time.h>
 
 #include "MCLMAC.h"
@@ -27,7 +26,7 @@
 struct statemachine_data {
     MCLMAC_t SINGLE_POINTER mclmac;
 #ifdef __LINUX__
-    uint8_t radio;
+    uint8_t *radio;
 #endif
 #ifdef __RIOT__
     nrf24l01p_ng_t *radio;
@@ -44,8 +43,10 @@ void setup_statemachine(void *arg)
     MCLMAC_init(&data->mclmac, data->radio);
 #endif
 #ifdef __RIOT__
+#ifndef NATIVE
     netopt_state_t state = NETOPT_STATE_STANDBY;
     data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
     MCLMAC_init(&data->mclmac, data->netdev);
 #endif
 }
@@ -54,72 +55,81 @@ void teardown_statemachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
 #ifdef __RIOT__
+#ifndef NATIVE
     netopt_state_t state = NETOPT_STATE_SLEEP;
     data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
+#endif
 #endif
     MCLMAC_destroy(&data->mclmac);
 }
 
-void test_mclmac_init_MAC_state_machine(void *arg)
+bool test_mclmac_init_MAC_state_machine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->macState.nextState == NONE);
+    bool passed = true;
+    passed = passed && (mclmac->macState.currentState == START);
+    passed = passed && (mclmac->macState.nextState == NONE);
+    return passed;
 }
 
-void test_mclmac_set_MAC_state(void *arg)
+bool test_mclmac_set_MAC_state(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
+    bool passed = true;
     state_t state = START;
     mclmac_set_MAC_state(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    passed = passed && (mclmac->macState.currentState == state);
 
     state = INITIALIZATION;
     mclmac_set_MAC_state(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    passed = passed && (mclmac->macState.currentState == state);
 
     state = SYNCHRONIZATION;
     mclmac_set_MAC_state(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    passed = passed && (mclmac->macState.currentState == state);
 
     state = TIMESLOT_AND_CHANNEL_SELECTION;
     mclmac_set_MAC_state(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    passed = passed && (mclmac->macState.currentState == state);
 
     state = MEDIUM_ACCESS;
     mclmac_set_MAC_state(mclmac, state);
-    assert(mclmac->macState.currentState == state);
+    passed = passed && (mclmac->macState.currentState == state);
+
+    return passed;
 }
 
-void test_mclmac_set_next_MAC_state(void *arg)
+bool test_mclmac_set_next_MAC_state(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
 
-
+    bool passed = true;
     state_t state = INITIALIZATION;
     mclmac_set_next_MAC_state(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    passed = passed && (mclmac->macState.nextState == state);
 
     state = SYNCHRONIZATION;
     mclmac_set_next_MAC_state(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    passed = passed && (mclmac->macState.nextState == state);
 
     state = TIMESLOT_AND_CHANNEL_SELECTION;
     mclmac_set_next_MAC_state(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    passed = passed && (mclmac->macState.nextState == state);
 
     state = MEDIUM_ACCESS;
     mclmac_set_next_MAC_state(mclmac, state);
-    assert(mclmac->macState.nextState == state);
+    passed = passed && (mclmac->macState.nextState == state);
+
+    return passed;
 }
 
-void test_mclmac_update_mac_state_machine(void *arg)
+bool test_mclmac_update_mac_state_machine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -134,42 +144,43 @@ void test_mclmac_update_mac_state_machine(void *arg)
      * If trying to reach the same state, return no transition;
      */
     // If next state is NONE, do nothing, return no transition
+    bool passed = true;
     int ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_NO_TRANSITION);
-    assert(mclmac->macState.nextState == NONE);
-    assert(mclmac->macState.currentState == START);
+    passed = passed && (ret == E_MAC_NO_TRANSITION);
+    passed = passed && (mclmac->macState.nextState == NONE);
+    passed = passed && (mclmac->macState.currentState == START);
 
     // Try to transit from START to any state other than INITIALIZATION, return error.
     mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == START);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
 
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == START);
+    passed = passed && (mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == START);
+    passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
 
     mclmac_set_next_MAC_state(mclmac, FINISH);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == START);
-    assert(mclmac->macState.nextState == FINISH);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == START);
+    passed = passed && (mclmac->macState.nextState == FINISH);
 
     // Set next state as INITIALIZATION, return success.
     mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
 
     /**
      * We are now at the INITIALIZATION state.
@@ -181,44 +192,44 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the same state
     mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_NO_TRANSITION);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (ret == E_MAC_NO_TRANSITION);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
 
     // Try to reach start, return error.
     mclmac->macState.nextState = START;
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_INVALID_STATE);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == START);
+    passed = passed && (ret == E_MAC_INVALID_STATE);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == START);
 
     // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return error
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     // Try to reach MEDIUM_ACCESS, return error
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
 
     // Try to reach FINISH, return error
     mclmac_set_next_MAC_state(mclmac, FINISH);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == FINISH);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == FINISH);
 
     // Set next state as SYNCHRONIZATION, return success
     mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
 
 
     /**
@@ -231,44 +242,44 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the same state
     mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_NO_TRANSITION);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (ret == E_MAC_NO_TRANSITION);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
 
     // Try to reach start, return error.
     mclmac->macState.nextState = START;
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_INVALID_STATE);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == START);
+    passed = passed && (ret == E_MAC_INVALID_STATE);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == START);
 
     // Set next state as INITIALIZATION, return error
     mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
 
     // Try to reach MEDIUM_ACCESS, return error
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
 
     // Try to reach FINISH, return error
     mclmac_set_next_MAC_state(mclmac, FINISH);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == FINISH);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == FINISH);
 
     // Try to reach TIMESLOT_AND_CHANNEL_SELECTION, return success
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     /**
      * We are now at the TIMESLOT_AND_CHANNEL_SELECTION state.
@@ -280,37 +291,37 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the same state
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_NO_TRANSITION);
-    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (ret == E_MAC_NO_TRANSITION);
+    passed = passed && (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     // Try to reach the start state, return error.
     mclmac->macState.nextState = START;
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_INVALID_STATE);
-    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(mclmac->macState.nextState == START);
+    passed = passed && (ret == E_MAC_INVALID_STATE);
+    passed = passed && (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (mclmac->macState.nextState == START);
 
     // Try to reach the INITIALIZATION state, return error
     mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
 
     // Try to reach the FINISH state, return error
     mclmac_set_next_MAC_state(mclmac, FINISH);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
-    assert(mclmac->macState.nextState == FINISH);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (mclmac->macState.nextState == FINISH);
 
     // Try to reach the SYNCHRONIZATION state, return success
     mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
 
     // Return to TIMESLOT_AND_CHANNEL_SELECTION
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
@@ -319,9 +330,9 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the MEDIUM_ACCESS state, return success
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
 
     /**
      * We are now at the MEDIUM_ACCESS state.
@@ -333,30 +344,30 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the same state
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_NO_TRANSITION);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
+    passed = passed && (ret == E_MAC_NO_TRANSITION);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
 
     // Try to reach the start state, return error.
     mclmac->macState.nextState = START;
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_INVALID_STATE);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->macState.nextState == START);
+    passed = passed && (ret == E_MAC_INVALID_STATE);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->macState.nextState == START);
 
     // Try to reach the TIMESLOT_AND_CHANNEL_SELECTION state, return error
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_ERROR);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (ret == E_MAC_TRANSITION_ERROR);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
 
     // Try to reach the INITIALIZATION state, return success
     mclmac_set_next_MAC_state(mclmac, INITIALIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
 
     // Return to MEDIUM_ACCESS
     mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
@@ -369,9 +380,9 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the SYNCRHONIZATION state, return success
     mclmac_set_next_MAC_state(mclmac, SYNCHRONIZATION);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == SYNCHRONIZATION);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
 
     // Return to MEDIUM_ACCESS
     mclmac_set_next_MAC_state(mclmac, TIMESLOT_AND_CHANNEL_SELECTION);
@@ -382,12 +393,14 @@ void test_mclmac_update_mac_state_machine(void *arg)
     // Try to reach the FINISH state, return success
     mclmac_set_next_MAC_state(mclmac, FINISH);
     ret = mclmac_update_mac_state_machine(mclmac);
-    assert(ret == E_MAC_TRANSITION_SUCCESS);
-    assert(mclmac->macState.currentState == FINISH);
-    assert(mclmac->macState.nextState == FINISH);
+    passed = passed && (ret == E_MAC_TRANSITION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == FINISH);
+    passed = passed && (mclmac->macState.nextState == FINISH);
+
+    return passed;
 }
 
-void test_start_state_mac_stmachine(void *arg)
+bool test_start_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -405,15 +418,18 @@ void test_start_state_mac_stmachine(void *arg)
      *  -Return success.
      */
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
+    bool passed = true;
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
     for (int i = 0; i < 8; i++)
-        assert(mclmac->_frequencies[i] >= 902000000 && mclmac->_frequencies[i] <= 928000000);
-    assert(mclmac->macState.nextState == INITIALIZATION);
-    assert(mclmac->_wakeup_frame > 0);
-    assert(mclmac->_is_first_node == false);    
+        passed = passed && (mclmac->_frequencies[i] >= 902000000 && mclmac->_frequencies[i] <= 928000000);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (mclmac->_wakeup_frame > 0);
+    passed = passed && (mclmac->_is_first_node == false);
+
+    return passed;
 }
 
-void test_initialization_state_mac_stmachine(void *arg)
+bool test_initialization_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -445,18 +461,21 @@ void test_initialization_state_mac_stmachine(void *arg)
     // Assert radio is in standby
     // Make it fail by expiring the initialization timeout 
     mclmac->_init_state = 0;
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->macState.currentState == INITIALIZATION);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    bool passed = true;
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
     // Make it success
     mclmac->_init_state = 1;
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
-    assert(mclmac->macState.currentState == INITIALIZATION);
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.currentState == INITIALIZATION);
+
+    return passed;
 }
 
-void test_synchronization_state_mac_stmachine(void *arg)
+bool test_synchronization_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -493,14 +512,15 @@ void test_synchronization_state_mac_stmachine(void *arg)
     // No control packets were received
     mclmac->_state_ctrl = 1;
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_FAILED);
+    bool passed = true;
+    passed = passed && (ret == E_MAC_EXECUTION_FAILED);
 
     mclmac->_state_ctrl = 0;
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->_initTime > 0);
-    assert(mclmac->_hopCount > 0);
-    assert(mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->_initTime > 0);
+    passed = passed && (mclmac->_hopCount > 0);
+    passed = passed && (mclmac->macState.nextState == TIMESLOT_AND_CHANNEL_SELECTION);
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
     {
@@ -515,9 +535,11 @@ void test_synchronization_state_mac_stmachine(void *arg)
         printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_selected_slots_neighbors[i]));
     }
     printf("\n");
+
+    return passed;
 }
 
-void test_timeslot_frequency_state_mac_stmachine(void *arg)
+bool test_timeslot_frequency_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -573,8 +595,9 @@ void test_timeslot_frequency_state_mac_stmachine(void *arg)
         }
     }
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
+    bool passed = true;
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
 
     /* For the case when there is one available slot. */
     uint8_t pos = rand() % 8;
@@ -589,12 +612,14 @@ void test_timeslot_frequency_state_mac_stmachine(void *arg)
         }
     }
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == MEDIUM_ACCESS);
-    assert(ARROW(mclmac->mac)selectedSlot == pos);
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
+    passed = passed && (ARROW(mclmac->mac)selectedSlot == pos);
+
+    return passed;
 }
 
-void test_medium_access_state_stmachine(void *arg)
+bool test_medium_access_state_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -667,11 +692,12 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_current_slot(mclmac, 1U);
     mclmac_set_current_cf_slot(mclmac, 1U);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == SYNCHRONIZATION);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
-    assert(mclmac->powerMode.nextState == FINISHP);
+    bool passed = true;
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == SYNCHRONIZATION);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->powerMode.currentState == FINISHP);
+    passed = passed && (mclmac->powerMode.nextState == FINISHP);
 
     // Synchronization error, slot different
     mclmac->_trues = 0;
@@ -682,11 +708,11 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_current_cf_slot(mclmac, 1U);
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == INITIALIZATION);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
-    assert(mclmac->powerMode.nextState == FINISHP);
+    passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->powerMode.currentState == FINISHP);
+    passed = passed && (mclmac->powerMode.nextState == FINISHP);
 
     // Synchronization error, frame different
     mclmac->_trues = 0;
@@ -697,11 +723,11 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_current_cf_slot(mclmac, 1U);
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == INITIALIZATION);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
-    assert(mclmac->powerMode.nextState == FINISHP);
+    passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->powerMode.currentState == FINISHP);
+    passed = passed && (mclmac->powerMode.nextState == FINISHP);
     
     // Synchronization error, network time different
     mclmac->_trues = 0;
@@ -712,11 +738,11 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_current_cf_slot(mclmac, 1U);
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(mclmac->macState.nextState == INITIALIZATION);
-    assert(mclmac->macState.currentState == MEDIUM_ACCESS);
-    assert(mclmac->powerMode.currentState == FINISHP);
-    assert(mclmac->powerMode.nextState == FINISHP);
+    passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->macState.nextState == INITIALIZATION);
+    passed = passed && (mclmac->macState.currentState == MEDIUM_ACCESS);
+    passed = passed && (mclmac->powerMode.currentState == FINISHP);
+    passed = passed && (mclmac->powerMode.nextState == FINISHP);
 
     // Collision detected, two packets are received
     /*printf("Collision detected.\n");
@@ -728,11 +754,11 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_current_cf_slot(mclmac, 1U);
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac->mac)_collisionDetected == true);
-    assert(ARROW(mclmac->mac)_collisionSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    assert(ARROW(mclmac->mac)_collisionFrequency == ARROW(mclmac->mac)receiveChannel);
-    assert(ARROW(mclmac->mac)_destination_id == 0);*/
+    passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
+    passed = passed && (ARROW(mclmac->mac)_collisionDetected == true);
+    passed = passed && (ARROW(mclmac->mac)_collisionSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
+    passed = passed && (ARROW(mclmac->mac)_collisionFrequency == ARROW(mclmac->mac)receiveChannel);
+    passed = passed && (ARROW(mclmac->mac)_destination_id == 0);*/
 
     // Collision detected, receive and transmit at the same time
     mclmac->_trues = 0;
@@ -743,12 +769,14 @@ void test_medium_access_state_stmachine(void *arg)
     mclmac_set_current_cf_slot(mclmac, 0);
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_PM_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac->mac)_destination_id[0] == 0);
-    assert(ARROW(mclmac->mac)_destination_id[1] == 0);
+    passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
+    passed = passed && (ARROW(mclmac->mac)_destination_id[0] == 0);
+    passed = passed && (ARROW(mclmac->mac)_destination_id[1] == 0);
+
+    return passed;
 }
 
-void test_first_node_case_mac(void *arg)
+bool test_first_node_case_mac(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
     MCLMAC_t *mclmac = REFERENCE data->mclmac;
@@ -762,31 +790,34 @@ void test_first_node_case_mac(void *arg)
     // Execute the INITIALIZATION state
     mclmac->_init_state = 0;
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->_is_first_node == true);
+    bool passed = true;
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->_is_first_node == true);
 
     // Execute the SYNCHRONIZATION state
     mclmac->_hopCount = 1;
     ret = mclmac_update_mac_state_machine(mclmac);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(mclmac->_initTime > 0);
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (mclmac->_initTime > 0);
     printf("Init time = %d\n", mclmac->_initTime);
-    assert(mclmac->_hopCount == 0);
-    assert(mclmac->_is_first_node == true);
+    passed = passed && (mclmac->_hopCount == 0);
+    passed = passed && (mclmac->_is_first_node == true);
 
     // Execute the TIMESLOT_AND_CHANNEL_SELECTION state
     ARROW(mclmac->mac)selectedSlot = 1; // Just store a value different to zero, to make the test fail
     mclmac_update_mac_state_machine(mclmac);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);
-    assert(ARROW(mclmac->mac)selectedSlot == 0);
-    assert(ARROW(mclmac->mac)transmitChannel == mclmac->_frequencies[0]);
-    assert(mclmac->_occupied_frequencies_slots[0][0] == 0x80);
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
+    passed = passed && (ARROW(mclmac->mac)selectedSlot == 0);
+    passed = passed && (ARROW(mclmac->mac)transmitChannel == mclmac->_frequencies[0]);
+    passed = passed && (mclmac->_occupied_frequencies_slots[0][0] == 0x80);
 
     /*mclmac_update_mac_state_machine(mclmac);
     ret = mclmac_execute_mac_state_machine(mclmac);
-    assert(ret == E_MAC_EXECUTION_SUCCESS);*/
+    passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);*/
+
+    return passed;
 }
 
 void executetests_mac_statemachine(void)
@@ -796,6 +827,7 @@ void executetests_mac_statemachine(void)
 
     cUnit_t *tests;
     struct statemachine_data data;
+#if defined __RIOT__ && !defined NATIVE
     nrf24l01p_ng_t radio, radio_test;
     nrf24l01p_ng_params_t params = {
         .spi = SPI_DEV(0),
@@ -836,6 +868,14 @@ void executetests_mac_statemachine(void)
     data.netdev_test = &data.radio_test->netdev;
     data.radio->netdev.driver->init(data.netdev);
     data.radio_test->netdev.driver->init(data.netdev_test);
+#elif defined _RIOT__ && defined NATIVE
+    data.netdev = NULL;
+    data.netdev_test = NULL;
+    data.radio = NULL;
+    data.radio_test = NULL;
+#elif defined __LINUX__
+    data.radio = NULL;
+#endif
 
     cunit_init(&tests, &setup_statemachine, &teardown_statemachine, (void *)&data);
 
@@ -843,11 +883,11 @@ void executetests_mac_statemachine(void)
     cunit_add_test(tests, &test_mclmac_set_MAC_state, "mclmac_set_MAC_state\0");
     cunit_add_test(tests, &test_mclmac_set_next_MAC_state, "mclmac_set_next_MAC_state\0");
     cunit_add_test(tests, &test_mclmac_update_mac_state_machine, "mclmac_update_mac_state_machine\0");
-    cunit_add_test(tests, &test_start_state_mac_stmachine, "START state.\0");
-    cunit_add_test(tests, &test_initialization_state_mac_stmachine, "INITIALIZATION state.\0");
-    cunit_add_test(tests, &test_synchronization_state_mac_stmachine, "SYNCHRONIZATION state.\0");
-    cunit_add_test(tests, &test_timeslot_frequency_state_mac_stmachine, "TIMESLOT_AND_CHANNEL_SELECTION state.\0");
-    cunit_add_test(tests, &test_medium_access_state_stmachine, "MEDIUM_ACCESS state.\0");
+    cunit_add_test(tests, &test_start_state_mac_stmachine, "START state\0");
+    cunit_add_test(tests, &test_initialization_state_mac_stmachine, "INITIALIZATION state\0");
+    cunit_add_test(tests, &test_synchronization_state_mac_stmachine, "SYNCHRONIZATION state\0");
+    cunit_add_test(tests, &test_timeslot_frequency_state_mac_stmachine, "TIMESLOT_AND_CHANNEL_SELECTION state\0");
+    cunit_add_test(tests, &test_medium_access_state_stmachine, "MEDIUM_ACCESS state\0");
     cunit_add_test(tests, &test_first_node_case_mac, "network's first node case\0");
 
     cunit_execute_tests(tests);

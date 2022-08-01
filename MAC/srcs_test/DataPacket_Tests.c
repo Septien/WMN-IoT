@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include <time.h>
 
 #include "DataPacket.h"
@@ -25,41 +24,47 @@ void teardown_datapacket(void *arg)
     datapacket_destroy(&data->datapkt);
 }
 
-void test_datapacket_init(void *arg)
+bool test_datapacket_init(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
+    bool passed = true;
 #ifdef __LINUX__
-    assert(data->datapkt != NULL);
-    assert(data->datapkt->data == NULL);
+    passed = passed && (data->datapkt != NULL);
+    passed = passed && (data->datapkt->data == NULL);
 #endif
-    assert(ARROW(data->datapkt)type == -1);
-    assert(ARROW(data->datapkt)destination_id[0] == 0);
-    assert(ARROW(data->datapkt)destination_id[1] == 0);
-    assert(ARROW(data->datapkt)size == 0);
+    passed = passed && (ARROW(data->datapkt)type == -1);
+    passed = passed && (ARROW(data->datapkt)destination_id[0] == 0);
+    passed = passed && (ARROW(data->datapkt)destination_id[1] == 0);
+    passed = passed && (ARROW(data->datapkt)size == 0);
 #ifdef __RIOT__
-    assert(data->datapkt.data.size == 0);
+    passed = passed && (data->datapkt.data.size == 0);
 #endif
+
+    return true;
 }
 
-void test_datapacket_destroy(void *arg)
+bool test_datapacket_destroy(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
 
     datapacket_destroy(&data->datapkt);
+    bool passed = true;
 #ifdef __LINUX__
-    assert(data->datapkt == NULL);
+    passed = passed && (data->datapkt == NULL);
 #endif
 #ifdef __RIOT__
-    assert(data->datapkt.type == -1);
-    assert(data->datapkt.destination_id[0] == 0);
-    assert(data->datapkt.destination_id[1] == 0);
-    assert(data->datapkt.size == 0);
-    assert(data->datapkt.data.size == 0);
+    passed = passed && (data->datapkt.type == -1);
+    passed = passed && (data->datapkt.destination_id[0] == 0);
+    passed = passed && (data->datapkt.destination_id[1] == 0);
+    passed = passed && (data->datapkt.size == 0);
+    passed = passed && (data->datapkt.data.size == 0);
 #endif
     datapacket_init(&data->datapkt);
+
+    return true;
 }
 
-void test_datapacket_create(void *arg)
+bool test_datapacket_create(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     DataPacket_t *datapkt = REFERENCE data->datapkt;
@@ -80,19 +85,20 @@ void test_datapacket_create(void *arg)
         WRITE_ARRAY(REFERENCE data_array, rand(), i);
 
     datapacket_create(datapkt, type, destination_id, &data_array, size);
-    assert(datapkt->destination_id[0] == destination_id[0]);
-    assert(datapkt->destination_id[1] == destination_id[1]);
-    assert(datapkt->size == size);
-    assert(datapkt->type == type);
+    bool passed = true;
+    passed = passed && (datapkt->destination_id[0] == destination_id[0]);
+    passed = passed && (datapkt->destination_id[1] == destination_id[1]);
+    passed = passed && (datapkt->size == size);
+    passed = passed && (datapkt->type == type);
 #ifdef __LINUX__
-    assert(datapkt->data != NULL);
+    passed = passed && (datapkt->data != NULL);
 #endif
 #ifdef __RIOT__
-    assert(datapkt->data.size > 0);
+    passed = passed && (datapkt->data.size > 0);
 #endif
     uint i = 0;
     for (i = 0; i < size; i++)
-        assert(READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE data_array, i));
+        passed = passed && (READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE data_array, i));
 
 #ifdef __LINUX__
     free(data_array);
@@ -100,9 +106,11 @@ void test_datapacket_create(void *arg)
 #ifdef __RIOT__
     free_array(&data_array);
 #endif
+
+    return passed;
 }
 
-void test_datapacket_clear(void *arg)
+bool test_datapacket_clear(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     DataPacket_t *datapkt = REFERENCE data->datapkt;
@@ -126,15 +134,16 @@ void test_datapacket_clear(void *arg)
     datapacket_create(datapkt, type, destination_id, &data_array, size);
     
     datapacket_clear( datapkt);
-    assert(datapkt->destination_id[0] == 0);
-    assert(datapkt->destination_id[1] == 0);
-    assert(datapkt->size == 0);
-    assert(datapkt->type == -1);
+    bool passed = true;
+    passed = passed && (datapkt->destination_id[0] == 0);
+    passed = passed && (datapkt->destination_id[1] == 0);
+    passed = passed && (datapkt->size == 0);
+    passed = passed && (datapkt->type == -1);
 #ifdef __LINUX__
-    assert(datapkt->data == NULL);
+    passed = passed && (datapkt->data == NULL);
 #endif
 #ifdef __RIOT__
-    assert(datapkt->data.size == 0);
+    passed = passed && (datapkt->data.size == 0);
 #endif
 
 #ifdef __LINUX__
@@ -143,9 +152,11 @@ void test_datapacket_clear(void *arg)
 #ifdef __RIOT__
     free_array(&data_array);
 #endif
+
+    return passed;
 }
 
-void test_datapacket_get_packet_bytestring(void *arg)
+bool test_datapacket_get_packet_bytestring(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     DataPacket_t *datapkt = REFERENCE data->datapkt;
@@ -171,7 +182,8 @@ void test_datapacket_get_packet_bytestring(void *arg)
     ARRAY byteString;
 
     datapacket_get_packet_bytestring(datapkt, &byteString);
-    assert(READ_ARRAY(REFERENCE byteString, 0) == type);
+    bool passed = true;
+    passed = passed && (READ_ARRAY(REFERENCE byteString, 0) == type);
     uint64_t destination_id1 = 0;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 1)) << 56;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 2)) << 48;
@@ -181,7 +193,7 @@ void test_datapacket_get_packet_bytestring(void *arg)
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 6)) << 16;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 7)) << 8;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 8));
-    assert(destination_id1 == destination_id[0]);
+    passed = passed && (destination_id1 == destination_id[0]);
     destination_id1 = 0;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 9)) << 56;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 10)) << 48;
@@ -191,13 +203,13 @@ void test_datapacket_get_packet_bytestring(void *arg)
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 14)) << 16;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 15)) << 8;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 16));
-    assert(READ_ARRAY(REFERENCE byteString, 17) == size);
+    passed = passed && (READ_ARRAY(REFERENCE byteString, 17) == size);
     for (i = 0; i < size; i++)
-        assert(READ_ARRAY(REFERENCE byteString, i + 18) == READ_ARRAY(REFERENCE data_array, i));
+        passed = passed && (READ_ARRAY(REFERENCE byteString, i + 18) == READ_ARRAY(REFERENCE data_array, i));
     if (size < PACKET_SIZE_MAC - 18)
     {
         for (; i < PACKET_SIZE_MAC - 18; i++)
-            assert(READ_ARRAY(REFERENCE byteString, i + 18) == 0);
+            passed = passed && (READ_ARRAY(REFERENCE byteString, i + 18) == 0);
     }
 
 #ifdef __LINUX__
@@ -208,9 +220,11 @@ void test_datapacket_get_packet_bytestring(void *arg)
     free_array(&data_array);
     free_array(&byteString);
 #endif
+
+    return passed;
 }
 
-void test_datapacket_construct_from_bytestring(void *arg)
+bool test_datapacket_construct_from_bytestring(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     DataPacket_t *datapkt = REFERENCE data->datapkt;
@@ -263,13 +277,14 @@ void test_datapacket_construct_from_bytestring(void *arg)
             WRITE_ARRAY(REFERENCE byteString, 0, i);
     }
     datapacket_construct_from_bytestring(datapkt, &byteString);
-    assert(datapkt->destination_id[0] == destination_id[0]);
-    assert(datapkt->destination_id[1] == destination_id[1]);
-    assert(datapkt->size == size);
-    assert(datapkt->type == type);
+    bool passed = true;
+    passed = passed && (datapkt->destination_id[0] == destination_id[0]);
+    passed = passed && (datapkt->destination_id[1] == destination_id[1]);
+    passed = passed && (datapkt->size == size);
+    passed = passed && (datapkt->type == type);
     for (i = 0; i < size; i++)
     {
-        assert(READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE byteString, i + 18));
+        passed = passed && (READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE byteString, i + 18));
     }
 
 #ifdef __LINUX__
@@ -280,6 +295,8 @@ void test_datapacket_construct_from_bytestring(void *arg)
     free_array(&data_array);
     free_array(&byteString);
 #endif
+
+    return passed;
 }
 
 void executeTestsDP(void)
