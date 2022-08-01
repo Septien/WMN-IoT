@@ -22,7 +22,12 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #endif
     memset((SINGLE_POINTER mclmac), 0, sizeof(MCLMAC_t));
 
+#ifdef __LINUX__
+    MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
+#endif
+#ifdef __RIOT__
     MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, netdev);
+#endif
     uint64_t id[2] = UUID;
     (SINGLE_POINTER mclmac)->_node_id[0] = id[0];
     (SINGLE_POINTER mclmac)->_node_id[1] = id[1];

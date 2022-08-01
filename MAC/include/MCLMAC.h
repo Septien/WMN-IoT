@@ -119,7 +119,7 @@ typedef struct MCLMAC
 
 void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
 #ifdef __LINUX__
-    uint8_t *radio,
+    uint8_t *radio
 #endif
 #ifdef __RIOT__
     netdev_t *netdev

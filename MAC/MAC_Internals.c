@@ -16,7 +16,7 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
 #endif
     memset(SINGLE_POINTER mac, 0, sizeof(MAC_Internals_t));
 #ifdef __LINUX__
-    (*mac)->radio = NULL;
+    (*mac)->radio = radio;
     (*mac)->ctrlpkt = NULL;
     (*mac)->frame = (Frame_t *)malloc(sizeof(Frame_t));
     if ((*mac)->frame == NULL)
