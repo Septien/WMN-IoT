@@ -5,92 +5,35 @@ utils_current_dir := $(notdir $(patsubst %/,%,$(dir $(utils_mkfil_path))))
 $(info $$utils_current_dir is [$(utils_current_dir)])
 
 # Include path corresponding to this module
-CFLAGS += -I$(utils_current_dir)/include -I$(utils_current_dir)/include/testsinclude
+CFLAGS += -I$(utils_current_dir)/include
 
-MKDIR_OBJ_UTILS := mkdir -p $(utils_current_dir)/obj
-MKDIR_LIB_UTILS := mkdir -p $(utils_current_dir)/lib
-
-LIB_UTILS := $(utils_current_dir)/lib
+OBJ_DIR := $(BIN)/utils
+LIB := $(BIN)/lib
+SRCD = $(utils_current_dir)
+MKDIR_OBJ_UTILS := mkdir -p $(OBJ_DIR)
 
 # Include directories for this module
 INC_UTILS := $(utils_current_dir)/include
-ifdef TEST
-INCT_UTILS += $(utils_current_dir)/include/testsinclude
-endif
-$(info $$INC_UTILS is [$(INC_UTILS)])
 
-# sources location
-SRCD = $(utils_current_dir)
-$(info $$SRCD is [$(SRCD)])
+DEPSA = timeouts.h
+DEPS = $(addprefix $(INC_UTILS)/, $(DEPSA))
 
-ifdef TEST
-SRCDT += $(utils_current_dir)/srcs_tests_utils
-$(info $$SRCDT is [$(SRCDT)])
-endif
+OBJSA = timeouts.o
+OBJS := $(addprefix $(OBJ_DIR)/, $(OBJSA))
 
-# sources
-SRCA = timeouts.c
-SRC = $(addprefix $(utils_current_dir)/, $(SRCA))
-$(info $$SRC is [$(SRC)])
-
-ifdef TEST
-SRCTA = utils_test.c timeouts_test.c
-SRCT = $(addprefix $(utils_current_dir)/, $(SRCTA))
-endif
-
-DEPS_UA = timeouts.h
-DEPS_U = $(addprefix $(INC_UTILS)/, $(DEPS_UA))
-
-ifdef TEST
-DEPST_UA = timeouts_test.h
-DEPST_U = $(addprefix $(INCT_UTILS)/, $(DEPST_UA))
-endif
-
-OBJU_DIR := $(utils_current_dir)/obj
-
-ifdef TEST
-OBJUT_DIR := $(utils_current_dir)/obj
-endif
-
-OBJSUA = timeouts.o
-OBJSU := $(addprefix $(OBJU_DIR)/, $(OBJSUA))
-
-ifdef TEST
-OBJSUTA = utils_tests.o timeouts_test.o
-OBJSUT = $(addprefix $(OBJUT_DIR)/, $(OBJSUTA))
-endif
-
-TARGETS := directories_utils $(LIB_UTILS)/libutils
-ifdef TEST
-TARGETS += $(LIB_UTILS)/libutilsT
-endif
-$(info $$TARGETS is [$(TARGETS)])
+TARGETS := directories_utils $(LIB)/libutils
 
 all: $(TARGETS)
 
 directories_utils:
 	$(MKDIR_OBJ_UTILS)
-	$(MKDIR_LIB_UTILS)
 
 # Create a static library for the module
-$(LIB_UTILS)/libutils: $(OBJSU)
+$(LIB)/libutils: $(OBJS)
 	$(AR) $@.a $^
 	$(RL) $@.a
 
-ifdef TEST
-$(LIB_UTILS)/libutilsT: $(OBJSUT)
-	$(AR) $@.a $^
-	$(RL) $@.a
-endif
-
-$(OBJU_DIR)/%.o: $(SRCD)/%.c
+$(OBJ_DIR)/%.o: $(SRCD)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJU_DIR)/%.o: $(INC_UTILS)/%.h $(GLOBAL_DEP)
-
-ifdef TEST
-$(OBJUT_DIR)/%.o: $(SRCDT)/%.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-$(OBJUT_DIR)/%.o: $(INCT_UTILS)/%.h
-endif
+$(OBJ_DIR)/%.o: $(INC_UTILS)/%.h $(GLOBAL_DEP)

@@ -5,6 +5,7 @@ ifdef TEST
 INCLUDES += -I$(CURDIR)/tests/include
 
 USEMODULE += tests-ipc-queues
+USEMODULE += tests-utils
 EXTERNAL_MODULE_DIRS += $(CURDIR)/tests
 
 CUNIT_PATH = /home/phantom/CP_Systems/Implementations

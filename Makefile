@@ -50,11 +50,7 @@ $(info $$MAC_PATH is [${MAC_PATH}])
 # Libraries to include
 #ipc-queues
 LIBS += ipcqueues
-
 # utils
-ifdef TEST
-LIBS += utilsT
-endif
 LIBS += utils
 
 # MAC (optionally mactests)
