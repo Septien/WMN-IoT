@@ -49,9 +49,6 @@ $(info $$MAC_PATH is [${MAC_PATH}])
 
 # Libraries to include
 #ipc-queues
-ifdef TEST
-LIBS += ipcqueuesT
-endif
 LIBS += ipcqueues
 
 # utils

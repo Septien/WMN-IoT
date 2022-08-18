@@ -23,4 +23,5 @@ CFLAGS += -I$(TESTS_INCLUDES)
 include $(curr_dir)/tests-ipc-queues/Makefile.linux
 
 LDFLAGS += $(CUNIT_LIB_PATH)
+LIBS += ipcqueuesT
 LIBS += cunit
