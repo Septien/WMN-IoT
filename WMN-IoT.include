@@ -1,23 +1,18 @@
 USEMODULE += MAC
-EXTERNAL_MODULE_DIRS += $(CURDIR)
-
 USEMODULE += utils
-EXTERNAL_MODULE_DIRS += $(CURDIR)
-
 USEMODULE += ipc-queues
-EXTERNAL_MODULE_DIRS += $(CURDIR)
-
 ifdef TEST
-USEMODULE += srcs_test
-EXTERNAL_MODULE_DIRS += $(CURDIR)/MAC
+INCLUDES += -I$(CURDIR)/tests/include
 
-USEMODULE += srcs_tests_utils
-EXTERNAL_MODULE_DIRS += $(CURDIR)/utils
-
-USEMODULE += srcs_test_ipc
-EXTERNAL_MODULE_DIRS += $(CURDIR)/ipc-queues
+USEMODULE += tests-ipc-queues
+EXTERNAL_MODULE_DIRS += $(CURDIR)/tests
 
 CUNIT_PATH = /home/phantom/CP_Systems/Implementations
 USEMODULE += cUnit
 EXTERNAL_MODULE_DIRS += $(CUNIT_PATH)
+
+CFLAGS += -DTESTING
+DISABLE_MODULE += test_utils_interactive_sync
 endif
+EXTERNAL_MODULE_DIRS += $(CURDIR)
+

@@ -4,38 +4,28 @@ unexport LINUX	# No longer needed, remove so it does not causes problems
 
 CC = /usr/bin/gcc
 
+BIN = bin/linux-x86_64
+LIB_DIR = $(BIN)/lib
+$(info $$BIN is [${BIN}])
+
 # Create a static library
 AR = ar csrv
 RL = ranlib
 
-CFLAGS += -fpic -fstack-protector-strong -Werror -Wall -Wextra -pedantic -g3 -Og -std=gnu11 -fstack-protector-all -ffunction-sections -fwrapv -Wstrict-overflow -fno-common -fdata-sections -Wmissing-include-dirs -fno-delete-null-pointer-checks -fdiagnostics-color -Wstrict-prototypes -Wold-style-definition -gz -Wformat=2 -Wformat-overflow -Wformat-truncation
-ifdef DEBUG
-	CFLAGS += -g
-endif
-ifdef TEST
-CFLAGS += -DTESTING
-CFLAGS += -DNATIVE
-endif
-CPPFLAGS += -D__LINUX__
-# Makeit available to all the files.
-ifdef TEST
-# Path to cUnit module
-CUNIT_PATH = /home/phantom/CP_Systems/Implementations/cUnit
-CUNIT_LIB_PATH = $(CUNIT_PATH)/bin/linux-x86_64/lib_cunit
-CUNIT_INCLUDE = $(CUNIT_PATH)/include
-
 WMN_IOT_INCLUDE = /home/phantom/CP_Systems/Implementations/WMN-IoT/include
 GLOBAL_DEP = $(WMN_IOT_INCLUDE)/config.h
 
-CFLAGS += -I$(CUNIT_INCLUDE) -I$(WMN_IOT_INCLUDE)
-endif
+CFLAGS += -fpic -fstack-protector-strong -Werror -Wall -Wextra -pedantic -g3 -Og -std=gnu11 -fstack-protector-all -ffunction-sections -fwrapv -Wstrict-overflow -fno-common -fdata-sections -Wmissing-include-dirs -fno-delete-null-pointer-checks -fdiagnostics-color -Wstrict-prototypes -Wold-style-definition -gz -Wformat=2 -Wformat-overflow -Wformat-truncation
+CFLAGS += -I$(WMN_IOT_INCLUDE)
+CPPFLAGS := -D__LINUX__
+
 # Compile each of the submodules
 include ipc-queues/Makefile.linux
 include utils/Makefile.linux
 include MAC/Makefile.linux
-
-BIN = bin/linux-x86_64
-$(info $$BIN is [${BIN}])
+ifdef TEST
+include tests/Makefile.linux
+endif
 
 ifdef TEST
 SRC = main_test.c
@@ -44,7 +34,7 @@ OBJ = obj
 $(info $$OBJ is [$(OBJ)])
 endif
 
-MKDIR_WMNL = mkdir -p $(BIN)
+MKDIR_WMNL = mkdir -p $(BIN) $(LIB_DIR)
 ifdef TEST
 MKDIR_WMNL += $(OBJ)
 endif
@@ -78,12 +68,7 @@ LIBS += mclmac
 $(info $$LIBS is [${LIBS}])
 
 # Paths to static libraries
-ifdef TEST
-LDFLAGS += $(CUNIT_LIB_PATH)
-
-LIBS += cunit
-endif
-LDFLAGS += $(IPC_QUEUES_PATH)
+LDFLAGS += $(LIB_DIR)
 LDFLAGS += $(UTILS_PATH)
 LDFLAGS += $(MAC_PATH)
 $(info $$LDFLAGS is [${LDFLAGS}])
@@ -150,7 +135,7 @@ USEMODULE += netdev
 USEMODULE += nrf24l01p_ng
 USEMODULE += nrf24l01p_ng_diagnostics
 
-# Which features do you require? (mcu architecure, peripherals, sensors, etc.)
+# Features (mcu architecure, peripherals, sensors, etc.)
 ifeq ($(BOARD), esp32-wroom-32)
 FEATURES_REQUIRED += arch_esp32
 endif
@@ -162,16 +147,8 @@ include WMN-IoT.include
 CFLAGS += -Wno-unused-variable
 CFLAGS += -Wno-unused-parameter
 CFLAGS += -D__RIOT__
-ifdef TEST
-CFLAGS += -DTESTING
-endif
 ifeq ($(BOARD), native)
 CFLAGS += -DNATIVE
-$(info $$CFLAGS is $(CFLAGS))
-endif
-
-ifdef TEST
-DISABLE_MODULE += test_utils_interactive_sync
 endif
 
 include $(RIOTBASE)/Makefile.include

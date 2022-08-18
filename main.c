@@ -42,9 +42,9 @@ int main(void)
         printf("\nTesting the IPC API module.\n");
         ipc_queues_tests();
         printf("\nTesting the UTILS module.\n");
-        utils_tests();
+        //utils_tests();
         printf("\nTesting the MAC protocol (MCLMAC).\n");
-        mac_tests();
+        //mac_tests();
     }while (0) ;
 #endif
     exit(0);

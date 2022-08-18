@@ -1,0 +1,26 @@
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+curr_dir_ipc := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+CURR_DIR = $(curr_dir)/$(curr_dir_ipc)
+$(info $$CURR_DIR in ipc tests is [$(CURR_DIR)])
+
+OBJS_DIR := $(BIN)/tests-ipc-queues
+$(info $$OBJS_DIR is [$(OBJS_DIR)])
+
+OBJ := ipc-queues_Tests.o
+OBJS := $(addprefix $(OBJS_DIR)/, $(OBJ))
+$(info $$OBJS is [$(OBJS)])
+TARGETS = obj_dir_ipc $(LIB_DIR)/libipcqueuesT
+
+all: $(TARGETS)
+
+obj_dir_ipc:
+	mkdir -p $(OBJS_DIR)
+
+$(LIB_DIR)/libipcqueuesT : $(OBJS)
+	$(AR) $@.a $^
+	$(RL) $@.a
+
+$(OBJS_DIR)/%.o : $(CURR_DIR)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(OBJS_DIR)/%.o : $(TESTS_INCLUDES)/%.h

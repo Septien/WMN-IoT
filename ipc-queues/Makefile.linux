@@ -3,95 +3,36 @@ $(info $$ipc_mkfile_path is [$(ipc_mkfile_path)])
 ipc_curr_dir := $(notdir $(patsubst %/,%,$(dir $(ipc_mkfile_path))))
 
 # Flags
-CFLAGS += -I$(ipc_curr_dir)/include -I$(ipc_curr_dir)/include/testsinclude
-
-MKDIR_OBJ_IPC := mkdir -p $(ipc_curr_dir)/obj
-MKDIR_LIB_IPC := mkdir -p $(ipc_curr_dir)/lib
-
-LIB_IPC_QUEUES := $(ipc_curr_dir)/lib
-
-# Include directories
-INCQ_DIR = $(ipc_curr_dir)/include
-
-ifdef TEST
-INCQT_DIR := $(INC_DIR)/testinclude
-endif
-
+CFLAGS += -I$(ipc_curr_dir)/include
+# Include directory
+INC_DIR := $(ipc_curr_dir)/include
 # Sources directories
-SRCQ_DIR = $(ipc_curr_dir)
-
-ifdef TEST
-SRCQT_DIR := $(ipc_curr_dir)/srcs_test_ipc
-endif
-
-# Source files
-SRCA = ipc-queues.c
-$(info $$SRCA is [$(SRCA)])
-SRCQ = $(addprefix $(SRC_DIR)/, $(SRCA))
-$(info $$SRCQ is [$(SRCQ)])
-
-ifdef TEST
-SRCTA := ipc-queues_Tests.c
-SRCQT := $(addprefix $(SRCT_DIR)/, $(SRCTA))
-endif
-
+SRC_DIR := $(ipc_curr_dir)
 # Dependencies
 DEPSA := config_ipc.h ipc-queues.h
 DEPS := $(addprefix $(INCT_DIR)/, $(DEPSA))
-$(info $$DEPS is [$(DEPS)])
-
-ifdef TEST
-DEPSTA := ipc-queues_Tests.h
-DEPST := $(addprefix $(INCQT_DIR)/, $(DEPSTA))
-endif
-
 # Objects
-OBJQ_DIR = $(ipc_curr_dir)/obj
-$(info $$OBJQ_DIR is [$(OBJQ_DIR)])
-ifdef TEST
-OBJQT_DIR = $(ipc_curr_dir)/obj
-$(info $$OBJQT_DIR is [$(OBJQT_DIR)])
-endif
-
+OBJ_DIR := $(BIN)/ipc-queues
 OBJA := ipc-queues.o
-OBJSQ := $(addprefix $(OBJQ_DIR)/, $(OBJA))
-$(info $$OBJ is [$(OBJSQ)])
+OBJS := $(addprefix $(OBJ_DIR)/, $(OBJA))
 
-ifdef TEST
-OBJTA := ipc-queues_Tests.o
-OBJSQT := $(addprefix $(OBJQT_DIR)/, $(OBJTA))
-endif
+MKDIR_OBJ_IPC := mkdir -p $(OBJ_DIR)
+
+LIB_IPC_QUEUES := $(BIN)/lib
 
 TARGETS = directories_ipc_queues $(LIB_IPC_QUEUES)/libipcqueues
-ifdef TEST
-TARGETS += $(LIB_IPC_QUEUES)/libipcqueuesT
-endif
 $(info $$TARGETS is [$(TARGETS)])
 
 all : $(TARGETS)
 
 directories_ipc_queues:
 	$(MKDIR_OBJ_IPC)
-	$(MKDIR_LIB_IPC)
 
-$(LIB_IPC_QUEUES)/libipcqueues : $(OBJSQ)
+$(LIB_IPC_QUEUES)/libipcqueues : $(OBJS)
 	$(AR) $@.a $^
 	$(RL) $@.a
 
-ifdef TEST
-$(LIB_IPC_QUEUES)/libipcqueuesT : $(OBJSQT)
-	$(AR) $@.a $^
-	$(RL) $@.a
-endif
-
-$(OBJQ_DIR)/%.o : $(SRCQ_DIR)/%.c
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJQ_DIR)/%.o : $(INCQ_DIR)/%.h $(GLOBAL_DEP)
-
-ifdef TEST
-$(OBJQT_DIR)/%.o : $(SRCQT_DIR)/%.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-$(OBJQT_DIR)/%.o : $(INCQT_DIR)/%.h
-endif
+$(OBJ_DIR)/%.o : $(INCQ_DIR)/%.h $(GLOBAL_DEP)
