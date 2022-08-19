@@ -44,7 +44,7 @@ int main(void)
         printf("\nTesting the UTILS module.\n");
         utils_tests();
         printf("\nTesting the MAC protocol (MCLMAC).\n");
-        //mac_tests();
+        mac_tests();
     }while (0) ;
 #endif
     exit(0);

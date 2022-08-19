@@ -6,6 +6,7 @@ INCLUDES += -I$(CURDIR)/tests/include
 
 USEMODULE += tests-ipc-queues
 USEMODULE += tests-utils
+USEMODULE += tests-mac
 EXTERNAL_MODULE_DIRS += $(CURDIR)/tests
 
 CUNIT_PATH = /home/phantom/CP_Systems/Implementations

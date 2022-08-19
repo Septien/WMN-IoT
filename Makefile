@@ -30,7 +30,7 @@ endif
 ifdef TEST
 SRC = main_test.c
 
-OBJ = obj
+OBJ = $(BIN)/main
 $(info $$OBJ is [$(OBJ)])
 endif
 
@@ -84,7 +84,7 @@ $(BIN)/wmn-iot : $(OBJ)/main_test.o
 $(OBJ)/main_test.o : main.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJ)/main_test.o : $(INCT_DIR)/mclmac_tests.h $(CUNIT_INCLUDE)/cUnit.h
+$(OBJ)/main_test.o : $(CUNIT_INCLUDE)/cUnit.h #$(INCT_DIR)/mclmac_tests.h
 endif
 
 # Remove object files and static libraries

@@ -1,0 +1,27 @@
+mkfile_path_mac_t := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir_mac_t := $(notdir $(patsubst %/,%,$(dir $(mkfile_path_mac_t))))
+
+SRC_DIR := $(curr_dir)/$(current_dir_mac_t)
+OBJ_DIR := $(BIN)/tests-mac
+LIB := $(BIN)/lib
+MKDIR_OBJ_MAC := mkdir -p $(OBJ_DIR)
+
+OBJSA := mclmac_tests.o CFPacket_Tests.o ControlPacket_Tests.o DataPacket_Tests.o MAC_Internals_Tests.o
+OBJSA += MCLMAC_Tests.o MAC_PowerMode_StateMachine_Tests.o Packets_Handlers_Tests.o MAC_StateMachine_Tests.o
+OBJS := $(addprefix $(OBJ_DIR)/, $(OBJSA))
+
+TARGETS := mac_obj_dir $(LIB)/libmclmacT
+
+all: $(TARGETS)
+
+mac_obj_dir :
+	$(MKDIR_OBJ_MAC)
+
+$(LIB)/libmclmacT: $(OBJS)
+	$(AR) $@.a $^
+	$(RL) $@.a
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(TESTS_INCLUDES)/%.h
