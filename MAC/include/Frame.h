@@ -34,7 +34,7 @@ typedef struct Frame
     uint8_t current_cf_slot;
     uint8_t cf_slots_number;
 #ifdef __LINUX__
-    // Tiemr descriptor (identifier)
+    // Timer descriptor (identifier)
     int frame_timer;
     int slot_timer;
     int cf_timer;
@@ -44,7 +44,7 @@ typedef struct Frame
     double cf_duration;
 #endif
 #ifdef __RIOT__
-    // Tiemr descriptor (identifier)
+    // Timer descriptor (identifier)
     uint32_t frame_timer;
     uint32_t slot_timer;
     uint32_t cf_timer;
