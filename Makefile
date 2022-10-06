@@ -89,18 +89,7 @@ endif
 
 # Remove object files and static libraries
 clean:
-# For ipc_queues
-	rm $(LIB_IPC_QUEUES)/*.a
-	rm $(OBJQ_DIR)/*.o
-# For utils
-	rm $(OBJU_DIR)/*.o
-	rm $(LIB_UTILS)/*.a
-# For MAC
-	rm $(LIB_MAC)/*.a
-	rm $(OBJ_DIR)/*.o
-# For main
-	rm $(OBJ)/*.o
-	rm $(BIN)/*
+	rm -r $(BIN)/
 
 endif # Linux compilation
 
