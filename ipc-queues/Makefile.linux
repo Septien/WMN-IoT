@@ -16,7 +16,7 @@ OBJ_DIR := $(BIN)/ipc-queues
 OBJA := ipc-queues.o
 OBJS := $(addprefix $(OBJ_DIR)/, $(OBJA))
 
-MKDIR_OBJ_IPC := mkdir -p $(OBJ_DIR)
+MKDIR_OBJ_IPC := mkdir -p $(OBJ_DIR) $(BIN)/lib
 
 LIB_IPC_QUEUES := $(BIN)/lib
 
