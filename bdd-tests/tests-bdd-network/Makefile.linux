@@ -1,0 +1,2 @@
+bdd_n_mk_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+bdd_n_curr_dir := $(notdir $(patsubst %/,%,$(dir $(bdd_n_mk_path))))
