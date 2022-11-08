@@ -127,6 +127,18 @@ first for incoming control packets and check for synchronization. Once such pack
 node will hear for any incoming data packet. Once all the packets are received, or the timer expires,
 the node will transit to the Passive state.
 
+## Modifications
+If you want to compile and run this stack on your own computer, change the following variables:
+
+- On the main makefile:
+  - Change the RIOTBASE to the path where RIOT OS is located.
+  - Change WMN_IOT_INCLUDE to coincide to the location of this project within your computer.
+
+- On the file WMN-IoT.include:
+  - CUNIT_PATH to wherever the location of the framework is within your computer.
+  - INCLUDES, within the BDD block, to whetever the location of the bdd-for-c header is located in
+    your computer.
+
 ### References
 [^1]: https://www.sparkfun.com/datasheets/Components/SMD/nRF24L01Pluss_Preliminary_Product_Specification_v1_0.pdf
 [^2]: Incel Ozlem D., van Hoesel Lodewijk, Jansen Pierre, and Havinga Paul *MC-LMAC: A multi-channel MAC protocol for wireless sensor networks.* In Ad Hoc Networks 9 (2011), Elsevier.
