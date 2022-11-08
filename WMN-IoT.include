@@ -17,4 +17,3 @@ CFLAGS += -DTESTING
 DISABLE_MODULE += test_utils_interactive_sync
 endif
 EXTERNAL_MODULE_DIRS += $(CURDIR)
-
