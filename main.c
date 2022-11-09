@@ -10,7 +10,7 @@
 
 #ifdef __RIOT__
 #include "periph/pm.h"
-
+#include "memory.h"
 #endif
 
 #include "assert.h"
@@ -19,10 +19,6 @@
 #include "mclmac_tests.h"
 #include "utils_tests.h"
 #include "ipc-queues_Tests.h"
-
-#ifdef __RIOT__
-#include "memory.h"
-#endif
 
 int main(void)
 {
