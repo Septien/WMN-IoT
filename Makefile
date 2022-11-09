@@ -60,10 +60,8 @@ LIBS += ipcqueues
 LIBS += utils
 
 # MAC (optionally mactests)
-ifdef TEST
-LIBS += mclmacT
-endif
 LIBS += mclmac
+LIBS += rema
 $(info $$LIBS is [${LIBS}])
 
 # Paths to static libraries

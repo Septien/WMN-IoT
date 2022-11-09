@@ -8,13 +8,23 @@ OBJ_DIR := $(BIN)/network
 SRC_DIR := $(net_curr_dir)
 MKDIR_NET := mkdir -p $(OBJ_DIR)
 
-DEPSA :=
+DEPSA := REMA.h
 
-OBJA :=
+OBJA := rema.o
+OBJS := $(addprefix $(OBJ_DIR)/, $(OBJA))
 
-TARGETS := directories_net #$(LIB)/librema
+TARGETS := directories_net $(LIB)/librema
 
 all : $(TARGETS)
 
 directories_net :
 	$(MKDIR_NET)
+
+$(LIB)/librema : $(OBJS)
+	$(AR) $@.a $^
+	$(RL) $@.a
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o : $(INC_NET)/%.h $(GLOBAL_DEP)
