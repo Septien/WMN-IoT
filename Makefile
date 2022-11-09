@@ -54,9 +54,6 @@ LIBS += ipcqueues
 LIBS += utils
 
 # MAC (optionally mactests)
-ifdef TEST
-LIBS += mclmacT
-endif
 LIBS += mclmac
 $(info $$LIBS is [${LIBS}])
 
