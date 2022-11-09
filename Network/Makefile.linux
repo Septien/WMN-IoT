@@ -1,0 +1,20 @@
+net_mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+net_curr_dir := $(notdir $(patsubst %/, %, $(dir $(net_mkfile_path))))
+
+INC_NET := $(net_curr_dir)/include
+CFLAGS += -I$(INC_NET)
+
+OBJ_DIR := $(BIN)/network
+SRC_DIR := $(net_curr_dir)
+MKDIR_NET := mkdir -p $(OBJ_DIR)
+
+DEPSA :=
+
+OBJA :=
+
+TARGETS := directories_net #$(LIB)/librema
+
+all : $(TARGETS)
+
+directories_net :
+	$(MKDIR_NET)

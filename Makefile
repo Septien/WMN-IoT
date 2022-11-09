@@ -23,6 +23,7 @@ CPPFLAGS := -D__LINUX__
 include ipc-queues/Makefile.linux
 include utils/Makefile.linux
 include MAC/Makefile.linux
+include Network/Makefile.linux
 
 ifdef TEST
 include tests/Makefile.linux

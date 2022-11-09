@@ -1,0 +1,17 @@
+net_mkfile_path_t := $(abspath $(lastword $(MAKEFILE_LIST)))
+net_curr_dir_t := $(notdir $(patsubst %/, %, $(dir $(net_mkfile_path_t))))
+
+ SRC_DIR := $(curr_dir)/$(net_curr_dir)
+ OBJ_DIR := $(BIN)/tests-network
+ LIB := $(BIN)/lib
+
+ MKDIR_OBJ_NET := mkdir -p $(OBJ_DIR)
+
+ OBJSA :=
+
+ TARGETS := net_obj_dir #$(LIB)/libremaT
+
+ all : $(TARGETS)
+
+ net_obj_dir : 
+	$(MKDIR_OBJ_NET)
