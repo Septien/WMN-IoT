@@ -1,8 +1,0 @@
-bdd_mk_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-bdd_curr_dir := $(notdir $(patsubst %/,%,$(dir $(bdd_mk_path))))
-
-CFLAGS += -DBDD_TEST
-
-include $(bdd_curr_dir)/tests-bdd-network/Makefile.linux
-
-#LIBS += bdd_networkT

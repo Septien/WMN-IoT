@@ -18,11 +18,4 @@ EXTERNAL_MODULE_DIRS += $(CUNIT_PATH)
 CFLAGS += -DTESTING
 DISABLE_MODULE += test_utils_interactive_sync
 endif
-ifdef BDD
-USEMODULE += tests-bdd-network
-EXTERNAL_MODULE_DIRS += $(CURDIR)/bdd-tests
-CFLAGS += -DBDD_TEST
-
-INCLUDES += -I/home/phantom/CP_Systems/External_Modules/bdd-for-c
-endif
 EXTERNAL_MODULE_DIRS += $(CURDIR)

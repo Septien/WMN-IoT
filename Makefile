@@ -27,22 +27,16 @@ include Network/Makefile.linux
 
 ifdef TEST
 include tests/Makefile.linux
+# Add headers for unit testing
+TESTS_INCLUDE := $(CUNIT_INCLUDE)/cUnit.h #$(INCT_DIR)/mclmac_tests.h
 endif
 
 ifdef BDD
-include bdd-tests/Makefile.linux
-endif
-
-ifdef TEST
-SRC = main_test.c
-
-OBJ = $(BIN)/main
-$(info $$OBJ is [$(OBJ)])
-endif
-
-MKDIR_WMNL = mkdir -p $(BIN) $(LIB_DIR)
-ifdef TEST
-MKDIR_WMNL += $(OBJ)
+CFLAGS += -DBDD
+CFLAGS += -I/home/phantom/CP_Systems/External_Modules/bdd-for-c/
+# Add headers for behavior testing
+TESTS_INCLUDE := /home/phantom/CP_Systems/External_Modules/bdd-for-c/bdd-for-c.h
+#include bdd-tests/Makefile.linux
 endif
 
 # Path to libipcqueues.a
@@ -54,12 +48,8 @@ MAC_PATH = $(mac_current_dir)/lib
 $(info $$MAC_PATH is [${MAC_PATH}])
 
 # Libraries to include
-#ipc-queues
 LIBS += ipcqueues
-# utils
 LIBS += utils
-
-# MAC (optionally mactests)
 LIBS += mclmac
 LIBS += rema
 $(info $$LIBS is [${LIBS}])
@@ -71,7 +61,12 @@ LDFLAGS += $(MAC_PATH)
 $(info $$LDFLAGS is [${LDFLAGS}])
 
 TARGETS = directories_main
-ifdef TEST
+
+ifeq ($(or $(TEST), $(BDD)), 1)
+MKDIR_WMNL := mkdir -p $(BIN) $(LIB_DIR)
+OBJ = $(BIN)/main
+MKDIR_WMNL += $(OBJ)
+
 TARGETS += $(BIN)/wmn-iot
 endif
 $(info $$TARGETS is [${TARGETS}])
@@ -81,14 +76,16 @@ all: $(TARGETS)
 directories_main:
 	$(MKDIR_WMNL)
 
-ifdef TEST
+# Comparing multiple variables: 
+#https://stackoverflow.com/questions/5584872/complex-conditions-check-in-makefile
+ifeq ($(or $(TEST), $(BDD)), 1)
 $(BIN)/wmn-iot : $(OBJ)/main_test.o
 	$(CC) $< -o $@ $(addprefix -L, $(LDFLAGS)) $(addprefix -l,$(LIBS)) -lrt -lpthread
 
 $(OBJ)/main_test.o : main.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-$(OBJ)/main_test.o : $(CUNIT_INCLUDE)/cUnit.h #$(INCT_DIR)/mclmac_tests.h
+$(OBJ)/main_test.o : $(TESTS_INCLUDE)
 endif
 
 # Remove object files and static libraries
@@ -127,6 +124,11 @@ FEATURES_REQUIRED += arch_esp32
 endif
 FEATURES_REQUIRED += periph_gpio
 FEATURES_REQUIRED += periph_spi
+
+ifdef BDD
+CFLAGS += -DBDD
+INCLUDES += -I/home/phantom/CP_Systems/External_Modules/bdd-for-c
+endif
 
 include WMN-IoT.include
 
