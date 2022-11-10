@@ -222,9 +222,11 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
     assert(ctrlpkt != NULL);
 
 #ifdef NATIVE
+#ifdef TESTING
     if (mclmac->_state_ctrl == 1) {
         return false;
     }
+#endif
     _receive_ctrlpkt_sync_native(mclmac, ctrlpkt);
 #else
 
@@ -413,9 +415,11 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 #ifdef NATIVE
+#ifdef TESTING
     if (mclmac->_state_ctrl == 7) {
         return false;
     }
+#endif
     _receive_control_packet_native(mclmac);
 #else
     ARRAY byteString;
@@ -654,12 +658,13 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
 #ifdef NATIVE
 bool _cf_packet_detected_native(MCLMAC_t *mclmac)
 {
-    #ifdef __LINUX__
+#ifdef __LINUX__
     int timeout = 0;
 #endif
 #ifdef __RIOT__
     uint32_t timeout = 0;
 #endif
+#ifdef TESTING
     /* For making the function fail. */
     if (mclmac->_init_state == 0)
     {
@@ -677,6 +682,7 @@ bool _cf_packet_detected_native(MCLMAC_t *mclmac)
         timeout_unset(timeout);
         return true;
     }
+#endif
     return true;
 }
 
@@ -720,6 +726,7 @@ Have a counter indicating in which function call the function is at.
 Another variable for holding the last state of _cf_message_received. */
 bool _receive_cf_message_native(MCLMAC_t *mclmac)
 {
+#ifdef TESTING
     if (mclmac->_state_cf == 1 || mclmac->_state_cf == 3)
     {
         ARROW(mclmac->mac)_cf_message_received = false;
@@ -794,7 +801,7 @@ bool _receive_cf_message_native(MCLMAC_t *mclmac)
             mclmac->_trues5++;
         }
     }
-
+#endif
     return true;
 }
 
@@ -813,6 +820,7 @@ void _receive_control_packet_native(MCLMAC_t *mclmac)
     uint8_t bytes = 1;
     // Store type
     WRITE_ARRAY(REFERENCE byteString, bytes,    0);
+#ifdef TESTING
     if (mclmac->_state_ctrl == 1 || mclmac->_state_ctrl == 3 || mclmac->_state_ctrl == 4 || mclmac->_state_ctrl == 5 || mclmac->_state_ctrl == 6)
     {
         // Store node id
@@ -992,6 +1000,7 @@ void _receive_control_packet_native(MCLMAC_t *mclmac)
         bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    16);
     }
+#endif
     ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
     controlpacket_construct_packet_from_bytestring(pkt, &byteString);
 }
