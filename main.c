@@ -14,15 +14,17 @@
 #endif
 
 #include "assert.h"
+#ifdef TESTING
 #include "timeouts.h"
 #include "ipc-queues.h"
 #include "mclmac_tests.h"
 #include "utils_tests.h"
 #include "ipc-queues_Tests.h"
+#endif
 
 int main(void)
 {
-#ifdef __LINUX__
+#if defined __LINUX__ && defined TESTING
     srand(time(NULL));
     printf("\nTesting the IPC API module.\n");
     ipc_queues_tests();
@@ -31,7 +33,7 @@ int main(void)
     printf("\nTesting the MAC protocol (MCLMAC).\n");
     mac_tests();
 #endif
-#ifdef __RIOT__
+#if defined __RIOT__ && defined TESTING
     puts("Welcome to RIOT!\n");
     do {
         srand(time(NULL));
