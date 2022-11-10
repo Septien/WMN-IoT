@@ -15,9 +15,6 @@ MKDIR_OBJ_UTILS := mkdir -p $(OBJ_DIR)
 # Include directories for this module
 INC_UTILS := $(utils_current_dir)/include
 
-DEPSA = timeouts.h
-DEPS = $(addprefix $(INC_UTILS)/, $(DEPSA))
-
 OBJSA = timeouts.o
 OBJS := $(addprefix $(OBJ_DIR)/, $(OBJSA))
 
