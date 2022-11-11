@@ -12,7 +12,7 @@
  */
 
 #ifndef INCLUDE_REMA_H
-#define INCLDE_REMA_H
+#define INCLUDE_REMA_H
 
 #include <stdint.h>
 
