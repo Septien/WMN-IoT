@@ -245,8 +245,8 @@ bool test_read_element(void *arg)
    passed = passed && (elementr == 0);
 
    ret = read_element(&array, &elementr, MAX_NUMBER_BLOCKS - 1);
-   assert(ret == 1);
-   assert(elementr == (MAX_NUMBER_BLOCKS - 1) % 256);
+   passed = passed && (ret == 1);
+   passed = passed && (elementr == (MAX_NUMBER_BLOCKS - 1) % 256);
 
    ith = rand() % size;
    ret = read_element(&array, &elementr, ith);
