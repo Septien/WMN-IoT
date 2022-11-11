@@ -1,6 +1,7 @@
 import os
+import sys
 
-def main():
+def main(opt):
     """
     Methodology:
         Static analysis first, with the following tools: cppcheck.
@@ -15,8 +16,12 @@ def main():
     cmd = "rm code-analysis/*"
     # Compilation and analysis for linux
     # Compile with testing
-    cmd = "make clean all DEBUG=1 LINUX=1 TEST=1"
-    os.system(cmd)
+    if opt == "TEST":
+        cmd = "make clean all DEBUG=1 LINUX=1 TEST=1"
+        os.system(cmd)
+    if opt == "BDD":
+        cmd = "make clean all DEBUG=1 LINUX=1 BDD=1"
+        os.system(cmd)
     # Static analysis
     cmd = "cppcheck . -D__LINUX__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --includes-file=utils/include --includes-file=utils/include/testsinclude --includes-file=ipc-queues/include --includes-file=ipc-queues/include/testinclude --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output.txt"
     os.system(cmd)
@@ -28,8 +33,12 @@ def main():
     os.system(cmd)
 
     # Compilation and analysis for RIOT
-    cmd = "make clean all RIOT=1 TEST=1"
-    os.system(cmd)
+    if opt == "TEST":
+        cmd = "make clean all RIOT=1 TEST=1"
+        os.system(cmd)
+    if opt == "BDD":
+        cmd = "make clean all RIOT=1 BDD=1"
+        os.system(cmd)
     # Static code analysis
     cmd = "cppcheck . -D__RIOT__ --enable=all --includes-file=MAC/include --includes-file=MAC/include/testsinclude/ --includes-file=utils/include --includes-file=utils/include/testsinclude --includes-file=ipc-queues/include --includes-file=ipc-queues/include/testinclude --language=c --std=c11 --cppcheck-build-dir=code-analysis 2> code-analysis/cpp_output_riot.txt"
     os.system(cmd)
@@ -47,4 +56,11 @@ def main():
     os.system(cmd)
 
 if __name__ == '__main__':
-        main()
+    argc = len(sys.argv)
+    if argc != 2:
+        print("Incorrect number of parameters.")
+        print("Execute python3 simply_build.py opt")
+        print("Where opt = TEST or BDD")
+        exit()
+    opt = sys.argv[2]
+    main(opt)

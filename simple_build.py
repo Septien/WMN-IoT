@@ -4,27 +4,38 @@ or other tests are make here.
 """
 
 import os
+import sys
 
-def main():
+def main(opt):
+    # clean the object files
     cmd = "make clean LINUX=1 TEST=1"
     os.system(cmd)
-    
-    cmd = "make all DEBUG=1 LINUX=1 TEST=1"
-    print(cmd)
-    os.system(cmd)
-    
     cmd = "make clean RIOT=1 TEST=1"
-    print(cmd)
     os.system(cmd)
 
-    cmd = "make all term RIOT=1 TEST=1"
-    print(cmd)
-    os.system(cmd)
+    if opt == "TEST":
+        cmd = "make all DEBUG=1 LINUX=1 TEST=1"
+        os.system(cmd)
+        cmd = "make all term RIOT=1 TEST=1"
+        os.system(cmd)
+        print("\n\nTesting for LINUX\n\n")
+        cmd = "bin/linux-x86_64/wmn-iot"
+        os.system(cmd)
     
-    print("\n\nTesting for LINUX\n\n")
-    cmd = "bin/linux-x86_64/wmn-iot"
-    print(cmd)
-    os.system(cmd)
+    if opt == "BDD":
+        cmd = "make all DEBUG=1 LINUX=1 BDD=1"
+        os.system(cmd)
+        cmd = "make all term RIOT=1 BDD=1"
+        os.system(cmd)
+        cmd = "bin/linux-x86_64/wmn-iot"
+        os.system(cmd)
 
 if __name__ == '__main__':
-    main()
+    argc = len(sys.argv)
+    if argc != 2:
+        print("Incorrect number of parameters.")
+        print("Execute python3 simply_build.py opt")
+        print("Where opt = TEST or BDD")
+        exit()
+    opt = sys.argv[1]
+    main(opt)
