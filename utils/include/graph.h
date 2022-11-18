@@ -28,9 +28,21 @@ typedef struct graph {
     REMA_t *nodes[MAX_NUMBER_NODES];
     vertex_t *adj[MAX_NUMBER_NODES];
     unsigned int max_nodes;
+    unsigned int index;
 }graph_t;
 
 void graph_init(graph_t **g);
 void graph_destroy(graph_t **g);
+
+/**
+ * @brief Add a new node @node to the graph @g.
+ * 
+ * @param g 
+ * @param node 
+ * @param neighbors 
+ * @param n 
+ * @return 1 on succes. 0 otherwise.
+ */
+int graph_insert_node(graph_t *g, REMA_t *node);
 
 #endif      // INCLUDE_GRAPH_H
