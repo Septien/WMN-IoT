@@ -6,9 +6,9 @@
  * among each other.
  * @version 0.1
  * @date 2022-11-10
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 #ifndef INCLUDE_GRAPH_H
 #define INCLUDE_GRAPH_H
@@ -27,8 +27,8 @@ typedef struct graph {
     // Array of nodes
     REMA_t *nodes[MAX_NUMBER_NODES];
     vertex_t *adj[MAX_NUMBER_NODES];
-    unsigned int max_nodes;
-    unsigned int index;
+    uint32_t max_nodes;
+    uint32_t index;
 }graph_t;
 
 void graph_init(graph_t **g);
@@ -36,7 +36,7 @@ void graph_destroy(graph_t **g);
 
 /**
  * @brief Add a new node @node to the graph @g.
- * 
+ *
  * @param g 
  * @param node 
  * @param neighbors 
@@ -44,5 +44,16 @@ void graph_destroy(graph_t **g);
  * @return 1 on succes. 0 otherwise.
  */
 int graph_insert_node(graph_t *g, REMA_t *node);
+
+/**
+ * @brief Given a node with id @node_id, insert the neighbor with id @neighbor_id
+ * into the graph @g.
+ *
+ * @param g
+ * @param node_id
+ * @param neigbor_id
+ * @return 1 on sucess, 0 otherwise.
+ */
+int graph_insert_neighbor(graph_t *g, vertex_t *node, vertex_t *neigbor);
 
 #endif      // INCLUDE_GRAPH_H

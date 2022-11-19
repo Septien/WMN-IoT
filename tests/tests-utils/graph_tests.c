@@ -68,6 +68,19 @@ bool test_graph_insert_first(void *arg)
     return passed;
 }
 
+bool test_insert_nodes_same_ids(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+    REMA_t node;
+    node.node_id[0] = 1234567890;
+    node.node_id[1] = 9876543210;
+
+    int ret = graph_insert_node(g, &node);
+    ret = graph_insert_node(g, &node);
+    
+    return ret == 0;
+}
+
 bool test_insert_several_nodes(void *arg)
 {
     graph_t *g = (graph_t *)arg;
@@ -137,6 +150,92 @@ bool test_insert_MAX_NODES_1_nodes(void *arg)
     return passed;
 }
 
+bool test_insert_neighbor_empty_graph(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    REMA_t node1, node2;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    memcpy(node1.node_id, id1, sizeof(id1));
+    memcpy(node2.node_id, id2, sizeof(id2));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = NULL};
+    /**
+     * Try to insert a neighbor into an empty graph (no nodes).
+     * Return 0.
+     */
+    int ret = graph_insert_neighbor(g, &v1, &v2);
+
+    return ret == 0;
+}
+
+bool test_insert_non_existing_neighbor_single_node(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+    REMA_t node1, node2;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    memcpy(node1.node_id, id1, sizeof(id1));
+    memcpy(node2.node_id, id2, sizeof(id2));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = NULL};
+
+    int ret = graph_insert_node(g, &node1);
+    
+    ret = graph_insert_neighbor(g, &v1, &v2);
+    
+    return ret == 0;
+}
+
+bool test_insert_no_existing_node(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    REMA_t node1, node2;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    memcpy(node1.node_id, id1, sizeof(id1));
+    memcpy(node2.node_id, id2, sizeof(id2));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = NULL};
+
+    int ret = graph_insert_node(g, &node2);
+    ret = graph_insert_neighbor(g, &v1, &v2);
+
+    return ret == 0;
+}
+
+bool test_insert_existing_neighbor_single_node(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    REMA_t node1, node2;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    memcpy(node1.node_id, id1, sizeof(id1));
+    memcpy(node2.node_id, id2, sizeof(id2));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = NULL};
+
+    int ret = graph_insert_node(g, &node1);
+    ret = graph_insert_node(g, &node2);
+
+    ret = graph_insert_neighbor(g, &v1, &v2);
+    bool passed = true;
+    passed = ret == 1;
+    // Verify the adjacence list was correctly updated
+    passed = passed && (g->adj[0] != NULL);
+    passed = passed && (g->adj[1] != NULL);
+    passed = passed && (g->adj[0] == &v2);
+    passed = passed && (g->adj[1] == &v1);
+    passed = passed && (g->adj[0]->next == NULL);
+    passed = passed && (g->adj[1]->next == NULL);
+    return passed;
+}
+
+// insert twice the same neighbor
+
 void teardown_graph(void *arg)
 {
     graph_t *g = (graph_t *)arg;
@@ -150,11 +249,16 @@ void graph_tests(void)
 
     cunit_init(&tests, &setup_graph, &teardown_graph, (void *)&graph);
 
-    cunit_add_test(tests, &test_graph_init,                 "graph_init\0");
-    cunit_add_test(tests, &test_graph_destroy,              "graph_destroy\0");
-    cunit_add_test(tests, &test_graph_insert_first,         "insertion of first node\0");
-    cunit_add_test(tests, &test_insert_several_nodes,       "insertion of several nodes\0");
-    cunit_add_test(tests, &test_insert_MAX_NODES_1_nodes,   "insertion of max+1 nodes\0");
+    cunit_add_test(tests, &test_graph_init,                                 "graph_init\0");
+    cunit_add_test(tests, &test_graph_destroy,                              "graph_destroy\0");
+    cunit_add_test(tests, &test_graph_insert_first,                         "insertion of first node\0");
+    cunit_add_test(tests, &test_insert_nodes_same_ids,                      "inserting 2 nodes with same id\0");
+    cunit_add_test(tests, &test_insert_several_nodes,                       "insertion of several nodes\0");
+    cunit_add_test(tests, &test_insert_MAX_NODES_1_nodes,                   "insertion of max+1 nodes\0");
+    cunit_add_test(tests, &test_insert_neighbor_empty_graph,                "insertion of neighbor into emtpy graph\0");
+    cunit_add_test(tests, &test_insert_non_existing_neighbor_single_node,   "insertion of non existing neighbor\0");
+    cunit_add_test(tests, &test_insert_no_existing_node,                    "insertion of neighbor with none-existing node\0");
+    cunit_add_test(tests, &test_insert_existing_neighbor_single_node,       "successful insertion of neighbor\0");    
 
     printf("\nTesting the graph's implementation.\n");
     cunit_execute_tests(tests);

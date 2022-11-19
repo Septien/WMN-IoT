@@ -38,8 +38,48 @@ int graph_insert_node(graph_t *g, REMA_t *node)
     if (g->index >= MAX_NUMBER_NODES) {
         return 0;
     }
+    // Check the node was not inserted previously
+    for (uint32_t i = 0; i < g->index; i++) {
+        if (memcmp(g->nodes[i]->node_id, node->node_id, 2 * sizeof(uint64_t)) == 0) {
+            return 0;
+        }
+    }
     g->nodes[g->index] = node;
     g->index++;
 
+    return 1;
+}
+
+int graph_insert_neighbor(graph_t *g, vertex_t *node, vertex_t *neighbor)
+{
+    assert (g != NULL);
+    assert(node != NULL);
+    assert(neighbor != NULL);
+    // An empty graph
+    if (g->index == 0) {
+        return 0;
+    }
+    
+    // Find the desired node and neighbor
+    int index_nd = -1, index_nbr = -1;
+    for (unsigned int i = 0; i < g->index; i++) {
+        if (memcmp(g->nodes[i]->node_id, node->node->node_id, 2*sizeof(uint64_t)) == 0) {
+            index_nd = (int)i;
+        }
+        if (memcmp(g->nodes[i]->node_id, neighbor->node->node_id, 2*sizeof(uint64_t)) == 0) {
+            index_nbr = (int)i;
+        }
+    }
+    if (index_nd == -1) {
+        return 0;
+    }
+    if (index_nbr == -1) {
+        return 0;
+    }
+    
+    /* We have the node's index and the neighbbor's index, now insert the 
+    new entry into the adjacence list for both the node and the neighbor */
+    g->adj[index_nd] = neighbor;
+    g->adj[index_nbr] = node;
     return 1;
 }
