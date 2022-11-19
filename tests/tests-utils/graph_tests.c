@@ -125,9 +125,9 @@ bool test_insert_MAX_NODES_1_nodes(void *arg)
      * When inserting the MAX_NUMBER_NODES+1 node,
      * return 0.
      */
-    int ret;
+    int ret = 1;
     bool passed = true;
-    for (unsigned int i = 0; i < MAX_NUMBER_NODES; i++) {
+    for (uint32_t i = 0; i < MAX_NUMBER_NODES; i++) {
         ret = graph_insert_node(g, &nodes[i]);
         passed = passed && (ret == 1);
     }
@@ -156,7 +156,7 @@ void graph_tests(void)
     cunit_add_test(tests, &test_insert_several_nodes,       "insertion of several nodes\0");
     cunit_add_test(tests, &test_insert_MAX_NODES_1_nodes,   "insertion of max+1 nodes\0");
 
-    printf("\nTesting the graph implementation.\n");
+    printf("\nTesting the graph's implementation.\n");
     cunit_execute_tests(tests);
 
     cunit_terminate(&tests);

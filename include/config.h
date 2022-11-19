@@ -42,7 +42,7 @@
 #if defined BDD  || defined TESTING// Only for behavioral testing
 /*--------------------------------------- GRAPH CONFIGURATION ------------------------------------*/
 #ifndef MAX_NUMBER_NODES
-#define MAX_NUMBER_NODES  200u
+#define MAX_NUMBER_NODES        200u
 #endif
 
 #endif  // BDD
