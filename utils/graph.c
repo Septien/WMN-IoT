@@ -40,7 +40,7 @@ int graph_insert_node(graph_t *g, REMA_t *node)
     }
     // Check the node was not inserted previously
     for (uint32_t i = 0; i < g->index; i++) {
-        if (memcmp(g->nodes[i]->node_id, node->node_id, 2 * sizeof(uint64_t)) == 0) {
+        if (memcmp(g->nodes[i]->_node_id, node->_node_id, 2 * sizeof(uint64_t)) == 0) {
             return 0;
         }
     }
@@ -59,14 +59,16 @@ int graph_insert_neighbor(graph_t *g, vertex_t *node, vertex_t *neighbor)
     if (g->index == 0) {
         return 0;
     }
-    
-    // Find the desired node and neighbor
+    if (neighbor->next != NULL) {
+        return 0;
+    }
+    // Find the desired node and neighbor index
     int index_nd = -1, index_nbr = -1;
     for (unsigned int i = 0; i < g->index; i++) {
-        if (memcmp(g->nodes[i]->node_id, node->node->node_id, 2*sizeof(uint64_t)) == 0) {
+        if (memcmp(g->nodes[i]->_node_id, node->node->_node_id, 2*sizeof(uint64_t)) == 0) {
             index_nd = (int)i;
         }
-        if (memcmp(g->nodes[i]->node_id, neighbor->node->node_id, 2*sizeof(uint64_t)) == 0) {
+        if (memcmp(g->nodes[i]->_node_id, neighbor->node->_node_id, 2*sizeof(uint64_t)) == 0) {
             index_nbr = (int)i;
         }
     }
@@ -77,9 +79,37 @@ int graph_insert_neighbor(graph_t *g, vertex_t *node, vertex_t *neighbor)
         return 0;
     }
     
-    /* We have the node's index and the neighbbor's index, now insert the 
+    /* We have the node's and the neighbbor's index, now insert the 
     new entry into the adjacence list for both the node and the neighbor */
-    g->adj[index_nd] = neighbor;
-    g->adj[index_nbr] = node;
+    vertex_t *v = g->adj[index_nd];
+    if (v == NULL) {
+        g->adj[index_nd] = neighbor;
+        g->adj[index_nd]->next = NULL;
+    }
+    else {
+        if (memcmp(v->node->_node_id, neighbor->node->_node_id, 2*sizeof(uint64_t)) == 0) {
+            return 0;
+        }
+        // Get to the list's end
+        while (v->next != NULL) {
+            // check if the neighbor already exists
+            if (memcmp(v->node->_node_id, neighbor->node->_node_id, 2*sizeof(uint64_t)) == 0) {
+                return 0;
+            }
+            v = v->next;
+        }
+        v->next = neighbor;
+        v->next->next = NULL;
+    }
+    v = g->adj[index_nbr];
+    if (v == NULL) {
+        g->adj[index_nbr] = node;
+    }
+    else {
+        while (v->next != NULL) {
+            v = v->next;
+        }
+        v->next = node;
+    }
     return 1;
 }

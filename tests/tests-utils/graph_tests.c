@@ -52,8 +52,8 @@ bool test_graph_insert_first(void *arg)
 {
     graph_t *g = (graph_t *)arg;
     REMA_t node;
-    node.node_id[0] = 1234567890;
-    node.node_id[1] = 9876543210;
+    node._node_id[0] = 1234567890;
+    node._node_id[1] = 9876543210;
 
     int ret = graph_insert_node(g, &node);
     bool passed = true;
@@ -72,8 +72,8 @@ bool test_insert_nodes_same_ids(void *arg)
 {
     graph_t *g = (graph_t *)arg;
     REMA_t node;
-    node.node_id[0] = 1234567890;
-    node.node_id[1] = 9876543210;
+    node._node_id[0] = 1234567890;
+    node._node_id[1] = 9876543210;
 
     int ret = graph_insert_node(g, &node);
     ret = graph_insert_node(g, &node);
@@ -90,7 +90,7 @@ bool test_insert_several_nodes(void *arg)
     REMA_t nodes[n];
     // Store the nodes ids, and create the vertices
     for (int i = 0; i < n; i++) {
-        memcpy(&nodes[i].node_id, ids, sizeof(ids));
+        memcpy(&nodes[i]._node_id, ids, sizeof(ids));
         ids[0]++;
         ids[1]--;
     }
@@ -128,7 +128,7 @@ bool test_insert_MAX_NODES_1_nodes(void *arg)
     uint64_t ids[2] = {1234567890 ,9876543210};
     // Store the nodes ids, and create the vertices
     for (unsigned int i = 0; i < MAX_NUMBER_NODES+1; i++) {
-        memcpy(&nodes[i].node_id, ids, sizeof(ids));
+        memcpy(&nodes[i]._node_id, ids, sizeof(ids));
         ids[0]++;
         ids[1]--;
     }
@@ -157,8 +157,8 @@ bool test_insert_neighbor_empty_graph(void *arg)
     REMA_t node1, node2;
     uint64_t id1[2] = {1234567890, 9876543210};
     uint64_t id2[2] = {1234567891, 9876543211};
-    memcpy(node1.node_id, id1, sizeof(id1));
-    memcpy(node2.node_id, id2, sizeof(id2));
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
     vertex_t v1 = {.node = &node1, .next = NULL};
     vertex_t v2 = {.node = &node2, .next = NULL};
     /**
@@ -176,8 +176,8 @@ bool test_insert_non_existing_neighbor_single_node(void *arg)
     REMA_t node1, node2;
     uint64_t id1[2] = {1234567890, 9876543210};
     uint64_t id2[2] = {1234567891, 9876543211};
-    memcpy(node1.node_id, id1, sizeof(id1));
-    memcpy(node2.node_id, id2, sizeof(id2));
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
     vertex_t v1 = {.node = &node1, .next = NULL};
     vertex_t v2 = {.node = &node2, .next = NULL};
 
@@ -195,8 +195,8 @@ bool test_insert_no_existing_node(void *arg)
     REMA_t node1, node2;
     uint64_t id1[2] = {1234567890, 9876543210};
     uint64_t id2[2] = {1234567891, 9876543211};
-    memcpy(node1.node_id, id1, sizeof(id1));
-    memcpy(node2.node_id, id2, sizeof(id2));
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
     vertex_t v1 = {.node = &node1, .next = NULL};
     vertex_t v2 = {.node = &node2, .next = NULL};
 
@@ -213,8 +213,8 @@ bool test_insert_existing_neighbor_single_node(void *arg)
     REMA_t node1, node2;
     uint64_t id1[2] = {1234567890, 9876543210};
     uint64_t id2[2] = {1234567891, 9876543211};
-    memcpy(node1.node_id, id1, sizeof(id1));
-    memcpy(node2.node_id, id2, sizeof(id2));
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
     vertex_t v1 = {.node = &node1, .next = NULL};
     vertex_t v2 = {.node = &node2, .next = NULL};
 
@@ -234,7 +234,142 @@ bool test_insert_existing_neighbor_single_node(void *arg)
     return passed;
 }
 
+bool test_insert_multiple_neighbors(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    int n = 5;
+    REMA_t node, neighbors[n];
+    uint64_t id1[2] = {1234567890, 9876543210};
+    memcpy(node._node_id, id1, sizeof(id1));
+    vertex_t v1 = {.node = &node, .next = NULL};
+    vertex_t v[n];
+
+    int ret = graph_insert_node(g, &node);
+
+    char str[500] = {0};
+    bool passed = true;
+    for (int i = 0; i < n; i++) {
+        id1[0]++;
+        id1[1]--;
+        memcpy(neighbors[i]._node_id, id1, sizeof(id1));
+        v[i] = (vertex_t){.node = &neighbors[i], .next = NULL};
+        ret = graph_insert_node(g, &neighbors[i]);
+        ret = graph_insert_neighbor(g, &v1, &v[i]);
+        passed = check_condition(passed, ret == 1, "\nReturn value of graph_insert_neighbor is 1", str);
+    }
+
+    int count = 0;
+    // For the first node
+    vertex_t *v2 = g->adj[0];
+    while (v2 != NULL) {
+        v2 = v2->next;
+        count++;
+    }
+    passed = check_condition(passed, count == n, "Check the number of neighbors", str);
+    // The rest of the nodes were inserted in consecutive order. Check each one has exactly 1 neighbor
+    for (int i = 0; i < n; i++) {
+        v2 = g->adj[i+1];
+        passed = check_condition(passed, v2 != NULL, "Node has no neighbor", str);
+        if (v2 != NULL) {
+            passed = check_condition(passed, v2->next == NULL, "Node has no more neighbors", str);
+        }
+    }
+
+    if (!passed) {
+        printf("%s", str);
+    }
+    return passed;
+}
+
+bool test_inset_vertex_with_next_not_null(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    REMA_t node1, node2;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = &v1};
+
+    int ret = graph_insert_node(g, &node1);
+    ret = graph_insert_node(g, &node2);
+
+    ret = graph_insert_neighbor(g, &v1, &v2);
+    char str[100];
+    bool passed = true;
+    passed = check_condition(passed, ret == 0, "insert neighbor with next != NULL\0", str);
+    if (!passed) {
+        printf("%s\n", str);
+    }
+
+    return passed;
+}
+
 // insert twice the same neighbor
+bool test_insert_same_neighbor_twice(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    REMA_t node1, node2;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = NULL};
+
+    int ret = graph_insert_node(g, &node1);
+    ret = graph_insert_node(g, &node2);
+
+    /* Try inserting the same neighbor to the same node
+     twice, it should return 0 */
+    ret = graph_insert_neighbor(g, &v1, &v2);
+    ret = graph_insert_neighbor(g, &v1, &v2);
+
+    return ret == 0;
+}
+
+// insert neighbor with more than two neighbors
+bool insert_neighbor_several_neighbors(void *arg)
+{
+    graph_t *g = (graph_t *)arg;
+
+    REMA_t node1, node2, node3;
+    uint64_t id1[2] = {1234567890, 9876543210};
+    uint64_t id2[2] = {1234567891, 9876543211};
+    uint64_t id3[2] = {1234567892, 9876543212};
+    memcpy(node1._node_id, id1, sizeof(id1));
+    memcpy(node2._node_id, id2, sizeof(id2));
+    memcpy(node3._node_id, id3, sizeof(id3));
+    vertex_t v1 = {.node = &node1, .next = NULL};
+    vertex_t v2 = {.node = &node2, .next = NULL};
+    vertex_t v3 = {.node = &node3, .next = NULL};
+
+    int ret = graph_insert_node(g, &node1);
+    ret = graph_insert_node(g, &node2);
+    ret = graph_insert_node(g, &node3);
+
+    ret = graph_insert_neighbor(g, &v2, &v3);
+    ret = graph_insert_neighbor(g, &v1, &v2);
+
+    char str[100];
+    bool passed = true;
+    passed = check_condition(passed, ret == 1, "insertion of neighbor with several neighbors\0", str);
+    int count = 0;
+    vertex_t *v = g->adj[1];    // v2
+    while (v != NULL) {
+        count++;
+        v = v->next;
+    }
+    passed = check_condition(passed, count == 2, "adjacence list has all the neighbors\0", str);
+    if (!passed) {
+        printf("%s\n", str);
+    }
+    return passed;
+}
 
 void teardown_graph(void *arg)
 {
@@ -258,7 +393,11 @@ void graph_tests(void)
     cunit_add_test(tests, &test_insert_neighbor_empty_graph,                "insertion of neighbor into emtpy graph\0");
     cunit_add_test(tests, &test_insert_non_existing_neighbor_single_node,   "insertion of non existing neighbor\0");
     cunit_add_test(tests, &test_insert_no_existing_node,                    "insertion of neighbor with none-existing node\0");
-    cunit_add_test(tests, &test_insert_existing_neighbor_single_node,       "successful insertion of neighbor\0");    
+    cunit_add_test(tests, &test_insert_existing_neighbor_single_node,       "successful insertion of neighbor\0");
+    cunit_add_test(tests, &test_insert_multiple_neighbors,                  "insertion of several neighbors\0");
+    cunit_add_test(tests, &test_inset_vertex_with_next_not_null,            "insert vertex with next different from NULL\0");
+    cunit_add_test(tests, &test_insert_same_neighbor_twice,                 "insertion of same neighbor twice\0");
+    cunit_add_test(tests, &insert_neighbor_several_neighbors,               "insertion of new neighbor with several neighbors\0");
 
     printf("\nTesting the graph's implementation.\n");
     cunit_execute_tests(tests);
