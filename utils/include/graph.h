@@ -46,14 +46,17 @@ void graph_destroy(graph_t **g);
 int graph_insert_node(graph_t *g, REMA_t *node);
 
 /**
- * @brief Given a node with id @node_id, insert the neighbor with id @neighbor_id
- * into the graph @g.
+ * @brief Insert @neighbor as neighbor of @node and viceversa. The function searches 
+ * for both on the lists of nodes, and then inserts the corresponding neighbor on the
+ * adjacence list of each node.It returns 0 when there are no nodes in the graph, 
+ * when some of the nodes does not exist in the graph, or when the neighbor already exists
+ * in the list of the node.
  *
  * @param g
- * @param node_id
- * @param neigbor_id
+ * @param node
+ * @param neighbor
  * @return 1 on sucess, 0 otherwise.
  */
-int graph_insert_neighbor(graph_t *g, vertex_t *node, vertex_t *neigbor);
+int graph_insert_neighbor(graph_t *g, vertex_t *node, vertex_t *neighbor);
 
 #endif      // INCLUDE_GRAPH_H
