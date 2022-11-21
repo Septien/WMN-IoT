@@ -17,7 +17,7 @@
 #include <stdint.h>
 
 typedef struct REMA {
-    uint64_t node_id[2];
+    uint64_t _node_id[2];
 }REMA_t;
 
 void rema_init(REMA_t **rema);
