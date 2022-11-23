@@ -37,6 +37,36 @@
 #define UUID        {0x0c0b4663131a4c5f, 0xa1b73100144476c0}
 #endif
 
+/*-------------------------------------- IPC QUEUES CONFIGURATION -------------------------------*/
+#ifndef MAX_QUEUES
+#define MAX_QUEUES                  10
+#endif
+
+/* On Linux, the upper limit is 10. See mq_overview(7) for more details. */
+#ifndef MAX_ELEMENTS_ON_QUEUE
+#define MAX_ELEMENTS_ON_QUEUE       10
+#endif
+
+/* The minimum message size in Linux is 128 bytes, 
+so set to 256 + 3 bytes, which includes the maximum 
+message size allowed by LoRa plus the spaces for store
+the type and destination id.*/
+#ifndef MAX_MESSAGE_SIZE
+#define MAX_MESSAGE_SIZE            256
+#endif
+
+#ifndef QUEUE_SIZE
+#define QUEUE_SIZE                  16
+#endif
+
+#ifdef __LINUX__
+#ifndef THREAD_STACKSIZE_DEFAULT
+#define THREAD_STACKSIZE_DEFAULT    2048
+#endif
+#endif // __LINUX__
+
+
+
 /**------------------------------------- NETWORK CONFIGURATION -----------------------------------*/
 
 #if defined BDD  || defined TESTING// Only for behavioral testing

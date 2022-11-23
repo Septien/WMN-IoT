@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "config_ipc.h"
+#include "config.h"
 
 #ifdef __LINUX__
 #include <fcntl.h>

@@ -19,7 +19,7 @@
 
 #include "ipc-queues_Tests.h"
 #include "ipc-queues.h"
-#include "config_ipc.h"
+#include "config.h"
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte) \
