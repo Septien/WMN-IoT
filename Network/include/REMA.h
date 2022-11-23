@@ -23,4 +23,6 @@ typedef struct REMA {
 void rema_init(REMA_t **rema);
 void rema_terminate(REMA_t **rema);
 
+/* Just a dummy function, to simulate the execution of the protocol. */
+void rema_dummy(REMA_t *rema);
 #endif  // INCLUDE_REMA_H
