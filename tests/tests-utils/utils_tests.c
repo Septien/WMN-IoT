@@ -7,6 +7,7 @@
 #endif
 #include "timeouts_test.h"
 #include "graph_tests.h"
+#include "helpers_tests.h"
 
 void utils_tests(void)
 {
@@ -18,6 +19,7 @@ void utils_tests(void)
 
     timeouts_test();
     graph_tests();
+    helpers_tests();
 
     return;
 }
