@@ -23,7 +23,7 @@ struct mac_internals_data {
 #endif
 };
 
-void setup_mac_internals(void *arg)
+static void setup(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
 #ifdef __LINUX__
@@ -55,7 +55,7 @@ void setup_mac_internals(void *arg)
 #endif
 }
 
-void teardown_mac_internal(void *arg)
+static void teardown(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
     MAC_internals_destroy(&data->mac);
@@ -131,7 +131,7 @@ void executeTestsMACInternals(void)
     cUnit_t *tests;
     struct mac_internals_data data;
 
-    cunit_init(&tests, &setup_mac_internals, &teardown_mac_internal, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_MAC_internals_init,     "MAC_internals_init\0");
     cunit_add_test(tests, &test_MAC_internals_destroy,  "MAC_internals_destroy\0");

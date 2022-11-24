@@ -11,13 +11,13 @@ struct cfpacket_data {
     CFPacket_t SINGLE_POINTER cfpkt;
 };
 
-void setup_cfpacket(void *arg)
+static void setup(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     cfpacket_init(&data->cfpkt);
 }
 
-void teardown_cfpacket(void *arg)
+static void teardown(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
     cfpacket_destroy(&data->cfpkt);
@@ -332,7 +332,7 @@ void executeTestsCF(void)
     cUnit_t *tests;
     struct cfpacket_data data;
 
-    cunit_init(&tests, &setup_cfpacket, &teardown_cfpacket, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_cfpacket_init,      "cfpacket_init\0");
     cunit_add_test(tests, &test_cfpacket_destroy,   "cfpacket_destroy\0");

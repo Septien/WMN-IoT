@@ -27,7 +27,7 @@ struct packethandlers_data{
 #endif
 };
 
-void setup_packet_handlers(void *arg)
+static void setup(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
 #ifdef __LINUX__
@@ -42,7 +42,7 @@ void setup_packet_handlers(void *arg)
 #endif
 }
 
-void teardown_packet_handlers(void *arg)
+static void teardown(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
 #ifdef __RIOT__
@@ -704,7 +704,7 @@ void executetests_packets_handlers(void)
     data.radio = NULL;
 #endif
 
-    cunit_init(&tests, &setup_packet_handlers, &teardown_packet_handlers, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_mclmac_start_packet_detection, "mclmac_start_packet_detection\0");
     cunit_add_test(tests, &test_mclmac_cf_packet_detected, "mclmac_cf_packet_detected\0");

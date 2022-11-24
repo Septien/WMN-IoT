@@ -8,7 +8,7 @@
 #include "graph.h"
 #include "cUnit.h"
 
-void setup_graph(void *arg)
+static void setup(void *arg)
 {
     graph_t *g = (graph_t *)arg;
     graph_init(&g);
@@ -371,7 +371,7 @@ bool insert_neighbor_several_neighbors(void *arg)
     return passed;
 }
 
-void teardown_graph(void *arg)
+static void teardown(void *arg)
 {
     graph_t *g = (graph_t *)arg;
     graph_destroy(&g);
@@ -382,7 +382,7 @@ void graph_tests(void)
     cUnit_t *tests;
     graph_t graph;
 
-    cunit_init(&tests, &setup_graph, &teardown_graph, (void *)&graph);
+    cunit_init(&tests, &setup, &teardown, (void *)&graph);
 
     cunit_add_test(tests, &test_graph_init,                                 "graph_init\0");
     cunit_add_test(tests, &test_graph_destroy,                              "graph_destroy\0");

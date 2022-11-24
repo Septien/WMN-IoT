@@ -28,7 +28,7 @@ struct mclmac_data {
 #endif
 };
 
-void setup_mclmac(void *arg)
+static void setup(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
 #ifdef __LINUX__
@@ -43,7 +43,7 @@ void setup_mclmac(void *arg)
 #endif
 }
 
-void teardown_mclmac(void *arg)
+static void teardown(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
 #ifdef __RIOT__
@@ -1199,7 +1199,7 @@ void executeTestsMCLMAC(void)
     data.radio = NULL;
 #endif
 
-    cunit_init(&tests, &setup_mclmac, &teardown_mclmac, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_MCLMAC_init, "MCLMAC_init\0");
     cunit_add_test(tests, &test_MCLMAC_destroy, "MCLMAC_destroy\0");

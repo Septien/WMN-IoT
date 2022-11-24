@@ -28,7 +28,7 @@ struct powermode_data
 #endif
 };
 
-void setup_powermode(void *arg)
+static void setup(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
 #ifdef __LINUX__
@@ -43,7 +43,7 @@ void setup_powermode(void *arg)
 #endif
 }
 
-void teardown_powermode(void *arg)
+static void teardown(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
 #ifdef __RIOT__
@@ -1251,7 +1251,7 @@ void executetests_mac_powermode_statemachine(void)
     data.radio = NULL;
 #endif
 
-    cunit_init(&tests, &setup_powermode, &teardown_powermode, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_mclmac_init_powermode_state_machine, "mclmac_init_powermode_state_machine\0");
     cunit_add_test(tests, &test_mclmac_set_powermode_state, "mclmac_set_powermode_state\0");

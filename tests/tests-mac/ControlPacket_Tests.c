@@ -14,13 +14,13 @@ struct controlpacket_data {
     ControlPacket_t SINGLE_POINTER ctrlpkt;
 };
 
-void setup_controlpacket(void *arg)
+static void setup(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     controlpacket_init(&data->ctrlpkt);
 }
 
-void teardown_controlpacket(void *arg)
+static void teardown(void *arg)
 {
     struct controlpacket_data *data = (struct controlpacket_data *) arg;
     controlpacket_destroy(&data->ctrlpkt);
@@ -621,7 +621,7 @@ void executeTestsCP(void)
     cUnit_t *tests;
     struct controlpacket_data data;
 
-    cunit_init(&tests, &setup_controlpacket, &teardown_controlpacket, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_controlpacket_init, "controlpacket_init\0");
     cunit_add_test(tests, &test_controlpacket_destroy, "controlpacket_destroy\0");

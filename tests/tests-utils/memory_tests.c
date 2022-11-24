@@ -7,7 +7,7 @@
 
 #include "cUnit.h"
 
-void setup_mem(void *arg)
+static void setup(void *arg)
 {
     (void) arg;
 }
@@ -266,7 +266,7 @@ bool test_read_element(void *arg)
    return passed;
 }
 
-void teardown_mem(void *arg)
+static void teardown(void *arg)
 {
     (void) arg;
 }
@@ -276,7 +276,7 @@ void memory_tests(void)
     cUnit_t *tests;
     uint8_t dummy_data = rand();
 
-    cunit_init(&tests, &setup_mem, &teardown_mem, (void *)&dummy_data);
+    cunit_init(&tests, &setup, &teardown, (void *)&dummy_data);
 
     printf("\nTesting the memory API\n");
 

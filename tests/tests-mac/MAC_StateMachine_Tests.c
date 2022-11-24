@@ -36,7 +36,7 @@ struct statemachine_data {
 #endif
 };
 
-void setup_statemachine(void *arg)
+static void setup(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
 #ifdef __LINUX__
@@ -51,7 +51,7 @@ void setup_statemachine(void *arg)
 #endif
 }
 
-void teardown_statemachine(void *arg)
+static void teardown(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
 #ifdef __RIOT__
@@ -877,7 +877,7 @@ void executetests_mac_statemachine(void)
     data.radio = NULL;
 #endif
 
-    cunit_init(&tests, &setup_statemachine, &teardown_statemachine, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_mclmac_init_MAC_state_machine, "mclmac_init_MAC_state_machine\0");
     cunit_add_test(tests, &test_mclmac_set_MAC_state, "mclmac_set_MAC_state\0");

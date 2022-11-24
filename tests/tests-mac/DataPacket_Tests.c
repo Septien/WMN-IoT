@@ -12,13 +12,13 @@ struct datapacket_data {
     DataPacket_t SINGLE_POINTER datapkt;
 };
 
-void setup_datapacket(void *arg)
+static void setup(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     datapacket_init(&data->datapkt);
 }
 
-void teardown_datapacket(void *arg)
+static void teardown(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     datapacket_destroy(&data->datapkt);
@@ -305,7 +305,7 @@ void executeTestsDP(void)
     cUnit_t *tests;
     struct datapacket_data data;
 
-    cunit_init(&tests, &setup_datapacket, &teardown_datapacket, (void *)&data);
+    cunit_init(&tests, &setup, &teardown, (void *)&data);
 
     cunit_add_test(tests, &test_datapacket_init,    "datapacket_init\0");
     cunit_add_test(tests, &test_datapacket_destroy, "datapacket_destroy\0");

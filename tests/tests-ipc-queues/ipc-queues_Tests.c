@@ -833,13 +833,13 @@ bool test_elements_on_queue(void *arg)
     return true;
 }
 
-void setup_ipc(void *arg)
+static void setup(void *arg)
 {
     (void) arg;
     init_queues();
 }
 
-void teardown_ipc(void *arg)
+static void teardown(void *arg)
 {
     (void) arg;
     end_queues();
@@ -850,7 +850,7 @@ void ipc_queues_tests(void)
     cUnit_t *tests;
     int dummy_data = rand();
 
-    cunit_init(&tests, &setup_ipc, &teardown_ipc, (void *)&dummy_data);
+    cunit_init(&tests, &setup, &teardown, (void *)&dummy_data);
 
     printf("Testing the IPC Queues API.\n");
 
