@@ -37,10 +37,24 @@
 #define UUID        {0x0c0b4663131a4c5f, 0xa1b73100144476c0}
 #endif
 
+/*--------------------------------------- TESTING CONFIGURATION ---------------------------------*/
+#if defined BDD  || defined TESTING// Only for behavioral testing
+/*--------------------------------------- GRAPH CONFIGURATION -----------------------------------*/
+#ifndef MAX_NUMBER_NODES
+#define MAX_NUMBER_NODES        200u
+#endif
+
+#endif  // BDD
+
+
 /*-------------------------------------- IPC QUEUES CONFIGURATION -------------------------------*/
 #ifndef MAX_QUEUES
+#ifdef BDD
+#define MAX_QUEUES                  MAX_NUMBER_NODES
+#else
 #define MAX_QUEUES                  10
-#endif
+#endif  // BDD
+#endif  // ndef MAX_QUEUES
 
 /* On Linux, the upper limit is 10. See mq_overview(7) for more details. */
 #ifndef MAX_ELEMENTS_ON_QUEUE
@@ -65,14 +79,4 @@ the type and destination id.*/
 #endif
 #endif // __LINUX__
 
-
-
 /**------------------------------------- NETWORK CONFIGURATION -----------------------------------*/
-
-#if defined BDD  || defined TESTING// Only for behavioral testing
-/*--------------------------------------- GRAPH CONFIGURATION ------------------------------------*/
-#ifndef MAX_NUMBER_NODES
-#define MAX_NUMBER_NODES        200u
-#endif
-
-#endif  // BDD
