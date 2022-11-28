@@ -132,7 +132,8 @@ void close_queue(uint32_t queue_id);
 /**
  * @brief Send a message *msg* of size *size* to the queue identified by queue_id. It returns
  * 1 in case of success, and 0 in case of failure. In RIOT, pid is the process id of the 
- * destination thread; in Linux it means nothing.
+ * destination thread; in Linux it means nothing. @size should be the same size as the
+ * stablished size of the queue when created.
  * 
  * @param queue_id 
  * @param msg 
@@ -152,13 +153,15 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
 /**
  * @brief Receive the messages present on the queue identified by *queue_id*. Store the 
  * message on *msg* and its size on *size*. On *pid* returns the process id that sent 
- * the message.
+ * the message. @size should be the same size as the stablished size of the queue when created.
  * 
  * @param queue_id 
  * @param msg 
  * @param pid
  * @param size 
- * @return uint32_t 
+ * @return 0 when the queue_id is invalid, or size is zero. For Linux, returns -1 when the 
+ * file descriptor is invalid, and -2 when the message size is different than the queue default's
+ * message size (defined when called create_queue.)
  */
 uint32_t recv_message(uint32_t queue_id, uint8_t *msg, size_t size,
 #ifdef __LINUX__

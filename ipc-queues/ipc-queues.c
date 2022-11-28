@@ -386,8 +386,11 @@ kernel_pid_t *pid
         case EBADF:
             /* Invalid queue descriptor */
             return -1;
+        case EMSGSIZE:
+            /* Invalid message size */
+            return -2;
         default:
-        return 0;
+            return 0;
             break;
         }
     }
