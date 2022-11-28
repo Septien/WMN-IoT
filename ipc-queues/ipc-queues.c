@@ -81,8 +81,9 @@ void end_queues(void)
             mq_close(q->queue);
         }
         q->queue = (mqd_t) -1;
-        if (q->q_name != NULL)
+        if (q->q_name != NULL) {
             free(q->q_name);
+        }
         q->q_name = NULL;
 #endif
 #ifdef __RIOT__
@@ -248,13 +249,15 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
 )
 {
     assert(msg != NULL);
-    if (queue_id < 1 || queue_id > MAX_QUEUES)
+    if (queue_id < 1 || queue_id > MAX_QUEUES) {
         return 0;
+    }
     Queue_t *q = &Queues.queues[queue_id - 1];
     // Get the associated queue
     Queue_t *recv_q = NULL;
-    if (pid == 0)
+    if (pid == 0) {
         return 0;
+    }
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         if (Queues.queues_ids[i].pid == pid && Queues.queues_ids[i].queue_id == 1)
@@ -263,8 +266,9 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
             break;
         }
     }
-    if (recv_q == NULL)
+    if (recv_q == NULL) {
         return 0;
+    }
 
 #ifdef __LINUX__
     assert(recv_q->queue_id != 0);
@@ -350,10 +354,12 @@ kernel_pid_t *pid
     assert(msg != NULL);
     assert(pid != NULL);
 
-    if (queue_id < 1 || queue_id > MAX_QUEUES)
+    if (queue_id < 1 || queue_id > MAX_QUEUES) {
         return 0;
-    if (size == 0)
+    }
+    if (size == 0) {
         return 0;
+    }
 
     Queue_t *q = &Queues.queues[queue_id - 1];
 #ifdef __LINUX__
@@ -381,6 +387,7 @@ kernel_pid_t *pid
             /* Invalid queue descriptor */
             return -1;
         default:
+        return 0;
             break;
         }
     }
@@ -403,8 +410,9 @@ kernel_pid_t *pid
     free(_msg);
 #endif
 #ifdef __RIOT__
-    if (Queues.stored_elements == 0)
+    if (Queues.stored_elements == 0) {
         return 0;
+    }
     msg_t _msg;
     msg_receive(&_msg);
     // Invalid message, discard
