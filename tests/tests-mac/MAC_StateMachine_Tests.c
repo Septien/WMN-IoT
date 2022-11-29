@@ -11,17 +11,7 @@
 #ifdef __RIOT__
 #include "net/netdev.h"
 #endif
-
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte) \
-        (((byte) & 0x80) ? '1' : '0'), \
-        (((byte) & 0x40) ? '1' : '0'), \
-        (((byte) & 0x20) ? '1' : '0'), \
-        (((byte) & 0x10) ? '1' : '0'), \
-        (((byte) & 0x08) ? '1' : '0'), \
-        (((byte) & 0x04) ? '1' : '0'), \
-        (((byte) & 0x02) ? '1' : '0'), \
-        (((byte) & 0x01) ? '1' : '0')
+#include "printbinary.h"
 
 struct statemachine_data {
     MCLMAC_t SINGLE_POINTER mclmac;
@@ -527,12 +517,12 @@ bool test_synchronization_state_mac_stmachine(void *arg)
         printf("For the frequency %d, we have:", mclmac->_frequencies[i]);
         for (int j = 0; j < m; j++)
         {
-            printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_occupied_frequencies_slots[i][j]));
+            printf(BYTE_TO_BINARY_PATTERN_INT8" ", BYTE_TO_BINARY_INT8(mclmac->_occupied_frequencies_slots[i][j]));
         }
         printf("\n");
     }
     for (int i = 0; i < MAX_NUMBER_SLOTS / 8; i++) {
-        printf(BYTE_TO_BINARY_PATTERN" ", BYTE_TO_BINARY(mclmac->_selected_slots_neighbors[i]));
+        printf(BYTE_TO_BINARY_PATTERN_INT8" ", BYTE_TO_BINARY_INT8(mclmac->_selected_slots_neighbors[i]));
     }
     printf("\n");
 

@@ -4,6 +4,7 @@ USEMODULE += utils
 USEMODULE += ipc-queues
 ifdef TEST
 INCLUDES += -I$(CURDIR)/tests/include
+INCLUDES += -I$(CURDIR)/debug/
 
 USEMODULE += tests-ipc-queues
 USEMODULE += tests-utils

@@ -46,7 +46,6 @@
 
 #endif  // BDD
 
-
 /*-------------------------------------- IPC QUEUES CONFIGURATION -------------------------------*/
 #ifndef MAX_QUEUES
 #ifdef BDD

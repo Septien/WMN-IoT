@@ -16,7 +16,7 @@ WMN_IOT_INCLUDE = /home/phantom/CP_Systems/Implementations/WMN-IoT/include
 GLOBAL_DEP = $(WMN_IOT_INCLUDE)/config.h
 
 CFLAGS += -fpic -fstack-protector-strong -Werror -Wall -Wextra -pedantic -g3 -Og -std=gnu11 -fstack-protector-all -ffunction-sections -fwrapv -Wstrict-overflow -fno-common -fdata-sections -Wmissing-include-dirs -fno-delete-null-pointer-checks -fdiagnostics-color -Wstrict-prototypes -Wold-style-definition -gz -Wformat=2 -Wformat-overflow -Wformat-truncation
-CFLAGS += -I$(WMN_IOT_INCLUDE)
+CFLAGS += -I$(WMN_IOT_INCLUDE) -I$(WMN_IOT_INCLUDE)/../debug/
 CPPFLAGS := -D__LINUX__
 
 # Compile each of the submodules
@@ -28,7 +28,7 @@ include Network/Makefile.linux
 ifdef TEST
 include tests/Makefile.linux
 # Add headers for unit testing
-TESTS_INCLUDE := $(CUNIT_INCLUDE)/cUnit.h #$(INCT_DIR)/mclmac_tests.h
+TESTS_INCLUDE := $(CUNIT_INCLUDE)/cUnit.h $(WMN_IOT_INCLUDE)/../debug/printbinary.h #$(INCT_DIR)/mclmac_tests.h
 endif
 
 ifdef BDD

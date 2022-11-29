@@ -13,18 +13,6 @@ static char stack[MAX_QUEUES * THREAD_STACKSIZE_DEFAULT];
 static msg_t queue[MAX_QUEUES * QUEUE_SIZE];
 #endif
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte) \
-        ((byte) & 0x80 ? '1' : '0'), \
-        ((byte) & 0x40 ? '1' : '0'), \
-        ((byte) & 0x20 ? '1' : '0'), \
-        ((byte) & 0x10 ? '1' : '0'), \
-        ((byte) & 0x08 ? '1' : '0'), \
-        ((byte) & 0x04 ? '1' : '0'), \
-        ((byte) & 0x02 ? '1' : '0'), \
-        ((byte) & 0x01 ? '1' : '0')
-
-
 static IPC_Queues_t Queues;
 
 void init_queues(void)
@@ -108,12 +96,15 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     assert(Queues.free_queue != NULL);
 #endif
 
-    if (max_queue_size > QUEUE_SIZE)
+    if (max_queue_size > QUEUE_SIZE) {
         return 0;
-    if (message_size > MAX_MESSAGE_SIZE)
+    }
+    if (message_size > MAX_MESSAGE_SIZE) {
         return 0;
-    if (msgs_allow > MAX_ELEMENTS_ON_QUEUE)
+    }
+    if (msgs_allow > MAX_ELEMENTS_ON_QUEUE) {
         return 0;
+    }
 
     // Find a new available id and get the pointers to the corresponding array entry
 #ifdef __RIOT__
@@ -150,7 +141,7 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
 #ifdef __RIOT__
     // Update the pointers
     *stack = _stack;
-    q->stack = *stack;
+    q->stack = _stack;
     q->queue = _queue;
 #endif
 #ifdef __LINUX__
