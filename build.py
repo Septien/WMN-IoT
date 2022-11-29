@@ -16,10 +16,10 @@ def main(opt):
     cmd = "rm code-analysis/*"
     # Compilation and analysis for linux
     # Compile with testing
-    if opt == "TEST":
+    if opt == "test":
         cmd = "make clean all DEBUG=1 LINUX=1 TEST=1"
         os.system(cmd)
-    if opt == "BDD":
+    if opt == "bdd":
         cmd = "make clean all DEBUG=1 LINUX=1 BDD=1"
         os.system(cmd)
     # Static analysis
@@ -33,10 +33,10 @@ def main(opt):
     os.system(cmd)
 
     # Compilation and analysis for RIOT
-    if opt == "TEST":
+    if opt == "test":
         cmd = "make clean all RIOT=1 TEST=1"
         os.system(cmd)
-    if opt == "BDD":
+    if opt == "bdd":
         cmd = "make clean all RIOT=1 BDD=1"
         os.system(cmd)
     # Static code analysis
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     if argc != 2:
         print("Incorrect number of parameters.")
         print("Execute python3 simply_build.py opt")
-        print("Where opt = TEST or BDD")
+        print("Where opt = test or bdd")
         exit()
     opt = sys.argv[2]
     main(opt)
