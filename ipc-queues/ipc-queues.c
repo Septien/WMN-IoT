@@ -243,12 +243,12 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
     if (queue_id < 1 || queue_id > MAX_QUEUES) {
         return 0;
     }
-    Queue_t *q = &Queues.queues[queue_id - 1];
-    // Get the associated queue
-    Queue_t *recv_q = NULL;
     if (pid == 0) {
         return 0;
     }
+    Queue_t *q = &Queues.queues[queue_id - 1];
+    // Get the associated queue
+    Queue_t *recv_q = NULL;
     for (int i = 0; i < MAX_QUEUES; i++)
     {
         if (Queues.queues_ids[i].pid == pid && Queues.queues_ids[i].queue_id == 1)
@@ -436,12 +436,11 @@ uint32_t elements_on_queue(uint32_t queue_id)
     uint32_t n_messages;
 #ifdef __LINUX__
     Queue_t *q = &Queues.queues[queue_id - 1];
-    
     mq_getattr(q->queue, &q->attr);
     n_messages = q->attr.mq_curmsgs;
 #endif
 #ifdef __RIOT__
-    n_messages = msg_avail();
+    n_messages = msg_avail_thread(Queues.queues_ids[queue_id-1].pid);
 #endif
 
     return n_messages;
