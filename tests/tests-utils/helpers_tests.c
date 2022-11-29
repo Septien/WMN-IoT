@@ -38,9 +38,10 @@ bool test_execute_rema(void *arg)
 {
     (void) arg;
 
+    uint64_t id[2] = {1234567890, 9876543210};
 #ifdef __LINUX__
     pthread_t pid;
-    pthread_create(&pid, NULL, execute_rema, NULL);
+    pthread_create(&pid, NULL, execute_rema, (void *)id);
     while (_mutex_lock(&mtx_req) != 1) ;
     request = STOP;
     _mutex_unlock(&mtx_req);
@@ -49,7 +50,7 @@ bool test_execute_rema(void *arg)
 #ifdef __RIOT__
     memset(thread_stack, 0, sizeof(thread_stack));
     kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
-    execute_rema, NULL, "REMA");
+    execute_rema, (void *)id, "REMA");
     int ret = 0;
     do {
         ret = _mutex_lock(&mtx_req);
@@ -68,15 +69,16 @@ bool test_handle_get_nodeid_request(void *arg)
     while (_mutex_lock(&mtx_req) != 1) ;
     request = GET_NODEID;
     _mutex_unlock(&mtx_req);
+    uint64_t id[2] = {1234567890, 9876543210};
 #ifdef __LINUX__
     pthread_t pid;
-    pthread_create(&pid, NULL, execute_rema, NULL);
+    pthread_create(&pid, NULL, execute_rema, (void *)id);
     usleep(1000);
 #endif
 #ifdef __RIOT__
     memset(thread_stack, 0, sizeof(thread_stack));
     kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
-    execute_rema, NULL, "REMA2");
+    execute_rema, (void *)id, "REMA");
     thread_wakeup(pid);
 #endif
     while (_mutex_lock(&mtx_req) != 1) ;
@@ -93,7 +95,6 @@ bool test_handle_get_nodeid_request(void *arg)
     while (_mutex_lock(&mtx_req) != 1) ;
     memcpy(nid, rema_data._node_id, 2*sizeof(uint64_t));
     _mutex_unlock(&mtx_data);
-    uint64_t id[2] = {1234567890, 9876543210};
 
     return memcmp(nid, id, 2*sizeof(uint64_t)) == 0;;
 }

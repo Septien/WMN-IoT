@@ -25,10 +25,9 @@ void _mutex_unlock(mutex_t *mtx)
 
 void *execute_rema(void *arg)
 {
-    (void) arg;
+    uint64_t *id = (uint64_t *)arg;
     REMA_t rema, *prema;
-    uint64_t nid[2] = {1234567890, 9876543210};
-    memcpy(rema._node_id, nid, 2 * sizeof(uint64_t));
+    memcpy(rema._node_id, id, 2 * sizeof(uint64_t));
 
     prema = &rema;
     rema_init(&prema);
