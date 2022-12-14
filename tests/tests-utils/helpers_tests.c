@@ -11,16 +11,7 @@
 #include "helpers.h"
 #include "printbinary.h"
 
-data_t rema_data;
-request_t request;
-#ifdef __LINUX__
-pthread_mutex_t mtx_req;
-pthread_mutex_t mtx_data;
-#endif
 #ifdef __RIOT__
-mutex_t mtx_req;
-mutex_t mtx_data;
-
 char thread_stack[THREAD_STACKSIZE_MAIN];
 #endif
 
@@ -39,18 +30,29 @@ bool test_execute_rema(void *arg)
     (void) arg;
 
     uint64_t id[2] = {1234567890, 9876543210};
+    data_t data = {0};
+    request_t request = NONE;
+    mutex_t mtx_data, mtx_req;
+    args_t args = {.data = &data, .request = &request,
+                    .mtx_data = &mtx_data, .mtx_req = &mtx_req};
+    memcpy(args._node_id, id, 2 * sizeof(uint64_t));
 #ifdef __LINUX__
+    mtx_data = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    mtx_req = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     pthread_t pid;
-    pthread_create(&pid, NULL, execute_rema, (void *)id);
+    pthread_create(&pid, NULL, execute_rema, (void *)&args);
     while (_mutex_lock(&mtx_req) != 1) ;
     request = STOP;
     _mutex_unlock(&mtx_req);
     pthread_join(pid, NULL);
 #endif
 #ifdef __RIOT__
+    mtx_data = (mutex_t) MUTEX_INIT;
+    mtx_req = (mutex_t) MUTEX_INIT;
     memset(thread_stack, 0, sizeof(thread_stack));
     kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
-    execute_rema, (void *)id, "REMA");
+    execute_rema, (void *)&args, "REMA");
+    thread_wakeup(pid);
     int ret = 0;
     do {
         ret = _mutex_lock(&mtx_req);
@@ -66,21 +68,32 @@ bool test_handle_get_nodeid_request(void *arg)
 {
     (void) arg;
 
+    uint64_t id[2] = {1234567890, 9876543210};
+    data_t data = {0};
+    request_t request = NONE;
+    mutex_t mtx_data, mtx_req;
+    args_t args = {.data = &data, .request = &request,
+                    .mtx_data = &mtx_data, .mtx_req = &mtx_req};
+    memcpy(args._node_id, id, 2 * sizeof(uint64_t));
+#ifdef __LINUX__
+    mtx_data = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    mtx_req = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    pthread_t pid;
+    pthread_create(&pid, NULL, execute_rema, (void *)&args);
+    usleep(10);
+#endif
+#ifdef __RIOT__
+    mtx_data = (mutex_t) MUTEX_INIT;
+    mtx_req = (mutex_t) MUTEX_INIT;
+    memset(thread_stack, 0, sizeof(thread_stack));
+    kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
+    execute_rema, (void *)&args, "REMA");
+    thread_wakeup(pid);
+#endif
     while (_mutex_lock(&mtx_req) != 1) ;
     request = GET_NODEID;
     _mutex_unlock(&mtx_req);
-    uint64_t id[2] = {1234567890, 9876543210};
-#ifdef __LINUX__
-    pthread_t pid;
-    pthread_create(&pid, NULL, execute_rema, (void *)id);
-    usleep(1000);
-#endif
-#ifdef __RIOT__
-    memset(thread_stack, 0, sizeof(thread_stack));
-    kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
-    execute_rema, (void *)id, "REMA");
-    thread_wakeup(pid);
-#endif
+    
     while (_mutex_lock(&mtx_req) != 1) ;
     request = STOP;
     _mutex_unlock(&mtx_req);
@@ -92,8 +105,8 @@ bool test_handle_get_nodeid_request(void *arg)
 #endif
     // Verify node_id is correct
     uint64_t nid[2] = {0};
-    while (_mutex_lock(&mtx_req) != 1) ;
-    memcpy(nid, rema_data._node_id, 2*sizeof(uint64_t));
+    while (_mutex_lock(&mtx_data) != 1) ;
+    memcpy(nid, args._node_id, 2*sizeof(uint64_t));
     _mutex_unlock(&mtx_data);
 
     return memcmp(nid, id, 2*sizeof(uint64_t)) == 0;;
@@ -101,21 +114,6 @@ bool test_handle_get_nodeid_request(void *arg)
 
 void helpers_tests(void)
 {
-#ifdef __LINUX__
-    pthread_mutex_init(&mtx_req, NULL);
-    pthread_mutex_init(&mtx_data, NULL);
-#endif
-#ifdef __RIOT__
-    mutex_init(&mtx_req);
-    mutex_init(&mtx_data);
-#endif
-    _mutex_lock(&mtx_req);
-    request = NONE;
-    _mutex_unlock(&mtx_req);
-    _mutex_lock(&mtx_data);
-    memset(rema_data._node_id, 0, 2*sizeof(uint64_t));
-    _mutex_unlock(&mtx_data);
-
     cUnit_t *tests;
     int data = 0;
     init_queues();

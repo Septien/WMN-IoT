@@ -34,18 +34,23 @@ typedef union data
 }data_t;
 
 /* Declare the data. */
-extern data_t rema_data;
-extern request_t request;
 #ifdef __LINUX__
-extern pthread_mutex_t mtx_req;
-extern pthread_mutex_t mtx_data;
-
+/* For consistency. */
 typedef pthread_mutex_t mutex_t;
+typedef pthread_t p_thread_t;   // Protocol's thread
 #endif
 #ifdef __RIOT__
-extern mutex_t mtx_req;
-extern mutex_t mtx_data;
+typedef kernel_pid_t p_thread_t;
 #endif
+
+typedef struct args{
+    data_t      *data;
+    data_t      _node_id[2];
+    request_t   *request;
+    mutex_t     *mtx_data;
+    mutex_t     *mtx_req;
+}args_t;
+
 int _mutex_lock(mutex_t *mtx);
 void _mutex_unlock(mutex_t *mtx);
 

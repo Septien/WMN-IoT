@@ -25,24 +25,23 @@ void _mutex_unlock(mutex_t *mtx)
 
 void *execute_rema(void *arg)
 {
-    uint64_t *id = (uint64_t *)arg;
+    args_t *args = (args_t *)arg;
     REMA_t rema, *prema;
-    memcpy(rema._node_id, id, 2 * sizeof(uint64_t));
+    memcpy(rema._node_id, args->_node_id, 2 * sizeof(uint64_t));
 
     prema = &rema;
     rema_init(&prema);
-
     int end = 0;
     while (!end) {
         /* Handle requests from main thread */
-        if (_mutex_lock(&mtx_req)) {
-            switch (request)
+        if (_mutex_lock(args->mtx_req)) {
+            switch (*(args->request))
             {
             case GET_NODEID:
-                _mutex_lock(&mtx_data);
-                memcpy(rema_data._node_id, rema._node_id, 2*sizeof(uint64_t));
-                _mutex_unlock(&mtx_data);
-                request = NONE;
+                _mutex_lock(args->mtx_data);
+                memcpy(args->data->_node_id, rema._node_id, 2*sizeof(uint64_t));
+                _mutex_unlock(args->mtx_data);
+                *(args->request) = NONE;
                 break;
             case STOP:
                 end = 1;
@@ -50,7 +49,7 @@ void *execute_rema(void *arg)
             default:
                 break;
             }
-            _mutex_unlock(&mtx_req);
+            _mutex_unlock(args->mtx_req);
         }
 
         // Run the REMA protocol
