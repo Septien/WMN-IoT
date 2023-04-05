@@ -44,6 +44,7 @@ typedef kernel_pid_t p_thread_t;
 #endif
 
 typedef struct args{
+    p_thread_t  pid;
     data_t      *data;
     data_t      _node_id[2];
     request_t   *request;

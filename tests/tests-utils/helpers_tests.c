@@ -33,7 +33,7 @@ bool test_execute_rema(void *arg)
     data_t data = {0};
     request_t request = NONE;
     mutex_t mtx_data, mtx_req;
-    args_t args = {.data = &data, .request = &request,
+    args_t args = {.pid = 0, .data = &data, .request = &request,
                     .mtx_data = &mtx_data, .mtx_req = &mtx_req};
     memcpy(args._node_id, id, 2 * sizeof(uint64_t));
 #ifdef __LINUX__
@@ -72,7 +72,7 @@ bool test_handle_get_nodeid_request(void *arg)
     data_t data = {0};
     request_t request = NONE;
     mutex_t mtx_data, mtx_req;
-    args_t args = {.data = &data, .request = &request,
+    args_t args = {.pid = 0, .data = &data, .request = &request,
                     .mtx_data = &mtx_data, .mtx_req = &mtx_req};
     memcpy(args._node_id, id, 2 * sizeof(uint64_t));
 #ifdef __LINUX__
@@ -85,7 +85,6 @@ bool test_handle_get_nodeid_request(void *arg)
 #ifdef __RIOT__
     mtx_data = (mutex_t) MUTEX_INIT;
     mtx_req = (mutex_t) MUTEX_INIT;
-    memset(thread_stack, 0, sizeof(thread_stack));
     kernel_pid_t pid = thread_create(thread_stack[0], sizeof(thread_stack[0]), THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
     execute_rema, (void *)&args, "REMA");
     thread_wakeup(pid);
@@ -122,7 +121,8 @@ bool test_create_n_threads(void *arg)
     args_t args[MAX_NUMBER_NODES];
     uint32_t i;
     for (i = 0; i < MAX_NUMBER_NODES; i++) {
-        args[i] = (args_t) {.data = &data[i], .request = &request[i],
+        request[i] = NONE;
+        args[i] = (args_t) {.pid = 0, .data = &data[i], .request = &request[i],
                             .mtx_data = &mtx_data[i], .mtx_req = &mtx_req[i]};
         memcpy(args[i]._node_id, id, 2 * sizeof(uint64_t));
     }
@@ -136,7 +136,6 @@ bool test_create_n_threads(void *arg)
     usleep(100);
 #endif
 #ifdef __RIOT__
-    memset(thread_stack, 0, sizeof(thread_stack));
     kernel_pid_t pid[MAX_NUMBER_NODES] = {0};
     for (i = 0; i < MAX_NUMBER_NODES; i++) {
         mtx_data[i] = (mutex_t) MUTEX_INIT;
