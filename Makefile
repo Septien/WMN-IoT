@@ -33,10 +33,8 @@ endif
 
 ifdef BDD
 CFLAGS += -DBDD
-CFLAGS += -I/home/phantom/CP_Systems/External_Modules/bdd-for-c/
 # Add headers for behavior testing
 TESTS_INCLUDE := /home/phantom/CP_Systems/External_Modules/bdd-for-c/bdd-for-c.h
-#include bdd-tests/Makefile.linux
 endif
 
 # Path to libipcqueues.a
@@ -127,7 +125,6 @@ FEATURES_REQUIRED += periph_spi
 
 ifdef BDD
 CFLAGS += -DBDD
-INCLUDES += -I/home/phantom/CP_Systems/External_Modules/bdd-for-c
 endif
 
 include WMN-IoT.include

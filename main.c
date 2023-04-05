@@ -46,7 +46,6 @@ int main(void)
 }
 #endif
 #ifdef BDD
-#include "bdd-for-c.h"
 
-#include "tests/bdd-tests-network/tests-bdd-network.c"
+#include "REMA.h"
 #endif
