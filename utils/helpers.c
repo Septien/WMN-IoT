@@ -3,64 +3,19 @@
 #include "helpers.h"
 #include "printbinary.h"
 
-int _mutex_lock(mutex_t *mtx)
-{
-#ifdef __LINUX__
-    return (pthread_mutex_trylock(mtx) == 0 ? 1 : 0);
-#endif
-#ifdef __RIOT__
-    return mutex_trylock(mtx);
-#endif
-}
 
-void _mutex_unlock(mutex_t *mtx)
+void execute_rema()
 {
-#ifdef __LINUX__
-    pthread_mutex_unlock(mtx);
-#endif
-#ifdef __RIOT__
-    mutex_unlock(mtx);
-#endif
-}
-
-void *execute_rema(void *arg)
-{
-    args_t *args = (args_t *)arg;
     REMA_t rema, *prema;
-    memcpy(rema._node_id, args->_node_id, 2 * sizeof(uint64_t));
 
     prema = &rema;
     rema_init(&prema);
     int end = 0;
     while (!end) {
-        /* Handle requests from main thread */
-        if (_mutex_lock(args->mtx_req)) {
-            switch (*(args->request))
-            {
-            case GET_NODEID:
-                _mutex_lock(args->mtx_data);
-                memcpy(args->data->_node_id, rema._node_id, 2*sizeof(uint64_t));
-                _mutex_unlock(args->mtx_data);
-                *(args->request) = NONE;
-                break;
-            case STOP:
-                end = 1;
-                break;
-            default:
-                break;
-            }
-            _mutex_unlock(args->mtx_req);
-        }
-
         // Run the REMA protocol
         rema_dummy(prema);
-#ifdef __RIOT__
-        thread_yield();
-        thread_sleep();
-#endif
+        break;
     }
 
     rema_terminate(&prema);
-
-    return NULL;
 }
