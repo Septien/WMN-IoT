@@ -16,9 +16,6 @@ MKDIR_OBJ_UTILS := mkdir -p $(OBJ_DIR)
 INC_UTILS := $(utils_current_dir)/include
 
 OBJSA := timeouts.o helpers.o
-ifdef TEST
-OBJSA += graph.o
-endif
 OBJS := $(addprefix $(OBJ_DIR)/, $(OBJSA))
 
 TARGETS := directories_utils $(LIB)/libutils

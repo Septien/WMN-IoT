@@ -20,6 +20,6 @@
 /* Requests sent by the main thread to its childs. */
 typedef enum {STOP, GET_NODEID, NONE} request_t;
 
-void *execute_rema(void *arg);
+void execute_rema(void);
 
 #endif      // INCLUDE_HELPERS_H

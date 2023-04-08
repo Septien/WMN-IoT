@@ -5,7 +5,7 @@ SRC_DIR := $(curr_dir)/$(curr_dir_utils)
 OBJ_DIR_U := $(BIN)/tests-utils
 LIB := $(BIN)/lib
 
-OBJSA = utils_tests.o timeouts_test.o graph_tests.o helpers_tests.o
+OBJSA = utils_tests.o timeouts_test.o helpers_tests.o
 OBJS = $(addprefix $(OBJ_DIR_U)/, $(OBJSA))
 
 TARGETS += utils_obj_dir $(LIB)/libutilsT

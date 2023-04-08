@@ -37,8 +37,6 @@ void helpers_tests(void)
     cunit_init(&tests, &setup, &teardown, &data);
 
     cunit_add_test(tests, &test_execute_rema,               "execution of rema protocol\0");
-    cunit_add_test(tests, &test_handle_get_nodeid_request,  "node_id request\0");
-    cunit_add_test(tests, &test_create_n_threads,           "creation of n nodes\0");
 
     printf("Testing the helpers function.\n");
     cunit_execute_tests(tests);

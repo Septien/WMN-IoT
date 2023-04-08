@@ -4,7 +4,7 @@
 #include "printbinary.h"
 
 
-void execute_rema()
+void execute_rema(void)
 {
     REMA_t rema, *prema;
 
