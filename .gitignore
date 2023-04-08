@@ -5,3 +5,4 @@
 code-analysis/
 valgrind-output/
 misc/
+__pycache__/
