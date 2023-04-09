@@ -66,6 +66,62 @@ class test_graph(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.graph.add_edge(node_id2, node_id1)
 
+    def test_add_edge_twice(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+        node_id2 = uuid4().hex
+        data2 = {'data': 2, 'data2': [1, 2, 3, 4, 5]}
+        self.graph.add_vertex(node_id2, data2)
+
+        self.graph.add_edge(node_id1, node_id2)
+        with self.assertRaises(ValueError):
+            self.graph.add_edge(node_id1, node_id2)
+
+        with self.assertRaises(ValueError):
+            self.graph.add_edge(node_id2, node_id1)
+
+    def test_add_edge_same_node(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+
+        with self.assertRaises(ValueError):
+            self.graph.add_edge(node_id1, node_id1)
+
+    def test_add_several_neighbors_one_node(self):
+        data = {'data': 1, 'data2': [1, 2, 3, 4]}
+        nodes_id = []
+        for i in range(6):
+            nodes_id.append(uuid4().hex)
+            self.graph.add_vertex(nodes_id[-1], data)
+
+        for i in range(1, 6):
+            self.graph.add_edge(nodes_id[0], nodes_id[i])
+
+        for i in range(1, 6):
+            self.assertEqual(self.graph.adjList[0][i - 1], i)
+
+    def test_add_several_neighbors_several_nodes(self):
+        data = {'data': 1, 'data2': [1, 2, 3, 4]}
+        nodes_id = []
+        for i in range(10):
+            nodes_id.append(uuid4().hex)
+            self.graph.add_vertex(nodes_id[-1], data)
+
+        for i in range(10):
+            _id = nodes_id[i]
+            for j in range(i + 1, i + 4):
+                self.graph.add_edge(_id, nodes_id[j%10])
+
+        #for i in range(10):
+        #    _id = nodes_id[i]
+        #    neighbors = self.graph.adjList[self.graph.index_map[_id]][0:3]
+        #    _neighbors = [j for j in range(i + 1, i + 4)]
+        #    with self.subTest(i=i):
+        #        self.assertEqual(neighbors, _neighbors)
+
+
     def test_get_data(self):
         node_id1 = uuid4().hex
         data1 = {'data': 1, 'data2': [1, 2, 3, 4]}

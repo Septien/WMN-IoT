@@ -29,8 +29,13 @@ class Graph:
         self.last_index += 1
 
     def add_edge(self, node_id1 : int = 0, node_id2 : int = 0) -> None:
+        if node_id1 == node_id2:
+            raise ValueError("A node cannot be its own neighbor.")
         index1 = verify_key(self.index_map, node_id1)
         index2 = verify_key(self.index_map, node_id2)
+
+        if index1 in self.adjList[index2] or index2 in self.adjList[index1]:
+            raise ValueError("Cannot add same node twice or more.")
 
         self.adjList[index1].append(index2)
         self.adjList[index2].append(index1)
@@ -42,3 +47,5 @@ class Graph:
         """
         index = verify_key(self.index_map, node_id)
         return self.nodes[index].data
+# Several nodes
+# List of neighbors
