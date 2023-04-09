@@ -34,6 +34,37 @@ class test_graph(unittest.TestCase):
         self.assertEqual(self.graph.nodes[0].data, data)
         self.assertIn("node id", self.graph.nodes[0].data)
 
+    def test_add_edge(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+        node_id2 = uuid4().hex
+        data2 = {'data': 2, 'data2': [1, 2, 3, 4, 5]}
+        self.graph.add_vertex(node_id2, data2)
+
+        self.graph.add_edge(node_id1, node_id2)
+        index1 = self.graph.index_map[node_id1]
+        index2 = self.graph.index_map[node_id2]
+        self.assertEqual(self.graph.adjList[index2], [index1])
+        self.assertEqual(self.graph.adjList[index1], [index2])
+
+    def test_add_edge_no_existing_id2(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+        node_id2 = uuid4().hex
+
+        with self.assertRaises(ValueError):
+            self.graph.add_edge(node_id1, node_id2)
+
+    def test_add_edge_no_existing_id1(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+        node_id2 = uuid4().hex
+
+        with self.assertRaises(ValueError):
+            self.graph.add_edge(node_id2, node_id1)
 
 if __name__ == '__main__':
     unittest.main()
