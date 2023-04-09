@@ -3,6 +3,15 @@ It contains both the data structure for the nodes, and the class that implements
 """
 import copy
 
+def verify_key(map, key):
+    try:
+        index = map[key]
+    except:
+        string = 'Node with id {} not existing'.format(key)
+        raise ValueError(string)
+    else:
+        return index
+
 class Node:
     data = {}
 
@@ -20,16 +29,16 @@ class Graph:
         self.last_index += 1
 
     def add_edge(self, node_id1 : int = 0, node_id2 : int = 0) -> None:
-        def verify_key(map, key):
-            try:
-                index = map[key]
-            except:
-                string = 'Node with id {} not existing'.format(key)
-                raise ValueError(string)
-            else:
-                return index
         index1 = verify_key(self.index_map, node_id1)
         index2 = verify_key(self.index_map, node_id2)
 
         self.adjList[index1].append(index2)
         self.adjList[index2].append(index1)
+
+    def get_node_data(self, node_id : int = 0) -> dict:
+        """
+        Returns a reference to a given node's data, allowing the user to
+        modify it.
+        """
+        index = verify_key(self.index_map, node_id)
+        return self.nodes[index].data

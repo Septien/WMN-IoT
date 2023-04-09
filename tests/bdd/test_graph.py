@@ -66,5 +66,24 @@ class test_graph(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.graph.add_edge(node_id2, node_id1)
 
+    def test_get_data(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+        data1["node id"] = node_id1
+
+        data = self.graph.get_node_data(node_id1)
+        self.assertEqual(data, data1)
+
+    def test_get_data_invalid_id(self):
+        node_id1 = uuid4().hex
+        data1 = {'data': 1, 'data2': [1, 2, 3, 4]}
+        self.graph.add_vertex(node_id1, data1)
+        data1["node id"] = node_id1
+
+        _id = uuid4().hex
+        with self.assertRaises(ValueError):
+            data = self.graph.get_node_data(_id)
+
 if __name__ == '__main__':
     unittest.main()
