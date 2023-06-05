@@ -84,6 +84,7 @@ class WMN_Interface:
     def disconnect(self) -> None:
         for topic in self.topics:
             self.nodes.unsubscribe(topic)
+        time.sleep(1)
         del self.topics
         self.topics = []
         self.nodes.disconnect()

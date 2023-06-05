@@ -116,7 +116,7 @@ class test_wmn(unittest.TestCase):
     def test_subscribe_multiple_topics(self):
         base_topic = '/nodes/'
         topics = []
-        for i in range(100):
+        for i in range(2000):
             topics.append((base_topic + str(i), 1))
         self.wmn.subscribe(topics)
         for i in range(len(topics)):
