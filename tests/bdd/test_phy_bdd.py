@@ -1,6 +1,6 @@
 import unittest
 
-from wmn_bdd import WMN_Interface
+from wmn_phy_bdd import WMN_Interface
 
 import paho.mqtt.client as mqtt
 from queue import Queue
