@@ -49,6 +49,7 @@ int main(void)
 
 int main(void)
 {
+    printf("BDD TESTS.\n");
     return 0;
 }
 

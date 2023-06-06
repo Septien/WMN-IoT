@@ -35,7 +35,7 @@ if __name__ == '__main__':
     if argc != 2:
         print("Incorrect number of parameters.")
         print("Execute python3 simply_build.py opt")
-        print("Where opt = test or bdd")
+        print("Where opt = test | bdd")
         exit()
     opt = sys.argv[1]
     main(opt)
