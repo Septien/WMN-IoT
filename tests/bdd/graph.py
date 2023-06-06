@@ -25,8 +25,8 @@ class Graph:
 
     def add_vertex(self, node_id : int = 0, data : dict = {}) -> None:
         self.index_map[node_id] = self.last_index
-        self.nodes[self.last_index].data = copy.deepcopy(data)
-        self.nodes[self.last_index].data["node id"] = node_id
+        self.nodes[self.last_index] = copy.deepcopy(data)
+        self.nodes[self.last_index]["node id"] = node_id
         self.last_index += 1
 
     def add_edge(self, node_id1 : int = 0, node_id2 : int = 0) -> None:
@@ -47,6 +47,6 @@ class Graph:
         modify it.
         """
         index = verify_key(self.index_map, node_id)
-        return self.nodes[index].data
+        return copy.deepcopy(self.nodes[index])
 # Several nodes
 # List of neighbors

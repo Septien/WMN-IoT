@@ -1,16 +1,11 @@
 import unittest
 from uuid import uuid4
 
-from graph import Node, Graph
-
-class test_node(unittest.TestCase):
-    def test_init(self):
-        node = Node()
-        self.assertIsInstance(node.data, dict)
+from graph import Graph
 
 class test_graph(unittest.TestCase):
     def setUp(self) -> None:
-        V = 10
+        V = 100
         self.graph = Graph(V)
 
     def tearDown(self) -> None:
@@ -31,8 +26,8 @@ class test_graph(unittest.TestCase):
         self.assertEqual(self.graph.last_index, 1)
         self.assertEqual(self.graph.index_map[node_id], 0)
         data["node id"] = node_id
-        self.assertEqual(self.graph.nodes[0].data, data)
-        self.assertIn("node id", self.graph.nodes[0].data)
+        self.assertEqual(self.graph.nodes[0], data)
+        self.assertIn("node id", self.graph.nodes[0])
 
     def test_add_edge(self):
         node_id1 = uuid4().hex
