@@ -12,12 +12,6 @@ def verify_key(map, key):
     else:
         return index
 
-class Node:
-    """
-    Holds the data associated with the nodes in a dictionary
-    """
-    data = {}
-
 class Graph:
     """
         -nodes: Contain the node's data.
@@ -25,7 +19,7 @@ class Graph:
     """
     def __init__(self, V : int = 1):
         self.last_index = 0
-        self.nodes = [Node() for _ in range(V)]
+        self.nodes = [dict() for _ in range(V)]
         self.index_map = {}
         self.adjList = [[] for _ in range(V)]
 
