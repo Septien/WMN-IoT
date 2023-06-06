@@ -1,6 +1,6 @@
 import unittest
 
-from wmn_phy_bdd import WMN_Interface
+from wmn_phy_bdd import PHY
 
 import paho.mqtt.client as mqtt
 from queue import Queue
@@ -14,7 +14,7 @@ class test_wmn(unittest.TestCase):
             if [msg, topic] != userdata:
                 raise ValueError("Incorrect message")
         #
-        self.wmn = WMN_Interface()
+        self.wmn = PHY()
         self.client = mqtt.Client('test')
         self.client.connect('localhost')
         self.client.on_message = on_message
@@ -29,7 +29,7 @@ class test_wmn(unittest.TestCase):
         self.client.disconnect()
 
     def test_init(self):
-        wmn = WMN_Interface()
+        wmn = PHY()
 
         self.assertIsInstance(wmn.nodes, mqtt.Client)
         self.assertTrue(wmn.nodes.is_connected())

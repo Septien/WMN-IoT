@@ -14,9 +14,9 @@ from queue import Queue
 import time
 from typing import Any
 
-class WMN_Interface:
+class PHY:
     """
-    Class for simulating the physical network's interface. It has the following members:
+    Class for simulating the network's physical interface. It has the following members:
         -nodes: the MQTT client for receiving/sending the messages.
         -topics: a list of topics to which the client is connected.
         -to_receive: a list of messages received from the broker.
