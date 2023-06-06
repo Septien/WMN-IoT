@@ -33,8 +33,6 @@ endif
 
 ifdef BDD
 CFLAGS += -DBDD
-# Add headers for behavior testing
-TESTS_INCLUDE := /home/phantom/CP_Systems/External_Modules/bdd-for-c/bdd-for-c.h
 endif
 
 # Path to libipcqueues.a
