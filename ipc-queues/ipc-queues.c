@@ -17,7 +17,7 @@ static IPC_Queues_t Queues;
 
 void init_queues(void)
 {
-    for (int i = 0; i < MAX_QUEUES; i++)
+    for (unsigned int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues.queues[i];
         q->queue_id = 0;
@@ -32,7 +32,7 @@ void init_queues(void)
         q->queue = (mqd_t) -1;
         q->q_name = NULL;
 #endif
-        for (int i = 0; i < MAX_QUEUES; i++)
+        for (unsigned int i = 0; i < MAX_QUEUES; i++)
         {
             Queues.queues_ids[i].queue_id = 0;
             Queues.queues_ids[i].pid = 0;
@@ -55,7 +55,7 @@ void end_queues(void)
     Queues.free_stack = NULL;
     Queues.free_queue = NULL;
 #endif
-    for (int i = 0; i < MAX_QUEUES; i++)
+    for (unsigned int i = 0; i < MAX_QUEUES; i++)
     {
         Queue_t *q = &Queues.queues[i];
         q->queue_id = 0;
@@ -112,7 +112,7 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     msg_t *_queue = NULL;
 #endif
     uint32_t q_id = 0;
-    for (int i = 0; i < MAX_QUEUES; i++)
+    for (unsigned int i = 0; i < MAX_QUEUES; i++)
     {
         if (Queues.queues_ids[i].queue_id == 0)
         {
@@ -150,7 +150,7 @@ uint32_t create_queue(size_t max_queue_size, size_t message_size, uint32_t msgs_
     q->attr.mq_msgsize = q->message_size + sizeof(pthread_t);
     q->attr.mq_curmsgs = 0;
     // For the string's name, just use the queue id
-    q->q_name = (char *)malloc(4 * sizeof(char));
+    q->q_name = (char *)malloc(5 * sizeof(char));
     sprintf(q->q_name, "/%d", q->queue_id);
     *stack = NULL;
     (void) stack; // Don't use
@@ -249,7 +249,7 @@ uint32_t send_message(uint32_t queue_id, uint8_t *msg, size_t size
     Queue_t *q = &Queues.queues[queue_id - 1];
     // Get the associated queue
     Queue_t *recv_q = NULL;
-    for (int i = 0; i < MAX_QUEUES; i++)
+    for (unsigned int i = 0; i < MAX_QUEUES; i++)
     {
         if (Queues.queues_ids[i].pid == pid && Queues.queues_ids[i].queue_id == 1)
         {
