@@ -122,6 +122,23 @@ class test_wmn(unittest.TestCase):
         for i in range(len(topics)):
             self.assertEqual(topics[i][0], self.wmn.topics[i + 1])
 
+    def test_publish_several_topics(self):
+        base_topic = '/nodes/'
+        topics = []
+        for i in range(2000):
+            topics.append((base_topic + str(i), 1))
+        self.wmn.subscribe(topics)
+        msg = 'Testing'
+        for topic in topics:
+            self.wmn.message = [msg, topic[0]]
+            time.sleep(0.5)
+
+        for i in range(len(topics)):
+            m = self.wmn.message
+            if m is None:
+                break
+            self.assertEqual(m, [msg, topics[i][0]])
+
     def test_disconnect(self):
         self.assertTrue(self.wmn.nodes.is_connected())
         self.wmn.disconnect()
