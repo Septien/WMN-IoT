@@ -47,5 +47,10 @@ int main(void)
 #endif
 #ifdef BDD
 
+int main(void)
+{
+    return 0;
+}
+
 #include "REMA.h"
 #endif

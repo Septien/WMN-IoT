@@ -1,7 +1,9 @@
 #include <string.h>
 
 #include "helpers.h"
+#ifdef TEST
 #include "printbinary.h"
+#endif
 
 
 void execute_rema(void)
