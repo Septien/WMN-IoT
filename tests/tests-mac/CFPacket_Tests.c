@@ -8,7 +8,7 @@
 #include "cUnit.h"
 
 struct cfpacket_data {
-    CFPacket_t SINGLE_POINTER cfpkt;
+    CFPacket_t *cfpkt;
 };
 
 void setup_cfpacket(void *arg)
@@ -26,18 +26,13 @@ void teardown_cfpacket(void *arg)
 bool test_cfpacket_init(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = data->cfpkt;
 
     bool passed = true;
-#ifdef __LINUX__
-    passed = passed && (cfpkt != NULL);
-#endif
-#ifdef __RIOT__
-    passed = passed && (data->cfpkt.node_id[0] == 0);
-    passed = passed && (data->cfpkt.node_id[1] == 0);
-    passed = passed && (data->cfpkt.destination_id[0] == 0);
-    passed = passed && (data->cfpkt.destination_id[1] == 0);
-#endif
+    passed = passed && (data->cfpkt->node_id[0] == 0);
+    passed = passed && (data->cfpkt->node_id[1] == 0);
+    passed = passed && (data->cfpkt->destination_id[0] == 0);
+    passed = passed && (data->cfpkt->destination_id[1] == 0);
 
     return passed;
 }
@@ -48,15 +43,12 @@ bool test_cfpacket_destroy(void *arg)
 
     cfpacket_destroy(&data->cfpkt);
     bool passed = true;
-#ifdef __LINUX__
-    passed = passed && (data->cfpkt == NULL);
-#endif
-#ifdef __RIOT__
-    passed = passed && (data->cfpkt.node_id[0] == 0);
-    passed = passed && (data->cfpkt.node_id[1] == 0);
-    passed = passed && (data->cfpkt.destination_id[0] == 0);
-    passed = passed && (data->cfpkt.destination_id[1] == 0);
-#endif
+    passed = passed && (data->cfpkt->node_id[0] == 0);
+    passed = passed && (data->cfpkt->node_id[1] == 0);
+    passed = passed && (data->cfpkt->destination_id[0] == 0);
+    passed = passed && (data->cfpkt->destination_id[1] == 0);
+
+    // Add so the teardown function doesn't break
     cfpacket_init(&data->cfpkt);
 
     return true;
@@ -65,7 +57,7 @@ bool test_cfpacket_destroy(void *arg)
 bool test_cfpacket_create(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = data->cfpkt;
 
     uint64_t node_id[2] = {0};
     uint64_t destination_id[2] = {0};
@@ -74,13 +66,13 @@ bool test_cfpacket_create(void *arg)
     destination_id[0] = rand();
     destination_id[1] = rand();
 
-    cfpacket_create(REFERENCE cfpkt, node_id, destination_id);
+    cfpacket_create(cfpkt, node_id, destination_id);
 
     bool passed = true;
-    passed = passed && (ARROW(cfpkt)node_id[0] == node_id[0]);
-    passed = passed && (ARROW(cfpkt)node_id[1] == node_id[1]);
-    passed = passed && (ARROW(cfpkt)destination_id[0] == destination_id[0]);
-    passed = passed && (ARROW(cfpkt)destination_id[1] == destination_id[1]);
+    passed = passed && (cfpkt->node_id[0] == node_id[0]);
+    passed = passed && (cfpkt->node_id[1] == node_id[1]);
+    passed = passed && (cfpkt->destination_id[0] == destination_id[0]);
+    passed = passed && (cfpkt->destination_id[1] == destination_id[1]);
 
     return passed;
 }
@@ -88,7 +80,7 @@ bool test_cfpacket_create(void *arg)
 bool test_cfpacket_clear(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     uint64_t node_id[2] = {0};
     uint64_t destination_id[2] = {0};
@@ -97,15 +89,15 @@ bool test_cfpacket_clear(void *arg)
     destination_id[0] = rand();
     destination_id[1] = rand();
 
-    cfpacket_create(REFERENCE cfpkt, node_id, destination_id);
+    cfpacket_create(cfpkt, node_id, destination_id);
 
-    cfpacket_clear(REFERENCE cfpkt);
+    cfpacket_clear(cfpkt);
 
     bool passed = true;
-    passed = passed && (ARROW(cfpkt)node_id[0] == 0);
-    passed = passed && (ARROW(cfpkt)node_id[1] == 0);
-    passed = passed && (ARROW(cfpkt)destination_id[0] == 0);
-    passed = passed && (ARROW(cfpkt)destination_id[1] == 0);
+    passed = passed && (cfpkt->node_id[0] == 0);
+    passed = passed && (cfpkt->node_id[1] == 0);
+    passed = passed && (cfpkt->destination_id[0] == 0);
+    passed = passed && (cfpkt->destination_id[1] == 0);
 
     return passed;
 }
@@ -113,15 +105,15 @@ bool test_cfpacket_clear(void *arg)
 bool test_cfpacket_set_nodeid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     uint64_t node_id[2] = {0};
     node_id[0] = rand();
     node_id[1] = rand();
-    cfpacket_set_nodeid(REFERENCE cfpkt, node_id);
+    cfpacket_set_nodeid(cfpkt, node_id);
     bool passed = true;
-    passed = passed && (ARROW(cfpkt)node_id[0] == node_id[0]);
-    passed = passed && (ARROW(cfpkt)node_id[1] == node_id[1]);
+    passed = passed && (cfpkt->node_id[0] == node_id[0]);
+    passed = passed && (cfpkt->node_id[1] == node_id[1]);
 
     return passed;
 }
@@ -129,18 +121,18 @@ bool test_cfpacket_set_nodeid(void *arg)
 bool test_cfpacket_get_nodeid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     uint64_t node_id[2] = {0};
     node_id[0] = rand();
     node_id[1] = rand();
-    cfpacket_set_nodeid(REFERENCE cfpkt, node_id);
+    cfpacket_set_nodeid(cfpkt, node_id);
     
     uint64_t node_id_r[2];
-    cfpacket_get_nodeid(REFERENCE cfpkt, node_id_r);
+    cfpacket_get_nodeid(cfpkt, node_id_r);
     bool passed = true;
-    passed = passed && (node_id_r[0] == ARROW(cfpkt)node_id[0]);
-    passed = passed && (node_id_r[1] == ARROW(cfpkt)node_id[1]);
+    passed = passed && (node_id_r[0] == cfpkt->node_id[0]);
+    passed = passed && (node_id_r[1] == cfpkt->node_id[1]);
 
     return passed;
 }
@@ -148,15 +140,15 @@ bool test_cfpacket_get_nodeid(void *arg)
 bool test_cfpacket_set_destinationid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
     destination_id[1] = rand();
-    cfpacket_set_destinationid(REFERENCE cfpkt, destination_id);
+    cfpacket_set_destinationid(cfpkt, destination_id);
     bool passed = true;
-    passed = passed && (ARROW(cfpkt)destination_id[0] == destination_id[0]);
-    passed = passed && (ARROW(cfpkt)destination_id[1] == destination_id[1]);
+    passed = passed && (cfpkt->destination_id[0] == destination_id[0]);
+    passed = passed && (cfpkt->destination_id[1] == destination_id[1]);
 
     return passed;
 }
@@ -164,20 +156,20 @@ bool test_cfpacket_set_destinationid(void *arg)
 bool test_cfpacket_get_destinationid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
     destination_id[1] = rand();
-    cfpacket_set_destinationid(REFERENCE cfpkt, destination_id);
+    cfpacket_set_destinationid(cfpkt, destination_id);
 
     uint64_t destination_id_df[2] = {0};
-    cfpacket_get_destinationid(REFERENCE cfpkt, destination_id_df);
+    cfpacket_get_destinationid(cfpkt, destination_id_df);
     bool passed = true;
     passed = passed && (destination_id_df[0] == destination_id[0]);
     passed = passed && (destination_id_df[1] == destination_id[1]);
-    passed = passed && (destination_id_df[0] == ARROW(cfpkt)destination_id[0]);
-    passed = passed && (destination_id_df[1] == ARROW(cfpkt)destination_id[1]);
+    passed = passed && (destination_id_df[0] == cfpkt->destination_id[0]);
+    passed = passed && (destination_id_df[1] == cfpkt->destination_id[1]);
 
     return passed;
 }
@@ -185,7 +177,7 @@ bool test_cfpacket_get_destinationid(void *arg)
 bool test_cfpacket_get_packet_bytestring(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     uint64_t node_id[2] = {0};
     uint64_t destination_id[2] = {0};
@@ -194,11 +186,11 @@ bool test_cfpacket_get_packet_bytestring(void *arg)
     destination_id[0] = rand();
     destination_id[1] = rand();
 
-    cfpacket_create(REFERENCE cfpkt, node_id, destination_id);
+    cfpacket_create(cfpkt, node_id, destination_id);
 
     ARRAY byteString;
 
-    cfpacket_get_packet_bytestring(REFERENCE cfpkt, &byteString);
+    cfpacket_get_packet_bytestring(cfpkt, &byteString);
     bool passed = true;
 #ifdef __LINUX__
     passed = passed && (byteString != NULL);
@@ -258,7 +250,7 @@ bool test_cfpacket_get_packet_bytestring(void *arg)
 bool test_cfpacket_construct_packet_from_bytestring(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t SINGLE_POINTER cfpkt = data->cfpkt;
+    CFPacket_t * cfpkt = data->cfpkt;
 
     ARRAY byteString;
 #ifdef __LINUX__
@@ -311,12 +303,12 @@ bool test_cfpacket_construct_packet_from_bytestring(void *arg)
     for (int i = 33; i < PACKET_SIZE_MAC; i++)
         WRITE_ARRAY(REFERENCE byteString, n, i);
 
-    cfpacket_construct_packet_from_bytestring(REFERENCE cfpkt, &byteString);
+    cfpacket_construct_packet_from_bytestring(cfpkt, &byteString);
     bool passed = true;
-    passed = passed && (ARROW(cfpkt)node_id[0]        == node_id[0]);
-    passed = passed && (ARROW(cfpkt)node_id[1]        == node_id[1]);
-    passed = passed && (ARROW(cfpkt)destination_id[0] == destination_id[0]);
-    passed = passed && (ARROW(cfpkt)destination_id[1] == destination_id[1]);
+    passed = passed && (cfpkt->node_id[0]        == node_id[0]);
+    passed = passed && (cfpkt->node_id[1]        == node_id[1]);
+    passed = passed && (cfpkt->destination_id[0] == destination_id[0]);
+    passed = passed && (cfpkt->destination_id[1] == destination_id[1]);
 
 #ifdef __LINUX__
     free(byteString);
@@ -331,6 +323,8 @@ void executeTestsCF(void)
 {
     cUnit_t *tests;
     struct cfpacket_data data;
+    CFPacket_t cfpkt;
+    data.cfpkt = &cfpkt;
 
     cunit_init(&tests, &setup_cfpacket, &teardown_cfpacket, (void *)&data);
 

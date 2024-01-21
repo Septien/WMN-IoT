@@ -5,25 +5,17 @@
 
 #include "CFPacket.h"
 
-void cfpacket_init(CFPacket_t DOUBLE_POINTER pkt)
+void cfpacket_init(CFPacket_t **pkt)
 {
-#ifdef __LINUX__
-    (*pkt) = (CFPacket_t *)malloc(sizeof(CFPacket_t));
-#endif
-    memset(SINGLE_POINTER pkt, 0, sizeof(CFPacket_t));
+    memset(*pkt, 0, sizeof(CFPacket_t));
 }
 
-void cfpacket_destroy(CFPacket_t DOUBLE_POINTER pkt)
+void cfpacket_destroy(CFPacket_t **pkt)
 {
     assert(pkt != NULL);
-#ifdef __LINUX__
     assert(*pkt != NULL);
-    free((void *) *pkt);
-    *pkt = NULL;
-#endif
-#ifdef __RIOT__
-    memset(pkt, 0, sizeof(CFPacket_t));
-#endif
+
+    memset(*pkt, 0, sizeof(CFPacket_t));
 }
 
 void cfpacket_create(CFPacket_t *pkt, uint64_t *node_id, uint64_t *destination_id)
