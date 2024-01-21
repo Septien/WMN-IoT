@@ -5,17 +5,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-void datapacket_init(DataPacket_t DOUBLE_POINTER pkt)
+void datapacket_init(DataPacket_t ** pkt)
 {
 #ifdef __LINUX__
     (*pkt) = (DataPacket_t *)malloc(sizeof(DataPacket_t));
     (*pkt)->data = NULL;  // Initialize until data is loaded
 #endif
-    memset(SINGLE_POINTER pkt, 0, sizeof(DataPacket_t));
-    (SINGLE_POINTER pkt)->type = -1;
+    memset(*pkt, 0, sizeof(DataPacket_t));
+    (*pkt)->type = -1;
 }
 
-void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt)
+void datapacket_destroy(DataPacket_t ** pkt)
 {
     assert(pkt != NULL);
 #ifdef __LINUX__
@@ -28,9 +28,9 @@ void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt)
     *pkt = NULL;
 #endif
 #ifdef __RIOT__
-    if (pkt->data.size > 0)
-        free_array(&pkt->data);
-    pkt->type = -1;
+    if ((*pkt)->data.size > 0)
+        free_array(&(*pkt)->data);
+    (*pkt)->type = -1;
 #endif
     return;
 }

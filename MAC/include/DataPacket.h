@@ -37,14 +37,14 @@ typedef struct {
  * 
  * @param pkt 
  */
-void datapacket_init(DataPacket_t DOUBLE_POINTER pkt);
+void datapacket_init(DataPacket_t ** pkt);
 
 /**
  * @brief Destroy the packet en free any used memory.
  * 
  * @param pkt 
  */
-void datapacket_destroy(DataPacket_t DOUBLE_POINTER pkt);
+void datapacket_destroy(DataPacket_t ** pkt);
 
 /**
  * @brief Creates the data packet with the given input parameters. Initialize the 

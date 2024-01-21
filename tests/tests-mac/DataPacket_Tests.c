@@ -9,7 +9,7 @@
 #include "cUnit.h"
 
 struct datapacket_data {
-    DataPacket_t SINGLE_POINTER datapkt;
+    DataPacket_t *datapkt;
 };
 
 void setup_datapacket(void *arg)
@@ -28,19 +28,20 @@ bool test_datapacket_init(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
     bool passed = true;
+    // Already called the datapacket_init function within setup
 #ifdef __LINUX__
     passed = passed && (data->datapkt != NULL);
     passed = passed && (data->datapkt->data == NULL);
 #endif
-    passed = passed && (ARROW(data->datapkt)type == -1);
-    passed = passed && (ARROW(data->datapkt)destination_id[0] == 0);
-    passed = passed && (ARROW(data->datapkt)destination_id[1] == 0);
-    passed = passed && (ARROW(data->datapkt)size == 0);
+    passed = passed && (data->datapkt->type == -1);
+    passed = passed && (data->datapkt->destination_id[0] == 0);
+    passed = passed && (data->datapkt->destination_id[1] == 0);
+    passed = passed && (data->datapkt->size == 0);
 #ifdef __RIOT__
-    passed = passed && (data->datapkt.data.size == 0);
+    passed = passed && (data->datapkt->data.size == 0);
 #endif
 
-    return true;
+    return passed;
 }
 
 bool test_datapacket_destroy(void *arg)
@@ -53,21 +54,22 @@ bool test_datapacket_destroy(void *arg)
     passed = passed && (data->datapkt == NULL);
 #endif
 #ifdef __RIOT__
-    passed = passed && (data->datapkt.type == -1);
-    passed = passed && (data->datapkt.destination_id[0] == 0);
-    passed = passed && (data->datapkt.destination_id[1] == 0);
-    passed = passed && (data->datapkt.size == 0);
-    passed = passed && (data->datapkt.data.size == 0);
+    passed = passed && (data->datapkt->type == -1);
+    passed = passed && (data->datapkt->destination_id[0] == 0);
+    passed = passed && (data->datapkt->destination_id[1] == 0);
+    passed = passed && (data->datapkt->size == 0);
+    passed = passed && (data->datapkt->data.size == 0);
 #endif
+    // So the teardown function doesn't break
     datapacket_init(&data->datapkt);
 
-    return true;
+    return passed;
 }
 
 bool test_datapacket_create(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
-    DataPacket_t *datapkt = REFERENCE data->datapkt;
+    DataPacket_t *datapkt = data->datapkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
@@ -97,8 +99,9 @@ bool test_datapacket_create(void *arg)
     passed = passed && (datapkt->data.size > 0);
 #endif
     uint i = 0;
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
         passed = passed && (READ_ARRAY(REFERENCE datapkt->data, i) == READ_ARRAY(REFERENCE data_array, i));
+    }
 
 #ifdef __LINUX__
     free(data_array);
@@ -113,7 +116,7 @@ bool test_datapacket_create(void *arg)
 bool test_datapacket_clear(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
-    DataPacket_t *datapkt = REFERENCE data->datapkt;
+    DataPacket_t *datapkt = data->datapkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
@@ -128,8 +131,9 @@ bool test_datapacket_clear(void *arg)
 #ifdef __RIOT__
     create_array(&data_array, size);
 #endif
-    for (uint i = 0; i < size; i++)
+    for (uint i = 0; i < size; i++) {
         WRITE_ARRAY(REFERENCE data_array, rand(), i);
+    }
 
     datapacket_create(datapkt, type, destination_id, &data_array, size);
     
@@ -159,7 +163,7 @@ bool test_datapacket_clear(void *arg)
 bool test_datapacket_get_packet_bytestring(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
-    DataPacket_t *datapkt = REFERENCE data->datapkt;
+    DataPacket_t *datapkt = data->datapkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
@@ -174,8 +178,9 @@ bool test_datapacket_get_packet_bytestring(void *arg)
     create_array(&data_array, size);
 #endif
     uint i;
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
         WRITE_ARRAY(REFERENCE data_array, rand(), i);
+    }
 
     datapacket_create(datapkt, type, destination_id, &data_array, size);
 
@@ -204,12 +209,14 @@ bool test_datapacket_get_packet_bytestring(void *arg)
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 15)) << 8;
     destination_id1 |= ((uint64_t) READ_ARRAY(REFERENCE byteString, 16));
     passed = passed && (READ_ARRAY(REFERENCE byteString, 17) == size);
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
         passed = passed && (READ_ARRAY(REFERENCE byteString, i + 18) == READ_ARRAY(REFERENCE data_array, i));
+    }
     if (size < PACKET_SIZE_MAC - 18)
     {
-        for (; i < PACKET_SIZE_MAC - 18; i++)
+        for (; i < PACKET_SIZE_MAC - 18; i++) {
             passed = passed && (READ_ARRAY(REFERENCE byteString, i + 18) == 0);
+        }
     }
 
 #ifdef __LINUX__
@@ -227,7 +234,7 @@ bool test_datapacket_get_packet_bytestring(void *arg)
 bool test_datapacket_construct_from_bytestring(void *arg)
 {
     struct datapacket_data *data = (struct datapacket_data *)arg;
-    DataPacket_t *datapkt = REFERENCE data->datapkt;
+    DataPacket_t *datapkt = data->datapkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = 12345678901;
@@ -245,8 +252,9 @@ bool test_datapacket_construct_from_bytestring(void *arg)
     create_array(&byteString, PACKET_SIZE_MAC);
 #endif
     uint i;
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
         WRITE_ARRAY(REFERENCE data_array, rand(), i);
+    }
 
     WRITE_ARRAY(REFERENCE byteString, type, 0);
     WRITE_ARRAY(REFERENCE byteString, (destination_id[0] & 0xff00000000000000) >> 56, 1);
@@ -304,6 +312,8 @@ void executeTestsDP(void)
 
     cUnit_t *tests;
     struct datapacket_data data;
+    DataPacket_t datapkt;
+    data.datapkt = &datapkt;
 
     cunit_init(&tests, &setup_datapacket, &teardown_datapacket, (void *)&data);
 
