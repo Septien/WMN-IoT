@@ -12,31 +12,15 @@ uint8_t get_number_bytes(uint8_t n)
     return (n + add) / 8;
 }
 
-void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt)
+void controlpacket_init(ControlPacket_t **pkt)
 {
-#ifdef __LINUX__
-    (*pkt) = (ControlPacket_t *)malloc(sizeof(ControlPacket_t));
-    if ((*pkt) == NULL)
-    {
-        printf("Unable to create packet.\n");
-        exit(-1);
-    }
-#endif
-    memset(SINGLE_POINTER pkt, 0, sizeof(ControlPacket_t));
+    memset(*pkt, 0, sizeof(ControlPacket_t));
 }
 
-void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt)
+void controlpacket_destroy(ControlPacket_t **pkt)
 {
     assert(pkt != NULL);
-#ifdef __LINUX__
-    assert(*pkt != NULL);
-    free(*pkt);
-
-    *pkt = NULL;
-#endif
-#ifdef __RIOT__
-    memset(SINGLE_POINTER pkt, 0, sizeof(ControlPacket_t));
-#endif
+    memset(*pkt, 0, sizeof(ControlPacket_t));
 }
 
 // Fill the packet with the given parameters

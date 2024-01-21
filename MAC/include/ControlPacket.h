@@ -34,8 +34,8 @@ typedef struct
     uint8_t     occupied_slots[MAX_NUMBER_FREQS][(MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0)];
 } ControlPacket_t;
 
-void controlpacket_init(ControlPacket_t DOUBLE_POINTER pkt);
-void controlpacket_destroy(ControlPacket_t DOUBLE_POINTER pkt);
+void controlpacket_init(ControlPacket_t **pkt);
+void controlpacket_destroy(ControlPacket_t **pkt);
 void controlpacket_create(ControlPacket_t *pkt, uint64_t *node_id, uint32_t frame, uint8_t slot, uint8_t collisionSlots, uint32_t collisionFrequency, uint16_t hopCount, uint64_t netTime, uint32_t initTime, uint8_t *occupied_slots);
 void controlpacket_clear(ControlPacket_t *pkt);
 void controlpacket_set_current_frame(ControlPacket_t *pkt, uint32_t frame);
