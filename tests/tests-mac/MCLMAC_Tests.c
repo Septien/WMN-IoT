@@ -16,7 +16,7 @@
 #define ITERATIONS 1000
 
 struct mclmac_data {
-    MCLMAC_t SINGLE_POINTER mclmac;
+    MCLMAC_t mclmac;
 #ifdef __LINUX__
     uint8_t *radio;
 #endif
@@ -62,34 +62,34 @@ bool test_MCLMAC_init(void *arg)
     bool passed = true;
 #ifdef __LINUX__
     passed = passed && (data->mclmac != NULL);
-    passed = passed && (data->mclmac->mac != NULL);
+    passed = passed && (data->mclmac.mac != NULL);
 #endif
     uint64_t id[2] = UUID;
-    passed = passed && (ARROW(data->mclmac)_node_id[0] == id[0]);
-    passed = passed && (ARROW(data->mclmac)_node_id[1] == id[1]);
-    passed = passed && (ARROW(data->mclmac)_networkTime == 0);
-    passed = passed && (ARROW(data->mclmac)_nSlots == MAX_NUMBER_SLOTS);
-    passed = passed && (ARROW(data->mclmac)_nChannels == MAX_NUMBER_FREQS);
-    passed = passed && (ARROW(data->mclmac)_networkTime == 0);
-    passed = passed && (ARROW(data->mclmac)_hopCount == 0);
+    passed = passed && (data->mclmac._node_id[0] == id[0]);
+    passed = passed && (data->mclmac._node_id[1] == id[1]);
+    passed = passed && (data->mclmac._networkTime == 0);
+    passed = passed && (data->mclmac._nSlots == MAX_NUMBER_SLOTS);
+    passed = passed && (data->mclmac._nChannels == MAX_NUMBER_FREQS);
+    passed = passed && (data->mclmac._networkTime == 0);
+    passed = passed && (data->mclmac._hopCount == 0);
     int n = MAX_NUMBER_FREQS;
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
     for (int i = 0; i < n; i++)
     {
-        passed = passed && (ARROW(data->mclmac)_frequencies[i] >= 902000000 && ARROW(data->mclmac)_frequencies[i] <= 928000000);
+        passed = passed && (data->mclmac._frequencies[i] >= 902000000 && data->mclmac._frequencies[i] <= 928000000);
         for (int j = 0; j < m; j++)
-            passed = passed && (ARROW(data->mclmac)_occupied_frequencies_slots[i][j] == 0);
+            passed = passed && (data->mclmac._occupied_frequencies_slots[i][j] == 0);
     }
 #ifdef __LINUX__
-    passed = passed && (data->mclmac->stack == NULL);
+    passed = passed && (data->mclmac.stack == NULL);
 #endif
 #ifdef __RIOT__
     passed = passed && (data->mclmac.stack != NULL);
 #endif
-    passed = passed && (ARROW(data->mclmac)_mac_queue_id != 0);
-    passed = passed && (ARROW(data->mclmac)_routing_queue_id == 0);
-    passed = passed && (ARROW(data->mclmac)_transport_queue_id == 0);
-    passed = passed && (ARROW(data->mclmac)_app_queue_id == 0);
+    passed = passed && (data->mclmac._mac_queue_id != 0);
+    passed = passed && (data->mclmac._routing_queue_id == 0);
+    passed = passed && (data->mclmac._transport_queue_id == 0);
+    passed = passed && (data->mclmac._app_queue_id == 0);
 
     return passed;
 }
@@ -116,15 +116,15 @@ bool test_MCLMAC_destroy(void *arg)
 bool test_MCLMAC_clear(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     MCLMAC_clear(mclmac);
     bool passed = true;
-    passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_frame == 0);
-    passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_slot == 0);
-    passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == 0);
-    passed = passed && (ARROW(ARROW(mclmac->mac)frame)cf_slots_number == 0);
-    passed = passed && (ARROW(ARROW(mclmac->mac)frame)slots_number == 0);
+    passed = passed && (mclmac->mac.frame.current_frame == 0);
+    passed = passed && (mclmac->mac.frame.current_slot == 0);
+    passed = passed && (mclmac->mac.frame.current_cf_slot == 0);
+    passed = passed && (mclmac->mac.frame.cf_slots_number == 0);
+    passed = passed && (mclmac->mac.frame.slots_number == 0);
     passed = passed && (mclmac->powerMode.currentState == STARTP);
     passed = passed && (mclmac->macState.currentState == START);
     passed = passed && (mclmac->_hopCount == 0);
@@ -138,7 +138,7 @@ bool test_MCLMAC_clear(void *arg)
 bool test_mclmac_set_transmit_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -146,7 +146,7 @@ bool test_mclmac_set_transmit_channel(void *arg)
     {
         uint32_t channel = (uint32_t)rand();
         mclmac_set_transmit_channel(mclmac, channel);
-        passed = passed && (ARROW(mclmac->mac)transmitChannel == channel);
+        passed = passed && (mclmac->mac.transmitChannel == channel);
     }
 
     return passed;
@@ -155,7 +155,7 @@ bool test_mclmac_set_transmit_channel(void *arg)
 bool test_mclmac_get_transmit_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -173,7 +173,7 @@ bool test_mclmac_get_transmit_channel(void *arg)
 bool test_mclmac_set_reception_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -181,7 +181,7 @@ bool test_mclmac_set_reception_channel(void *arg)
     {
         uint32_t channel = (uint32_t)rand();
         mclmac_set_reception_channel(mclmac, channel);
-        passed = passed && (ARROW(mclmac->mac)receiveChannel == channel);
+        passed = passed && (mclmac->mac.receiveChannel == channel);
     }
 
     return passed;
@@ -190,7 +190,7 @@ bool test_mclmac_set_reception_channel(void *arg)
 bool test_mclmac_get_reception_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -208,7 +208,7 @@ bool test_mclmac_get_reception_channel(void *arg)
 bool test_mclmac_get_frequency(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     for (int i = 0; i < MAX_NUMBER_FREQS; i++)
@@ -223,7 +223,7 @@ bool test_mclmac_get_frequency(void *arg)
 bool test_mclmac_get_nodeid(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -246,7 +246,7 @@ bool test_mclmac_get_nodeid(void *arg)
 bool test_mclmac_set_transmiterid(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     /**
      * Set the sender id, it should comply that id is different to the
@@ -257,8 +257,8 @@ bool test_mclmac_set_transmiterid(void *arg)
     sender_id[1] = rand();
     mclmac_set_transmiterid(mclmac, sender_id);
     bool passed = true;
-    passed = passed && (ARROW(mclmac->mac)transmitter_id[0] == sender_id[0]);
-    passed = passed && (ARROW(mclmac->mac)transmitter_id[1] == sender_id[1]);
+    passed = passed && (mclmac->mac.transmitter_id[0] == sender_id[0]);
+    passed = passed && (mclmac->mac.transmitter_id[1] == sender_id[1]);
 
     return passed;
 }
@@ -266,7 +266,7 @@ bool test_mclmac_set_transmiterid(void *arg)
 bool test_mclmac_set_selected_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -274,7 +274,7 @@ bool test_mclmac_set_selected_slot(void *arg)
     {
         uint8_t slot = (uint8_t) rand() % 256;
         mclmac_set_selected_slot(mclmac, slot);
-        passed = passed && (ARROW(mclmac->mac)selectedSlot == slot);
+        passed = passed && (mclmac->mac.selectedSlot == slot);
     }
 
     return passed;
@@ -283,7 +283,7 @@ bool test_mclmac_set_selected_slot(void *arg)
 bool test_mclmac_get_selected_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -301,7 +301,7 @@ bool test_mclmac_get_selected_slot(void *arg)
 bool test_mclmac_set_current_frame(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -309,7 +309,7 @@ bool test_mclmac_set_current_frame(void *arg)
     {
         uint32_t frame_number = (uint32_t)rand();
         mclmac_set_current_frame(mclmac, frame_number);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_frame == frame_number);
+        passed = passed && (mclmac->mac.frame.current_frame == frame_number);
     }
 
     return passed;
@@ -318,7 +318,7 @@ bool test_mclmac_set_current_frame(void *arg)
 bool test_mclmac_increase_frame(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     uint32_t frame_number = 0;
     mclmac_set_current_frame(mclmac, frame_number);
@@ -328,7 +328,7 @@ bool test_mclmac_increase_frame(void *arg)
     {
         mclmac_increase_frame(mclmac);
         frame_number++;
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_frame == frame_number);
+        passed = passed && (mclmac->mac.frame.current_frame == frame_number);
     }
 
     return passed;
@@ -337,7 +337,7 @@ bool test_mclmac_increase_frame(void *arg)
 bool test_mclmac_set_current_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -345,7 +345,7 @@ bool test_mclmac_set_current_slot(void *arg)
     {
         uint8_t slot = (uint8_t)rand() % 256;
         mclmac_set_current_slot(mclmac, slot);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_slot == slot);
+        passed = passed && (mclmac->mac.frame.current_slot == slot);
     }
 
     return passed;
@@ -354,7 +354,7 @@ bool test_mclmac_set_current_slot(void *arg)
 bool test_mclmac_get_current_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -372,7 +372,7 @@ bool test_mclmac_get_current_slot(void *arg)
 bool test_mclmac_increase_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     uint8_t slot = 0;
@@ -382,7 +382,7 @@ bool test_mclmac_increase_slot(void *arg)
     {
         mclmac_increase_slot(mclmac);
         slot++;
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_slot == slot);
+        passed = passed && (mclmac->mac.frame.current_slot == slot);
     }
 
     return passed;
@@ -391,7 +391,7 @@ bool test_mclmac_increase_slot(void *arg)
 bool test_mclmac_set_slots_number(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -400,7 +400,7 @@ bool test_mclmac_set_slots_number(void *arg)
         uint8_t slots_number = (uint8_t) rand();
         slots_number = (slots_number == 0 ? 1 : slots_number);
         mclmac_set_slots_number(mclmac, slots_number);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)slots_number == slots_number);
+        passed = passed && (mclmac->mac.frame.slots_number == slots_number);
     }
 
     return passed;
@@ -409,7 +409,7 @@ bool test_mclmac_set_slots_number(void *arg)
 bool test_mclmac_set_cf_slots_number(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -418,7 +418,7 @@ bool test_mclmac_set_cf_slots_number(void *arg)
         uint8_t cf_slots_number = 1 + ((uint8_t) rand());
         cf_slots_number = (cf_slots_number == 0 ? 1 : cf_slots_number);
         mclmac_set_cf_slots_number(mclmac, cf_slots_number);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)cf_slots_number == cf_slots_number);
+        passed = passed && (mclmac->mac.frame.cf_slots_number == cf_slots_number);
     }
 
     return passed;
@@ -427,7 +427,7 @@ bool test_mclmac_set_cf_slots_number(void *arg)
 bool test_mclmac_set_current_cf_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -436,7 +436,7 @@ bool test_mclmac_set_current_cf_slot(void *arg)
         uint8_t current_cf_slot = ((uint8_t) rand() % 256);
         current_cf_slot = (current_cf_slot == 0 ? 1 : current_cf_slot);
         mclmac_set_current_cf_slot(mclmac, current_cf_slot);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == current_cf_slot);
+        passed = passed && (mclmac->mac.frame.current_cf_slot == current_cf_slot);
     }
 
     return passed;
@@ -445,7 +445,7 @@ bool test_mclmac_set_current_cf_slot(void *arg)
 bool test_mclmac_get_current_cf_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -464,7 +464,7 @@ bool test_mclmac_get_current_cf_slot(void *arg)
 bool test_mclmac_increase_cf_slot(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
     
     uint8_t nCFSlot = rand();
     nCFSlot = (nCFSlot == 0 ? 1 : nCFSlot);
@@ -475,7 +475,7 @@ bool test_mclmac_increase_cf_slot(void *arg)
     {
         mclmac_increase_cf_slot(mclmac);
         nCFSlot++;
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)current_cf_slot == nCFSlot);
+        passed = passed && (mclmac->mac.frame.current_cf_slot == nCFSlot);
     }
 
     return passed;
@@ -484,7 +484,7 @@ bool test_mclmac_increase_cf_slot(void *arg)
 bool test_mclmac_set_slot_duration(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
 #ifdef __LINUX__
     double slot_duration;
@@ -499,7 +499,7 @@ bool test_mclmac_set_slot_duration(void *arg)
     {
         slot_duration = rand();
         mclmac_set_slot_duration(mclmac, slot_duration);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)slot_duration == slot_duration);
+        passed = passed && (mclmac->mac.frame.slot_duration == slot_duration);
     }
 
     return passed;
@@ -508,7 +508,7 @@ bool test_mclmac_set_slot_duration(void *arg)
 bool test_mclmac_set_frame_duration(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
 #ifdef __LINUX__
     double frame_duration;
@@ -523,7 +523,7 @@ bool test_mclmac_set_frame_duration(void *arg)
     {
         frame_duration = rand();
         mclmac_set_frame_duration(mclmac, frame_duration);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)frame_duration == frame_duration);
+        passed = passed && (mclmac->mac.frame.frame_duration == frame_duration);
     }
     
     return passed;
@@ -532,7 +532,7 @@ bool test_mclmac_set_frame_duration(void *arg)
 bool test_mclmac_set_cf_duration(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
 #ifdef __LINUX__
     double cf_duration;
@@ -547,7 +547,7 @@ bool test_mclmac_set_cf_duration(void *arg)
     {
         cf_duration = rand();
         mclmac_set_cf_duration(mclmac, cf_duration);
-        passed = passed && (ARROW(ARROW(mclmac->mac)frame)cf_duration == cf_duration);
+        passed = passed && (mclmac->mac.frame.cf_duration == cf_duration);
     }
 
     return passed;
@@ -556,7 +556,7 @@ bool test_mclmac_set_cf_duration(void *arg)
 bool test_mclmac_available_data_packets(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     int n = rand() % ITERATIONS;
@@ -564,8 +564,8 @@ bool test_mclmac_available_data_packets(void *arg)
     {
         uint8_t message_packets = rand() % MAX_NUMBER_DATA_PACKETS;
         uint8_t control_packets = rand() % MAX_NUMBER_DATA_PACKETS;
-        ARROW(mclmac->mac)_packets_to_send_message = message_packets;
-        ARROW(mclmac->mac)_packets_to_send_control = control_packets;
+        mclmac->mac._packets_to_send_message = message_packets;
+        mclmac->mac._packets_to_send_control = control_packets;
         uint16_t total_packets = mclmac_available_data_packets(mclmac);
         passed = passed && (total_packets == message_packets + control_packets);
     }
@@ -582,13 +582,13 @@ void _read_queue(MCLMAC_t *mclmac)
     *       -nelements should be 0.
     *       -_packets_read should be MAX_NUMBER_DATA_PACKETS
     * */
-    ARROW(mclmac->mac)_packets_to_send_message = MAX_NUMBER_DATA_PACKETS;
-    ARROW(mclmac->mac)_packets_to_send_control = MAX_NUMBER_DATA_PACKETS;
+    mclmac->mac._packets_to_send_message = MAX_NUMBER_DATA_PACKETS;
+    mclmac->mac._packets_to_send_control = MAX_NUMBER_DATA_PACKETS;
     int nelements = mclmac_read_queue_element(mclmac);
     bool passed = true;
     passed = passed && (nelements == 0);
-    passed = passed && (ARROW(mclmac->mac)_packets_to_send_message == MAX_NUMBER_DATA_PACKETS);
-    passed = passed && (ARROW(mclmac->mac)_packets_to_send_control == MAX_NUMBER_DATA_PACKETS);
+    passed = passed && (mclmac->mac._packets_to_send_message == MAX_NUMBER_DATA_PACKETS);
+    passed = passed && (mclmac->mac._packets_to_send_control == MAX_NUMBER_DATA_PACKETS);
     if (!passed) {
         printf("Test case 1 \033[1;31mfailed\033[0m.\n");
         passed = true;
@@ -597,8 +597,8 @@ void _read_queue(MCLMAC_t *mclmac)
      * The queue is empty. It should not increase the number of elements on the queue,
      * and the function should return 0.
     */
-    ARROW(mclmac->mac)_packets_to_send_message = 0;
-    ARROW(mclmac->mac)_packets_to_send_control = 0;
+    mclmac->mac._packets_to_send_message = 0;
+    mclmac->mac._packets_to_send_control = 0;
     nelements = mclmac_read_queue_element(mclmac);
     passed = passed && (nelements == 0);
     if (!passed) {
@@ -623,10 +623,10 @@ void _read_queue(MCLMAC_t *mclmac)
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
     passed = passed && (nelements == 1);
-    passed = passed && (ARROW(mclmac->mac)_first_send_message == 0);
-    passed = passed && (ARROW(mclmac->mac)_last_send_message == 1);
-    passed = passed && (ARROW(mclmac->mac)_packets_to_send_message == 1);
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[0];
+    passed = passed && (mclmac->mac._first_send_message == 0);
+    passed = passed && (mclmac->mac._last_send_message == 1);
+    passed = passed && (mclmac->mac._packets_to_send_message == 1);
+    DataPacket_t *pkt = &mclmac->mac._message_packets_to_send[0];
     // Incoming message
     passed = passed && (pkt->type == message[0]);
     uint64_t destination_id[2] = {0};
@@ -661,10 +661,10 @@ void _read_queue(MCLMAC_t *mclmac)
     send_message(mclmac->_mac_queue_id, message, size, mclmac->_self_pid);
     nelements = mclmac_read_queue_element(mclmac);
     passed = passed && (nelements == 1);
-    passed = passed && (ARROW(mclmac->mac)_first_send_control == 0);
-    passed = passed && (ARROW(mclmac->mac)_last_send_control == 1);
-    passed = passed && (ARROW(mclmac->mac)_packets_to_send_control == 1);
-    pkt = &ARROW(mclmac->mac)_control_packets_to_send[0];
+    passed = passed && (mclmac->mac._first_send_control == 0);
+    passed = passed && (mclmac->mac._last_send_control == 1);
+    passed = passed && (mclmac->mac._packets_to_send_control == 1);
+    pkt = &mclmac->mac._control_packets_to_send[0];
     passed = passed && (pkt->size == message[17]);
     for (uint i = 0; i < pkt->size; i++) {
         passed = passed && (READ_ARRAY(REFERENCE pkt->data, i) == message[i + 18]);
@@ -711,7 +711,7 @@ static void* read_queue(void *arg)
 bool test_mclmac_read_queue_element(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     /**
      * read_queue_element.
@@ -769,7 +769,7 @@ void _write_queue(MCLMAC_t *mclmac)
         msg[i] = rand();
     for (uint i = 0; i < MAX_ELEMENTS_ON_QUEUE; i++)
         send_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, mclmac->_self_pid);
-    ARROW(mclmac->mac)_number_packets_received = 1;
+    mclmac->mac._number_packets_received = 1;
     ret = mclmac_write_queue_element(mclmac);
     passed = passed && (ret == 0);
 #ifdef __LINUX__
@@ -794,7 +794,7 @@ void _write_queue(MCLMAC_t *mclmac)
     *   -the packet should be cleared
     */
     // Fill the packet
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[0];
+    DataPacket_t *pkt = &mclmac->mac._packets_received[0];
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
     destination_id[1] = rand();
@@ -812,13 +812,13 @@ void _write_queue(MCLMAC_t *mclmac)
     datapacket_create(pkt, type, destination_id, &data, size);
 
     // Increase the number of packets store.
-    ARROW(mclmac->mac)_number_packets_received = 1;
-    ARROW(mclmac->mac)_last_received = 1;
+    mclmac->mac._number_packets_received = 1;
+    mclmac->mac._last_received = 1;
     ret = mclmac_write_queue_element(mclmac);
     passed = passed && (ret == 1);
-    passed = passed && (ARROW(mclmac->mac)_number_packets_received == 0);
-    passed = passed && (ARROW(mclmac->mac)_first_received == 1);
-    passed = passed && (ARROW(mclmac->mac)_last_received == 1);
+    passed = passed && (mclmac->mac._number_packets_received == 0);
+    passed = passed && (mclmac->mac._first_received == 1);
+    passed = passed && (mclmac->mac._last_received == 1);
     passed = passed && (pkt->type == -1);
     passed = passed && (pkt->destination_id[0] == 0);
     passed = passed && (pkt->destination_id[1] == 0);
@@ -840,20 +840,20 @@ void _write_queue(MCLMAC_t *mclmac)
      *  -first_received should be 0.
      *  -_number_packets_received should be 0.
      */
-    ARROW(mclmac->mac)_number_packets_received = 0;
-    ARROW(mclmac->mac)_last_received = 0;
-    ARROW(mclmac->mac)_first_received = 0;
+    mclmac->mac._number_packets_received = 0;
+    mclmac->mac._last_received = 0;
+    mclmac->mac._first_received = 0;
     uint i;
     for (i = 0; i < MAX_MESSAGE_SIZE; i++)
         msg[i] = rand();
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
+        DataPacket_t *pkt = &mclmac->mac._packets_received[i];
         datapacket_create(pkt, type, destination_id, &data, size);
     }
     // Total of packets to store.
-    ARROW(mclmac->mac)_number_packets_received = MAX_NUMBER_DATA_PACKETS;
-    ARROW(mclmac->mac)_last_received = 0;
+    mclmac->mac._number_packets_received = MAX_NUMBER_DATA_PACKETS;
+    mclmac->mac._last_received = 0;
 
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
@@ -861,12 +861,12 @@ void _write_queue(MCLMAC_t *mclmac)
         recv_message(mclmac->_mac_queue_id, msg, MAX_MESSAGE_SIZE, &pid);
         passed = passed && (ret == 1);
     }
-    passed = passed && (ARROW(mclmac->mac)_number_packets_received == 0);
-    passed = passed && (ARROW(mclmac->mac)_first_received == 0);
-    passed = passed && (ARROW(mclmac->mac)_last_received == 0);
+    passed = passed && (mclmac->mac._number_packets_received == 0);
+    passed = passed && (mclmac->mac._first_received == 0);
+    passed = passed && (mclmac->mac._last_received == 0);
     for (i = 0; i < MAX_NUMBER_DATA_PACKETS; i++)
     {
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[i];
+        DataPacket_t *pkt = &mclmac->mac._packets_received[i];
         passed = passed && (pkt->type == -1);
         passed = passed && (pkt->destination_id[0] == 0);
         passed = passed && (pkt->destination_id[1] == 0);
@@ -914,7 +914,7 @@ static void *write_queue(void *arg)
 bool test_mclmac_write_queue_element(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     /**
      * This function will store the packets received from the medium
@@ -940,15 +940,15 @@ bool test_mclmac_write_queue_element(void *arg)
 bool test_mclmac_change_cf_channel(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
-    ARROW(mclmac->mac)cfChannel = 5;
+    mclmac->mac.cfChannel = 5;
 
     mclmac_change_cf_channel(mclmac);
 
     bool passed = true;
 #ifdef __RIOT__
-    /*uint8_t channel = (uint8_t)ARROW(mclmac->mac)cfChannel;
+    /*uint8_t channel = (uint8_t)mclmac->mac.cfChannel;
     uint8_t radio_channel;
     mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
                                     (void *)&channel, sizeof(uint16_t));
@@ -974,9 +974,9 @@ bool test_mclmac_change_cf_channel(void *arg)
 bool test_mclmac_start_cf_phase(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
-    ARROW(mclmac->mac)cfChannel = 5;
+    mclmac->mac.cfChannel = 5;
 
     mclmac_change_cf_channel(mclmac);
 
@@ -1003,7 +1003,7 @@ bool test_mclmac_start_cf_phase(void *arg)
 bool test_mclmac_start_split_phase(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     /**
      * We are now at either the TRANSMIT or RECEIVE state of the power mode, 
@@ -1080,7 +1080,7 @@ bool test_mclmac_start_split_phase(void *arg)
 bool test_mclmac_set_radio_sleep(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     /**
      * The radio should be set to sleep. This function is executed at the beginning of the
@@ -1102,7 +1102,7 @@ bool test_mclmac_set_radio_sleep(void *arg)
 bool test_mclmac_set_radio_standby(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     /**
      * Set the radio state to standby.
@@ -1122,7 +1122,7 @@ bool test_mclmac_set_radio_standby(void *arg)
 bool test_mclmac_set_radio_rx(void *arg)
 {
     struct mclmac_data *data = (struct mclmac_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+     MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_set_radio_rx(mclmac);
     bool passed = true;

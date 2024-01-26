@@ -4,7 +4,7 @@
 
 #include "MCLMAC.h"
 
-void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
+void MCLMAC_init(MCLMAC_t *mclmac, 
 #ifdef __LINUX__
     uint8_t *radio
 #endif
@@ -13,73 +13,60 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #endif
 )
 {
-#ifdef __LINUX__
-    (*mclmac) = (MCLMAC_t *)malloc(sizeof(MCLMAC_t));
-    if ((*mclmac) == NULL)
-    {
-        return;
-    }
-#endif
-    memset((SINGLE_POINTER mclmac), 0, sizeof(MCLMAC_t));
+    memset(mclmac, 0, sizeof(MCLMAC_t));
 
+    MAC_Internals_t *mac = &mclmac->mac;
 #ifdef __LINUX__
-    MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, radio);
+    MAC_internals_init(mac, radio);
 #endif
 #ifdef __RIOT__
-    MAC_internals_init(&(SINGLE_POINTER mclmac)->mac, netdev);
+    MAC_internals_init(mac, netdev);
 #endif
     uint64_t id[2] = UUID;
-    (SINGLE_POINTER mclmac)->_node_id[0] = id[0];
-    (SINGLE_POINTER mclmac)->_node_id[1] = id[1];
-    (SINGLE_POINTER mclmac)->_nChannels = MAX_NUMBER_FREQS;
-    (SINGLE_POINTER mclmac)->_nSlots = MAX_NUMBER_SLOTS;
-    (SINGLE_POINTER mclmac)->_hopCount = 0;
-    (SINGLE_POINTER mclmac)->_networkTime = 0;
-    (SINGLE_POINTER mclmac)->_mac_queue_id = 0;
-    (SINGLE_POINTER mclmac)->_routing_queue_id = 0;
-    (SINGLE_POINTER mclmac)->_transport_queue_id = 0;
-    (SINGLE_POINTER mclmac)->_app_queue_id = 0;
+    mclmac->_node_id[0] = id[0];
+    mclmac->_node_id[1] = id[1];
+    mclmac->_nChannels = MAX_NUMBER_FREQS;
+    mclmac->_nSlots = MAX_NUMBER_SLOTS;
+    mclmac->_hopCount = 0;
+    mclmac->_networkTime = 0;
+    mclmac->_mac_queue_id = 0;
+    mclmac->_routing_queue_id = 0;
+    mclmac->_transport_queue_id = 0;
+    mclmac->_app_queue_id = 0;
 
     // Initialize state machines
-    mclmac_init_mac_state_machine((SINGLE_POINTER mclmac));
-    mclmac_init_powermode_state_machine((SINGLE_POINTER mclmac));
+    mclmac_init_mac_state_machine(mclmac);
+    mclmac_init_powermode_state_machine(mclmac);
 
     int n = MAX_NUMBER_FREQS;
     int m = (MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0);
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < m; j++)
-            (SINGLE_POINTER mclmac)->_occupied_frequencies_slots[i][j] = 0;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            mclmac->_occupied_frequencies_slots[i][j] = 0;
+        }
+    }
     uint32_t frequencies[MAX_NUMBER_FREQS] = FREQUENCIES;
-    memcpy(&(SINGLE_POINTER mclmac)->_frequencies, frequencies, sizeof(frequencies));
+    memcpy(&mclmac->_frequencies, frequencies, sizeof(frequencies));
 
-    (SINGLE_POINTER mclmac)->_mac_queue_id = create_queue(QUEUE_SIZE, MAX_MESSAGE_SIZE, MAX_ELEMENTS_ON_QUEUE, &(SINGLE_POINTER mclmac)->stack);
+    mclmac->_mac_queue_id = create_queue(QUEUE_SIZE, MAX_MESSAGE_SIZE, MAX_ELEMENTS_ON_QUEUE, &mclmac->stack);
 }
  
-void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac)
+void MCLMAC_destroy(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(*mclmac != NULL);
-#endif
 
-    MAC_internals_destroy(&(SINGLE_POINTER mclmac)->mac);
-    if ((SINGLE_POINTER mclmac)->_mac_queue_id != 0)
-        close_queue((SINGLE_POINTER mclmac)->_mac_queue_id);
-#ifdef __LINUX__
-    free((*mclmac));
-    *mclmac = NULL;
-#endif
-
-#ifdef __RIOT__
+    MAC_internals_destroy(&mclmac->mac);
+    if (mclmac->_mac_queue_id != 0) {
+        close_queue(mclmac->_mac_queue_id);
+    }
     memset(mclmac, 0, sizeof(MCLMAC_t));
-#endif
 }
 
 void MCLMAC_clear(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
     
-    MAC_internals_clear(REFERENCE mclmac->mac);
+    MAC_internals_clear(&mclmac->mac);
     mclmac->macState.currentState = START;
     mclmac->powerMode.currentState = STARTP;
     mclmac->_networkTime = 0;
@@ -93,41 +80,29 @@ void MCLMAC_clear(MCLMAC_t *mclmac)
 void mclmac_set_transmit_channel(MCLMAC_t *mclmac, uint32_t channel)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
 
-    ARROW(mclmac->mac)transmitChannel = channel;
+    mclmac->mac.transmitChannel = channel;
 }
 
 uint32_t mclmac_get_transmit_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
 
-    return ARROW(mclmac->mac)transmitChannel;
+    return mclmac->mac.transmitChannel;
 }
 
 void mclmac_set_reception_channel(MCLMAC_t *mclmac, uint32_t rChannel)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
 
-    ARROW(mclmac->mac)receiveChannel = rChannel;
+    mclmac->mac.receiveChannel = rChannel;
 }
 
 uint32_t mclmac_get_reception_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
 
-    return ARROW(mclmac->mac)receiveChannel;
+    return mclmac->mac.receiveChannel;
 }
 
 uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index)
@@ -141,9 +116,6 @@ uint32_t mclmac_get_frequency(MCLMAC_t *mclmac, uint8_t index)
 void mclmac_get_nodeid(MCLMAC_t *mclmac, uint64_t *node_id)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__    
-    assert(mclmac->mac != NULL);
-#endif
 
     node_id[0] = mclmac->_node_id[0];
     node_id[1] = mclmac->_node_id[1];
@@ -153,133 +125,95 @@ void mclmac_set_transmiterid(MCLMAC_t *mclmac, uint64_t *transmitter_id)
 {
     assert(mclmac != NULL);
 
-    ARROW(mclmac->mac)transmitter_id[0] = transmitter_id[0];
-    ARROW(mclmac->mac)transmitter_id[1] = transmitter_id[1];
+    mclmac->mac.transmitter_id[0] = transmitter_id[0];
+    mclmac->mac.transmitter_id[1] = transmitter_id[1];
 }
 
 void mclmac_set_selected_slot(MCLMAC_t *mclmac, uint8_t slot)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
 
-    ARROW(mclmac->mac)selectedSlot = slot;
+    mclmac->mac.selectedSlot = slot;
 
 }
 
 uint8_t mclmac_get_selected_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-#endif
     
-    return ARROW(mclmac->mac)selectedSlot;
+    return mclmac->mac.selectedSlot;
 }
 
 void mclmac_set_current_frame(MCLMAC_t *mclmac, uint32_t frame_number)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_frame = frame_number;
+    mclmac->mac.frame.current_frame = frame_number;
 }
 
 void mclmac_increase_frame(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_frame++;
+    mclmac->mac.frame.current_frame++;
 }
 
 void mclmac_set_current_slot(MCLMAC_t *mclmac, uint8_t slot)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_slot = slot;
+    mclmac->mac.frame.current_slot = slot;
 }
 
 uint8_t mclmac_get_current_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    return ARROW(ARROW(mclmac->mac)frame)current_slot;
+    return mclmac->mac.frame.current_slot;
 }
 
 void mclmac_increase_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_slot++;
+    mclmac->mac.frame.current_slot++;
 }
 
 void mclmac_set_slots_number(MCLMAC_t *mclmac, uint8_t n_slots)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
     assert(n_slots > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)slots_number = n_slots;
+    mclmac->mac.frame.slots_number = n_slots;
 }
 
 void mclmac_set_cf_slots_number(MCLMAC_t *mclmac, uint8_t n_cf_slots)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
     assert(n_cf_slots > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)cf_slots_number = n_cf_slots;
+    mclmac->mac.frame.cf_slots_number = n_cf_slots;
 }
 
 void mclmac_set_current_cf_slot(MCLMAC_t *mclmac, uint8_t cur_cf_slot)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_cf_slot = cur_cf_slot;
+    mclmac->mac.frame.current_cf_slot = cur_cf_slot;
 }
 
 uint8_t mclmac_get_current_cf_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    return ARROW(ARROW(mclmac->mac)frame)current_cf_slot;
+    return mclmac->mac.frame.current_cf_slot;
 }
 
 void mclmac_increase_cf_slot(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
 
-    ARROW(ARROW(mclmac->mac)frame)current_cf_slot++;
+    mclmac->mac.frame.current_cf_slot++;
 }
 
 void mclmac_set_slot_duration(MCLMAC_t *mclmac,
@@ -292,13 +226,9 @@ uint32_t slot_dur
 )
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
     assert(slot_dur > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)slot_duration = slot_dur;
+    mclmac->mac.frame.slot_duration = slot_dur;
 }
 
 void mclmac_set_frame_duration(MCLMAC_t *mclmac,
@@ -311,13 +241,9 @@ uint32_t frame_dur
 )
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
     assert(frame_dur > 0);
 
-    ARROW(ARROW(mclmac->mac)frame)frame_duration = frame_dur;
+    mclmac->mac.frame.frame_duration = frame_dur;
 }
 
 void mclmac_set_cf_duration(MCLMAC_t *mclmac,
@@ -330,20 +256,17 @@ uint32_t cf_dur
 )
 {
     assert(mclmac != NULL);
-#ifdef __LINUX__
-    assert(mclmac->mac != NULL);
-    assert(mclmac->mac->frame != NULL);
-#endif
     assert(cf_dur > 0);
-    ARROW(ARROW(mclmac->mac)frame)cf_duration = cf_dur;
+
+    mclmac->mac.frame.cf_duration = cf_dur;
 }
 
 uint16_t mclmac_available_data_packets(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    uint8_t message_packets = ARROW(mclmac->mac)_packets_to_send_message;
-    uint8_t control_packets = ARROW(mclmac->mac)_packets_to_send_control;
+    uint8_t message_packets = mclmac->mac._packets_to_send_message;
+    uint8_t control_packets = mclmac->mac._packets_to_send_control;
 
     return (uint16_t)(message_packets + control_packets);
 }
@@ -358,11 +281,11 @@ void mclmac_start_CAD_mode(MCLMAC_t *mclmac)
 int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-    assert(ARROW(mclmac->mac)_packets_to_send_message <= MAX_NUMBER_DATA_PACKETS);
-    assert(ARROW(mclmac->mac)_packets_to_send_control <= MAX_NUMBER_DATA_PACKETS);
+    assert(mclmac->mac._packets_to_send_message <= MAX_NUMBER_DATA_PACKETS);
+    assert(mclmac->mac._packets_to_send_control <= MAX_NUMBER_DATA_PACKETS);
 
-    uint8_t to_send_msg = ARROW(mclmac->mac)_packets_to_send_message;
-    uint8_t to_send_ctrl = ARROW(mclmac->mac)_packets_to_send_control;
+    uint8_t to_send_msg = mclmac->mac._packets_to_send_message;
+    uint8_t to_send_ctrl = mclmac->mac._packets_to_send_control;
     if (to_send_msg + to_send_ctrl == 2 * MAX_NUMBER_DATA_PACKETS) {
         return 0;
     }
@@ -399,17 +322,17 @@ int32_t mclmac_read_queue_element(MCLMAC_t *mclmac)
         }
         if (msg[0] >= 7 && msg[0] < 10)
         {
-            uint8_t last = ARROW(mclmac->mac)_last_send_message;
-            datapacket_construct_from_bytestring(&ARROW(mclmac->mac)_message_packets_to_send[last], &byteString);
-            ARROW(mclmac->mac)_last_send_message++;
-            ARROW(mclmac->mac)_packets_to_send_message++;
+            uint8_t last = mclmac->mac._last_send_message;
+            datapacket_construct_from_bytestring(&mclmac->mac._message_packets_to_send[last], &byteString);
+            mclmac->mac._last_send_message++;
+            mclmac->mac._packets_to_send_message++;
         }
         else if (msg[0] >= 2 && msg[0] < 7)
         {
-            uint8_t last = ARROW(mclmac->mac)_last_send_control;
-            datapacket_construct_from_bytestring(&ARROW(mclmac->mac)_control_packets_to_send[last], &byteString);
-            ARROW(mclmac->mac)_last_send_control++;
-            ARROW(mclmac->mac)_packets_to_send_control++;
+            uint8_t last = mclmac->mac._last_send_control;
+            datapacket_construct_from_bytestring(&mclmac->mac._control_packets_to_send[last], &byteString);
+            mclmac->mac._last_send_control++;
+            mclmac->mac._packets_to_send_control++;
         }
         // Invalid type, return 0
         else
@@ -431,19 +354,19 @@ int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    if (ARROW(mclmac->mac)_number_packets_received == 0)
+    if (mclmac->mac._number_packets_received == 0)
         return 0;
     // When queue is empty, no sure how useful this check is.
-    if (ARROW(mclmac->mac)_first_received == ARROW(mclmac->mac)_last_received && ARROW(mclmac->mac)_number_packets_received == 0)
+    if (mclmac->mac._first_received == mclmac->mac._last_received && mclmac->mac._number_packets_received == 0)
         return 0;
     if (elements_on_queue(mclmac->_routing_queue_id) == MAX_ELEMENTS_ON_QUEUE)
         return 0;
     if (mclmac->_routing_queue_id == 0)
         return 0;
 
-    uint8_t first = ARROW(mclmac->mac)_first_received;
+    uint8_t first = mclmac->mac._first_received;
     // Get the first packet of the queue
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[first];
+    DataPacket_t *pkt = &mclmac->mac._packets_received[first];
     ARRAY _byteString;
     datapacket_get_packet_bytestring(pkt, &_byteString);
 #ifdef __LINUX__
@@ -464,8 +387,8 @@ int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
     // Push the packet on the inter-layer queue (just clear it for now)
     datapacket_clear(pkt);
     first = (first + 1) % MAX_NUMBER_DATA_PACKETS;
-    ARROW(mclmac->mac)_first_received = first;
-    ARROW(mclmac->mac)_number_packets_received--;
+    mclmac->mac._first_received = first;
+    mclmac->mac._number_packets_received--;
 
 #ifdef __LINUX__
     free(_byteString);
@@ -481,7 +404,7 @@ void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 #if defined __RIOT__ && !defined NATIVE
-    assert(ARROW(mclmac->mac)netdev != NULL);
+    assert(mclmac->mac.netdev != NULL);
 #endif
 
 #if defined __RIOT__ && !defined NATIVE
@@ -506,7 +429,7 @@ void mclmac_start_cf_phase(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 #if defined __RIOT__ && !defined NATIVE
-    assert(ARROW(mclmac->mac)netdev != NULL);
+    assert(mclmac->mac.netdev != NULL);
 #endif
 
     // Change the channel
@@ -555,7 +478,6 @@ int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
 void mclmac_set_radio_sleep(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-
 #if defined __RIOT__ && !defined NATIVE
     netopt_state_t state = NETOPT_STATE_SLEEP;
     mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,

@@ -186,7 +186,8 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         mclmac->_hopCount = 0xffff;         // The greatest possible number for uint16_t
         mclmac->_networkTime = 0;
         /* Create control packet for filling information of the network. */
-        ControlPacket_t SINGLE_POINTER ctrlpkt;
+        ControlPacket_t *ctrlpkt, _ctrlpkt;
+        ctrlpkt = & _ctrlpkt;
         controlpacket_init(&ctrlpkt);
         uint32_t current_frame = 0;
         uint32_t frequency = 0;
@@ -196,7 +197,7 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         int count = 0;
         while (count <= 10) {
             // Try at most 10 times to listen for a control packet on the medium.
-            bool ret = mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt);
+            bool ret = mclmac_receive_ctrlpkt_sync(mclmac, ctrlpkt);
             if (!ret) {
                 count++;
                 continue;
@@ -207,15 +208,15 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
             return E_MAC_EXECUTION_FAILED;
         }
         /* Get the frame. */
-        current_frame = controlpacket_get_current_frame(REFERENCE ctrlpkt);
+        current_frame = controlpacket_get_current_frame(ctrlpkt);
         /* Get the current slot. */
-        current_slot = controlpacket_get_current_slot(REFERENCE ctrlpkt);
+        current_slot = controlpacket_get_current_slot(ctrlpkt);
         // Get the latest network time
-        mclmac->_networkTime = controlpacket_get_network_time(REFERENCE ctrlpkt);
+        mclmac->_networkTime = controlpacket_get_network_time(ctrlpkt);
         // Get the starting time of the network
-        mclmac->_initTime = controlpacket_get_init_time(REFERENCE ctrlpkt);
+        mclmac->_initTime = controlpacket_get_init_time(ctrlpkt);
         uint8_t occupied_slots[MAX_NUMBER_FREQS][(MAX_NUMBER_SLOTS / 8U) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0)];
-        controlpacket_get_occupied_slots(REFERENCE ctrlpkt, (uint8_t *)occupied_slots);
+        controlpacket_get_occupied_slots(ctrlpkt, (uint8_t *)occupied_slots);
         // Copy the received vector to node's one
         memcpy(mclmac->_occupied_frequencies_slots, occupied_slots, sizeof(occupied_slots));
         // Set to occupied by neighbor the corresponding bit on _selected_slots_neighbors array
@@ -245,15 +246,15 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
         {
             /* Listen for the first incoming control packet and get the data. */
             // If a packet is received, update values
-            if (mclmac_receive_ctrlpkt_sync(mclmac, REFERENCE ctrlpkt))
+            if (mclmac_receive_ctrlpkt_sync(mclmac, ctrlpkt))
             {
                 /* Get the corresponding variables. */
                 // Get the minimum number of hops
-                uint8_t hops = controlpacket_get_hop_count(REFERENCE ctrlpkt);
+                uint8_t hops = controlpacket_get_hop_count(ctrlpkt);
                 if (hops < mclmac->_hopCount)
                     mclmac->_hopCount = hops;
 
-                controlpacket_get_occupied_slots(REFERENCE ctrlpkt, (uint8_t *)occupied_slots);
+                controlpacket_get_occupied_slots(ctrlpkt, (uint8_t *)occupied_slots);
                 // For each frequency, OR all the available slots
                 for (int i = 0; i < MAX_NUMBER_FREQS; i++) {
                     for (int j = 0; j < (MAX_NUMBER_SLOTS / 8) + ((MAX_NUMBER_SLOTS % 8) != 0 ? 1 : 0); j++) {
@@ -399,11 +400,11 @@ int mclmac_execute_mac_state_machine(MCLMAC_t *mclmac)
                 execute = false;
                 break;
             case E_PM_COLLISION_DETECTED:
-                ARROW(mclmac->mac)_collisionDetected = true;
-                ARROW(mclmac->mac)_collisionSlot = mclmac_get_current_slot(mclmac);
-                ARROW(mclmac->mac)_collisionFrequency = mclmac_get_reception_channel(mclmac);
-                ARROW(mclmac->mac)_destination_id[0] = 0;      // Set to broadcast
-                ARROW(mclmac->mac)_destination_id[1] = 0;
+                mclmac->mac._collisionDetected = true;
+                mclmac->mac._collisionSlot = mclmac_get_current_slot(mclmac);
+                mclmac->mac._collisionFrequency = mclmac_get_reception_channel(mclmac);
+                mclmac->mac._destination_id[0] = 0;      // Set to broadcast
+                mclmac->mac._destination_id[1] = 0;
                 break;
             default:
                 break;

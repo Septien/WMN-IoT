@@ -80,7 +80,7 @@ typedef struct RadioState
 typedef struct MCLMAC
 {
     // Internals to the MAC
-    MAC_Internals_t     SINGLE_POINTER mac;
+    MAC_Internals_t     mac;
     MACState_t          macState;
     RadioPowerMode_t    powerMode;
 
@@ -117,7 +117,7 @@ typedef struct MCLMAC
 #endif
 }MCLMAC_t;
 
-void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac, 
+void MCLMAC_init(MCLMAC_t *mclmac, 
 #ifdef __LINUX__
     uint8_t *radio
 #endif
@@ -126,7 +126,7 @@ void MCLMAC_init(MCLMAC_t DOUBLE_POINTER mclmac,
 #endif
 );
 
-void MCLMAC_destroy(MCLMAC_t DOUBLE_POINTER mclmac);
+void MCLMAC_destroy(MCLMAC_t *mclmac);
 void MCLMAC_clear(MCLMAC_t *mclmac);
 
 // Protocol Execution

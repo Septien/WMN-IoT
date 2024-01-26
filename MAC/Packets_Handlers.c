@@ -69,7 +69,7 @@ void mclmac_send_cf_message(MCLMAC_t *mclmac)
     
     // Change radio to standby
     mclmac_set_radio_standby(mclmac);
-    CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[0];
+    CFPacket_t *pkt = &mclmac->mac._cf_messages[0];
     ARRAY byte_string;
     cfpacket_get_packet_bytestring(pkt, &byte_string);
 #if defined __RIOT__ && !defined NATIVE
@@ -243,11 +243,11 @@ bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
     // Limit the time for hearing the control packet to 5% of the slot duration.
 #ifdef __LINUX__
     int timer;
-    double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+    double secs = 0.05 * mclmac->mac.frame->slot_duration;
 #endif
 #ifdef __RIOT__
     uint32_t timer;
-    uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+    uint32_t secs = 0.05 *mclmac->mac.frame->slot_duration;
 #endif
     timer = timeout_set(secs);
     // Receive the first 32 byres.
@@ -324,24 +324,24 @@ bool mclmac_receive_cf_message(MCLMAC_t *mclmac)
     }
 #endif
 
-    return ARROW(mclmac->mac)_cf_message_received;
+    return mclmac->mac._cf_message_received;
 }
 
 void mclmac_create_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
+    ControlPacket_t *pkt = &mclmac->mac.ctrlpkt;
     controlpacket_clear(pkt);
 
     // Get the relevant data.
     uint64_t node_id[2] = {0};
     node_id[0] = mclmac->_node_id[0];
     node_id[1] = mclmac->_node_id[1];
-    uint32_t currentFrame = ARROW(ARROW(mclmac->mac)frame)current_frame;
-    uint8_t currentSlot = ARROW(ARROW(mclmac->mac)frame)current_slot;
-    uint8_t collisionSlot = ARROW(mclmac->mac)_collisionSlot;
-    uint32_t collisionFrequency = ARROW(mclmac->mac)_collisionFrequency;
+    uint32_t currentFrame = mclmac->mac.frame.current_frame;
+    uint8_t currentSlot = mclmac->mac.frame.current_slot;
+    uint8_t collisionSlot = mclmac->mac._collisionSlot;
+    uint32_t collisionFrequency = mclmac->mac._collisionFrequency;
     uint16_t hopCount = mclmac->_hopCount;
     uint64_t networkTime = mclmac->_networkTime;
     uint32_t initTime = mclmac->_initTime;
@@ -355,10 +355,10 @@ void mclmac_send_control_packet(MCLMAC_t *mclmac)
     assert(mclmac != NULL);
 #ifdef __LINUX__
     assert(mclmac->mac != NULL);
-    assert(mclmac->mac->ctrlpkt != NULL);
+    assert(mclmac->mac.ctrlpkt != NULL);
 #endif
 
-    ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt;
+    ControlPacket_t *pkt = &mclmac->mac.ctrlpkt;
     ARRAY byteStr;
 
     controlpacket_get_packet_bytestring(pkt, &byteStr);
@@ -436,11 +436,11 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
     // Limit the time for hearing the control packet to 5% of the slot duration.
 #ifdef __LINUX__
     int timer;
-    double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+    double secs = 0.05 * mclmac->mac.frame->slot_duration;
 #endif
 #ifdef __RIOT__
     uint32_t timer;
-    uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+    uint32_t secs = 0.05 * mclmac->mac.frame->slot_duration;
 #endif
     timer = timeout_set(secs);
     // Receive the first 32 byres.
@@ -460,7 +460,7 @@ bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
         WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
     }
 #endif
-    ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
+    ControlPacket_t *pkt = mclmac->mac.ctrlpkt_recv;
     controlpacket_construct_packet_from_bytestring(pkt, &byteString);
 #ifdef __LINUX__
     free(byteString);
@@ -478,19 +478,19 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
 
-    if (ARROW(mclmac->mac)_packets_to_send_message == 0 && ARROW(mclmac->mac)_packets_to_send_control == 0)
+    if (mclmac->mac._packets_to_send_message == 0 && mclmac->mac._packets_to_send_control == 0)
         return;
-    if (ARROW(mclmac->mac)_first_send_message > MAX_NUMBER_DATA_PACKETS)
+    if (mclmac->mac._first_send_message > MAX_NUMBER_DATA_PACKETS)
         return;
-    if (ARROW(mclmac->mac)_first_send_control > MAX_NUMBER_DATA_PACKETS)
+    if (mclmac->mac._first_send_control > MAX_NUMBER_DATA_PACKETS)
         return;
 
     // Iterate over all packets on both queues,sending first the control packets
-    if (ARROW(mclmac->mac)_packets_to_send_control > 0)
+    if (mclmac->mac._packets_to_send_control > 0)
     {
         // Get the packet pointed to by _first_send_control
-        uint8_t first_send = ARROW(mclmac->mac)_first_send_control;
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_control_packets_to_send[first_send];
+        uint8_t first_send = mclmac->mac._first_send_control;
+        DataPacket_t *pkt = &mclmac->mac._control_packets_to_send[first_send];
         // Get the byte string
         ARRAY byteString;
         datapacket_get_packet_bytestring(pkt, &byteString);
@@ -529,8 +529,8 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
 #endif
         datapacket_clear(pkt);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-        ARROW(mclmac->mac)_first_send_control = first_send;
-        ARROW(mclmac->mac)_packets_to_send_control--;
+        mclmac->mac._first_send_control = first_send;
+        mclmac->mac._packets_to_send_control--;
 #ifdef __LINUX__
         free(byteString);
 #endif
@@ -539,11 +539,11 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
 #endif
     }
 
-    else if (ARROW(mclmac->mac)_packets_to_send_message > 0)
+    else if (mclmac->mac._packets_to_send_message > 0)
     {
         // Get the packet pointed to by _first_send_message
-        uint8_t first_send = ARROW(mclmac->mac)_first_send_message;
-        DataPacket_t *pkt = &ARROW(mclmac->mac)_message_packets_to_send[first_send];
+        uint8_t first_send = mclmac->mac._first_send_message;
+        DataPacket_t *pkt = &mclmac->mac._message_packets_to_send[first_send];
         // Get the byte string
         ARRAY byteString;
         datapacket_get_packet_bytestring(pkt, &byteString);
@@ -582,8 +582,8 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
 #endif
         datapacket_clear(pkt);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
-        ARROW(mclmac->mac)_first_send_message = first_send;
-        ARROW(mclmac->mac)_packets_to_send_message--;
+        mclmac->mac._first_send_message = first_send;
+        mclmac->mac._packets_to_send_message--;
 #ifdef __LINUX__
         free(byteString);
 #endif
@@ -614,11 +614,11 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
     // Limit the time for hearing the control packet to 5% of the slot duration.
 #ifdef __LINUX__
     int timer;
-    double secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+    double secs = 0.05 * ARROW(mclmac->mac.frame)slot_duration;
 #endif
 #ifdef __RIOT__
     uint32_t timer;
-    uint32_t secs = 0.05 * ARROW(ARROW(mclmac->mac)frame)slot_duration;
+    uint32_t secs = 0.05 * ARROW(mclmac->mac.frame)slot_duration;
 #endif
     timer = timeout_set(secs);
     // Receive the first 32 byres.
@@ -638,12 +638,12 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
         WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
     }*/
 #endif
-    pos = ARROW(mclmac->mac)_last_received;
-    DataPacket_t *pkt = &ARROW(mclmac->mac)_packets_received[pos];
+    pos = mclmac->mac._last_received;
+    DataPacket_t *pkt = &mclmac->mac._packets_received[pos];
     datapacket_construct_from_bytestring(pkt, &byteString);
     pos = (pos + 1) % (2 * MAX_NUMBER_DATA_PACKETS);
-    ARROW(mclmac->mac)_last_received = pos;
-    ARROW(mclmac->mac)_number_packets_received++;
+    mclmac->mac._last_received = pos;
+    mclmac->mac._number_packets_received++;
 #ifdef __LINUX__
     free(byteString);
 #endif
@@ -688,8 +688,8 @@ bool _cf_packet_detected_native(MCLMAC_t *mclmac)
 
 void _receive_ctrlpkt_sync_native(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
-    uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
-    uint8_t slot = ARROW(ARROW(mclmac->mac)frame)current_slot;
+    uint32_t frame = mclmac->mac.frame.current_frame;
+    uint8_t slot = mclmac->mac.frame.current_slot;
     uint8_t hopCount = mclmac->_hopCount;
     uint32_t network_time = mclmac->_networkTime;
     uint32_t init_time = mclmac->_initTime;
@@ -729,7 +729,7 @@ bool _receive_cf_message_native(MCLMAC_t *mclmac)
 #ifdef TESTING
     if (mclmac->_state_cf == 1 || mclmac->_state_cf == 3)
     {
-        ARROW(mclmac->mac)_cf_message_received = false;
+        mclmac->mac._cf_message_received = false;
         return false;
     }
 
@@ -739,13 +739,13 @@ bool _receive_cf_message_native(MCLMAC_t *mclmac)
     {
         if (mclmac->_trues == 1)
         {
-            ARROW(mclmac->mac)_cf_message_received = false;
+            mclmac->mac._cf_message_received = false;
             return false;
         }
 
-        ARROW(mclmac->mac)_cf_message_received = true;
-        CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
-        if (ARROW(mclmac->mac)_cf_message_received)
+        mclmac->mac._cf_message_received = true;
+        CFPacket_t *pkt = &mclmac->mac._cf_messages[1];
+        if (mclmac->mac._cf_message_received)
         {
             id[0] = rand();
             id[1] = rand();
@@ -763,17 +763,17 @@ bool _receive_cf_message_native(MCLMAC_t *mclmac)
     {
         if (mclmac_get_current_cf_slot(mclmac) == 0)
         {
-            ARROW(mclmac->mac)_cf_message_received = false;
+            mclmac->mac._cf_message_received = false;
             return false;
         }
         if (mclmac->_trues == 2)
         {
-            ARROW(mclmac->mac)_cf_message_received = false;
+            mclmac->mac._cf_message_received = false;
             return false;
         }
-        ARROW(mclmac->mac)_cf_message_received = true;
-        CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
-        if (ARROW(mclmac->mac)_cf_message_received)
+        mclmac->mac._cf_message_received = true;
+        CFPacket_t *pkt = &mclmac->mac._cf_messages[1];
+        if (mclmac->mac._cf_message_received)
         {
             id[0] = rand();
             id[1] = rand();
@@ -787,12 +787,12 @@ bool _receive_cf_message_native(MCLMAC_t *mclmac)
     {
         if (mclmac->_trues5 >= 2)
         {
-            ARROW(mclmac->mac)_cf_message_received = false;
+            mclmac->mac._cf_message_received = false;
             return false;
         }
-        ARROW(mclmac->mac)_cf_message_received = (rand() % 1024 > 256 ? true : false);
-        CFPacket_t *pkt = &ARROW(mclmac->mac)_cf_messages[1];
-        if (ARROW(mclmac->mac)_cf_message_received)
+        mclmac->mac._cf_message_received = (rand() % 1024 > 256 ? true : false);
+        CFPacket_t *pkt = &mclmac->mac._cf_messages[1];
+        if (mclmac->mac._cf_message_received)
         {
             id[0] = rand();
             id[1] = rand();
@@ -824,40 +824,40 @@ void _receive_control_packet_native(MCLMAC_t *mclmac)
     if (mclmac->_state_ctrl == 1 || mclmac->_state_ctrl == 3 || mclmac->_state_ctrl == 4 || mclmac->_state_ctrl == 5 || mclmac->_state_ctrl == 6)
     {
         // Store node id
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0xff00000000000000) >> 56;
+        bytes = (mclmac->mac.transmitter_id[0] & 0xff00000000000000) >> 56;
         WRITE_ARRAY(REFERENCE byteString, bytes,    1);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00ff000000000000) >> 48;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x00ff000000000000) >> 48;
         WRITE_ARRAY(REFERENCE byteString, bytes,    2);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000ff0000000000) >> 40;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x0000ff0000000000) >> 40;
         WRITE_ARRAY(REFERENCE byteString, bytes,    3);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000ff00000000) >> 32;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x000000ff00000000) >> 32;
         WRITE_ARRAY(REFERENCE byteString, bytes,    4);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000ff000000) >> 24;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x00000000ff000000) >> 24;
         WRITE_ARRAY(REFERENCE byteString, bytes,    5);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000000000ff0000) >> 16;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x0000000000ff0000) >> 16;
         WRITE_ARRAY(REFERENCE byteString, bytes,    6);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000000000ff00) >> 8;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x000000000000ff00) >> 8;
         WRITE_ARRAY(REFERENCE byteString, bytes,    7);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000000000ff);
+        bytes = (mclmac->mac.transmitter_id[0] & 0x00000000000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    8);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0xff00000000000000) >> 56;
+        bytes = (mclmac->mac.transmitter_id[1] & 0xff00000000000000) >> 56;
         WRITE_ARRAY(REFERENCE byteString, bytes,    9);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00ff000000000000) >> 48;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x00ff000000000000) >> 48;
         WRITE_ARRAY(REFERENCE byteString, bytes,    10);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000ff0000000000) >> 40;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x0000ff0000000000) >> 40;
         WRITE_ARRAY(REFERENCE byteString, bytes,    11);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000ff00000000) >> 32;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x000000ff00000000) >> 32;
         WRITE_ARRAY(REFERENCE byteString, bytes,    12);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000ff000000) >> 24;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x00000000ff000000) >> 24;
         WRITE_ARRAY(REFERENCE byteString, bytes,    13);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000000000ff0000) >> 16;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x0000000000ff0000) >> 16;
         WRITE_ARRAY(REFERENCE byteString, bytes,    14);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000000000ff00) >> 8;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x000000000000ff00) >> 8;
         WRITE_ARRAY(REFERENCE byteString, bytes,    15);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000000000ff);
+        bytes = (mclmac->mac.transmitter_id[1] & 0x00000000000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    16);
         // Store current frame
-        uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame;
+        uint32_t frame = mclmac->mac.frame.current_frame;
         bytes = (frame & 0xff000000) >> 24;
         WRITE_ARRAY(REFERENCE byteString, bytes,    17);
         bytes = (frame & 0x00ff0000) >> 16;
@@ -913,10 +913,10 @@ void _receive_control_packet_native(MCLMAC_t *mclmac)
         if (mclmac->_state_ctrl == 3)
         {
             // Store collision slot
-            bytes = ARROW(mclmac->mac)selectedSlot;
+            bytes = mclmac->mac.selectedSlot;
             WRITE_ARRAY(REFERENCE byteString, bytes,    22);
             // Store collision frequency
-            uint32_t freq = ARROW(mclmac->mac)transmitChannel;
+            uint32_t freq = mclmac->mac.transmitChannel;
             bytes = (freq & 0xff000000) >> 24;
             WRITE_ARRAY(REFERENCE byteString, bytes,    23);
             bytes = (freq & 0x00ff0000) >> 16;
@@ -932,7 +932,7 @@ void _receive_control_packet_native(MCLMAC_t *mclmac)
         }
         else if (mclmac->_state_ctrl == 5)
         {
-            uint32_t frame = ARROW(ARROW(mclmac->mac)frame)current_frame + 1;
+            uint32_t frame = mclmac->mac.frame.current_frame + 1;
             bytes = (frame & 0xff000000) >> 24;
             WRITE_ARRAY(REFERENCE byteString, bytes,    17);
             bytes = (frame & 0x00ff0000) >> 16;
@@ -967,41 +967,41 @@ void _receive_control_packet_native(MCLMAC_t *mclmac)
     else if (mclmac->_state_ctrl == 2)
     {
         // Store node id
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0xff00000000000000) >> 56;
+        bytes = (mclmac->mac.transmitter_id[0] & 0xff00000000000000) >> 56;
         WRITE_ARRAY(REFERENCE byteString, bytes,    1);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00ff000000000000) >> 48;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x00ff000000000000) >> 48;
         WRITE_ARRAY(REFERENCE byteString, bytes,    2);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000ff0000000000) >> 40;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x0000ff0000000000) >> 40;
         WRITE_ARRAY(REFERENCE byteString, bytes,    3);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000ff00000000) >> 32;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x000000ff00000000) >> 32;
         WRITE_ARRAY(REFERENCE byteString, bytes,    4);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000ff000000) >> 24;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x00000000ff000000) >> 24;
         WRITE_ARRAY(REFERENCE byteString, bytes,    5);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x0000000000ff0000) >> 16;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x0000000000ff0000) >> 16;
         WRITE_ARRAY(REFERENCE byteString, bytes,    6);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x000000000000ff00) >> 8;
+        bytes = (mclmac->mac.transmitter_id[0] & 0x000000000000ff00) >> 8;
         WRITE_ARRAY(REFERENCE byteString, bytes,    7);
-        bytes = (ARROW(mclmac->mac)transmitter_id[0] & 0x00000000000000ff);
+        bytes = (mclmac->mac.transmitter_id[0] & 0x00000000000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    8);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0xff00000000000000) >> 56;
+        bytes = (mclmac->mac.transmitter_id[1] & 0xff00000000000000) >> 56;
         WRITE_ARRAY(REFERENCE byteString, bytes,    9);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00ff000000000000) >> 48;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x00ff000000000000) >> 48;
         WRITE_ARRAY(REFERENCE byteString, bytes,    10);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000ff0000000000) >> 40;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x0000ff0000000000) >> 40;
         WRITE_ARRAY(REFERENCE byteString, bytes,    11);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000ff00000000) >> 32;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x000000ff00000000) >> 32;
         WRITE_ARRAY(REFERENCE byteString, bytes,    12);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000ff000000) >> 24;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x00000000ff000000) >> 24;
         WRITE_ARRAY(REFERENCE byteString, bytes,    13);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x0000000000ff0000) >> 16;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x0000000000ff0000) >> 16;
         WRITE_ARRAY(REFERENCE byteString, bytes,    14);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x000000000000ff00) >> 8;
+        bytes = (mclmac->mac.transmitter_id[1] & 0x000000000000ff00) >> 8;
         WRITE_ARRAY(REFERENCE byteString, bytes,    15);
-        bytes = (ARROW(mclmac->mac)transmitter_id[1] & 0x00000000000000ff);
+        bytes = (mclmac->mac.transmitter_id[1] & 0x00000000000000ff);
         WRITE_ARRAY(REFERENCE byteString, bytes,    16);
     }
 #endif
-    ControlPacket_t *pkt = REFERENCE ARROW(mclmac->mac)ctrlpkt_recv;
+    ControlPacket_t *pkt = &mclmac->mac.ctrlpkt_recv;
     controlpacket_construct_packet_from_bytestring(pkt, &byteString);
 }
 

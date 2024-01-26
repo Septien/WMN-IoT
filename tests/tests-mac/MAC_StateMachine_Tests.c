@@ -24,8 +24,8 @@
         (((byte) & 0x01) ? '1' : '0')
 
 struct statemachine_data {
-    MCLMAC_t SINGLE_POINTER mclmac;
-#ifdef __LINUX__
+    MCLMAC_t mclmac;
+#ifdef __LINUX__0
     uint8_t *radio;
 #endif
 #ifdef __RIOT__
@@ -66,7 +66,7 @@ void teardown_statemachine(void *arg)
 bool test_mclmac_init_MAC_state_machine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
     bool passed = true;
@@ -78,7 +78,7 @@ bool test_mclmac_init_MAC_state_machine(void *arg)
 bool test_mclmac_set_MAC_state(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     state_t state = START;
@@ -107,7 +107,7 @@ bool test_mclmac_set_MAC_state(void *arg)
 bool test_mclmac_set_next_MAC_state(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     bool passed = true;
     state_t state = INITIALIZATION;
@@ -132,7 +132,7 @@ bool test_mclmac_set_next_MAC_state(void *arg)
 bool test_mclmac_update_mac_state_machine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
     /**
@@ -403,7 +403,7 @@ bool test_mclmac_update_mac_state_machine(void *arg)
 bool test_start_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
 
@@ -432,7 +432,7 @@ bool test_start_state_mac_stmachine(void *arg)
 bool test_initialization_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
     // Pass to START state and execute
@@ -478,7 +478,7 @@ bool test_initialization_state_mac_stmachine(void *arg)
 bool test_synchronization_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
 
@@ -494,8 +494,8 @@ bool test_synchronization_state_mac_stmachine(void *arg)
     mclmac->_initTime = rand() % 100;
     mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
     mclmac->_hopCount = rand() % 10;
-    ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
-    ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
+    mclmac->mac.frame.current_frame = rand() % 10;
+    mclmac->mac.frame.current_slot = rand() % MAX_NUMBER_SLOTS;
     /**
      * We are now at the SYNCHRONIZATION state.
      * The purpose of this state is to synchronize the node with the network
@@ -542,7 +542,7 @@ bool test_synchronization_state_mac_stmachine(void *arg)
 bool test_timeslot_frequency_state_mac_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
 
@@ -558,8 +558,8 @@ bool test_timeslot_frequency_state_mac_stmachine(void *arg)
     mclmac->_initTime = rand() % 100;
     mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
     mclmac->_hopCount = rand() % 10;
-    ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
-    ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
+    mclmac->mac.frame.current_frame = rand() % 10;
+    mclmac->mac.frame.current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random, 
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(mclmac);
@@ -614,7 +614,7 @@ bool test_timeslot_frequency_state_mac_stmachine(void *arg)
     ret = mclmac_execute_mac_state_machine(mclmac);
     passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
     passed = passed && (mclmac->macState.nextState == MEDIUM_ACCESS);
-    passed = passed && (ARROW(mclmac->mac)selectedSlot == pos);
+    passed = passed && (mclmac->mac.selectedSlot == pos);
 
     return passed;
 }
@@ -622,7 +622,7 @@ bool test_timeslot_frequency_state_mac_stmachine(void *arg)
 bool test_medium_access_state_stmachine(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
 
@@ -638,8 +638,8 @@ bool test_medium_access_state_stmachine(void *arg)
     mclmac->_initTime = rand() % 100;
     mclmac->_networkTime = (rand() % 1000) + mclmac->_initTime;
     mclmac->_hopCount = rand() % 10;
-    ARROW(ARROW(mclmac->mac)frame)current_frame = rand() % 10;
-    ARROW(ARROW(mclmac->mac)frame)current_slot = rand() % MAX_NUMBER_SLOTS;
+    mclmac->mac.frame.current_frame = rand() % 10;
+    mclmac->mac.frame.current_slot = rand() % MAX_NUMBER_SLOTS;
     /* Execute the SYNCHRONIZATION state. The slots and frequency returned data will be random,
     so we will modify it for testing. */
     ret = mclmac_execute_mac_state_machine(mclmac);
@@ -755,10 +755,10 @@ bool test_medium_access_state_stmachine(void *arg)
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
     passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
-    passed = passed && (ARROW(mclmac->mac)_collisionDetected == true);
-    passed = passed && (ARROW(mclmac->mac)_collisionSlot == ARROW(ARROW(mclmac->mac)frame)current_slot);
-    passed = passed && (ARROW(mclmac->mac)_collisionFrequency == ARROW(mclmac->mac)receiveChannel);
-    passed = passed && (ARROW(mclmac->mac)_destination_id == 0);*/
+    passed = passed && (mclmac->mac._collisionDetected == true);
+    passed = passed && (mclmac->mac._collisionSlot == mclmac->mac.frame.current_slot);
+    passed = passed && (mclmac->mac._collisionFrequency == mclmac->mac>receiveChannel);
+    passed = passed && (mclmac->mac._destination_id == 0);*/
 
     // Collision detected, receive and transmit at the same time
     mclmac->_trues = 0;
@@ -770,8 +770,8 @@ bool test_medium_access_state_stmachine(void *arg)
     mclmac_set_next_MAC_state(mclmac, MEDIUM_ACCESS);
     ret = mclmac_execute_mac_state_machine(mclmac);
     passed = passed && (ret == E_PM_EXECUTION_SUCCESS);
-    passed = passed && (ARROW(mclmac->mac)_destination_id[0] == 0);
-    passed = passed && (ARROW(mclmac->mac)_destination_id[1] == 0);
+    passed = passed && (mclmac->mac._destination_id[0] == 0);
+    passed = passed && (mclmac->mac._destination_id[1] == 0);
 
     return passed;
 }
@@ -779,7 +779,7 @@ bool test_medium_access_state_stmachine(void *arg)
 bool test_first_node_case_mac(void *arg)
 {
     struct statemachine_data *data = (struct statemachine_data *) arg;
-    MCLMAC_t *mclmac = REFERENCE data->mclmac;
+    MCLMAC_t *mclmac = &data->mclmac;
 
     mclmac_init_mac_state_machine(mclmac);
 
@@ -805,12 +805,12 @@ bool test_first_node_case_mac(void *arg)
     passed = passed && (mclmac->_is_first_node == true);
 
     // Execute the TIMESLOT_AND_CHANNEL_SELECTION state
-    ARROW(mclmac->mac)selectedSlot = 1; // Just store a value different to zero, to make the test fail
+    mclmac->mac.selectedSlot = 1; // Just store a value different to zero, to make the test fail
     mclmac_update_mac_state_machine(mclmac);
     ret = mclmac_execute_mac_state_machine(mclmac);
     passed = passed && (ret == E_MAC_EXECUTION_SUCCESS);
-    passed = passed && (ARROW(mclmac->mac)selectedSlot == 0);
-    passed = passed && (ARROW(mclmac->mac)transmitChannel == mclmac->_frequencies[0]);
+    passed = passed && (mclmac->mac.selectedSlot == 0);
+    passed = passed && (mclmac->mac.transmitChannel == mclmac->_frequencies[0]);
     passed = passed && (mclmac->_occupied_frequencies_slots[0][0] == 0x80);
 
     /*mclmac_update_mac_state_machine(mclmac);
