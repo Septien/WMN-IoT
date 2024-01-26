@@ -5,17 +5,16 @@
 
 #include "CFPacket.h"
 
-void cfpacket_init(CFPacket_t **pkt)
+void cfpacket_init(CFPacket_t *pkt)
 {
-    memset(*pkt, 0, sizeof(CFPacket_t));
+    memset(pkt, 0, sizeof(CFPacket_t));
 }
 
-void cfpacket_destroy(CFPacket_t **pkt)
+void cfpacket_destroy(CFPacket_t *pkt)
 {
     assert(pkt != NULL);
-    assert(*pkt != NULL);
 
-    memset(*pkt, 0, sizeof(CFPacket_t));
+    memset(pkt, 0, sizeof(CFPacket_t));
 }
 
 void cfpacket_create(CFPacket_t *pkt, uint64_t *node_id, uint64_t *destination_id)

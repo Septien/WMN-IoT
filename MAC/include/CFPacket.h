@@ -26,8 +26,8 @@ typedef struct CFPacket
     uint64_t destination_id[2];
 }CFPacket_t;
 
-void cfpacket_init(CFPacket_t ** pkt);
-void cfpacket_destroy(CFPacket_t ** pkt);
+void cfpacket_init(CFPacket_t *pkt);
+void cfpacket_destroy(CFPacket_t *pkt);
 void cfpacket_create(CFPacket_t *pkt, uint64_t *node_id, uint64_t *destination_id);
 void cfpacket_clear(CFPacket_t *pkt);
 void cfpacket_set_nodeid(CFPacket_t *pkt, uint64_t *node_id);

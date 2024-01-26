@@ -8,7 +8,7 @@
 #include "cUnit.h"
 
 struct cfpacket_data {
-    CFPacket_t *cfpkt;
+    CFPacket_t cfpkt;
 };
 
 void setup_cfpacket(void *arg)
@@ -26,13 +26,13 @@ void teardown_cfpacket(void *arg)
 bool test_cfpacket_init(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t *cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     bool passed = true;
-    passed = passed && (data->cfpkt->node_id[0] == 0);
-    passed = passed && (data->cfpkt->node_id[1] == 0);
-    passed = passed && (data->cfpkt->destination_id[0] == 0);
-    passed = passed && (data->cfpkt->destination_id[1] == 0);
+    passed = passed && (cfpkt->node_id[0] == 0);
+    passed = passed && (cfpkt->node_id[1] == 0);
+    passed = passed && (cfpkt->destination_id[0] == 0);
+    passed = passed && (cfpkt->destination_id[1] == 0);
 
     return passed;
 }
@@ -43,10 +43,10 @@ bool test_cfpacket_destroy(void *arg)
 
     cfpacket_destroy(&data->cfpkt);
     bool passed = true;
-    passed = passed && (data->cfpkt->node_id[0] == 0);
-    passed = passed && (data->cfpkt->node_id[1] == 0);
-    passed = passed && (data->cfpkt->destination_id[0] == 0);
-    passed = passed && (data->cfpkt->destination_id[1] == 0);
+    passed = passed && (data->cfpkt.node_id[0] == 0);
+    passed = passed && (data->cfpkt.node_id[1] == 0);
+    passed = passed && (data->cfpkt.destination_id[0] == 0);
+    passed = passed && (data->cfpkt.destination_id[1] == 0);
 
     // Add so the teardown function doesn't break
     cfpacket_init(&data->cfpkt);
@@ -57,7 +57,7 @@ bool test_cfpacket_destroy(void *arg)
 bool test_cfpacket_create(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t *cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t node_id[2] = {0};
     uint64_t destination_id[2] = {0};
@@ -80,7 +80,7 @@ bool test_cfpacket_create(void *arg)
 bool test_cfpacket_clear(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t node_id[2] = {0};
     uint64_t destination_id[2] = {0};
@@ -105,7 +105,7 @@ bool test_cfpacket_clear(void *arg)
 bool test_cfpacket_set_nodeid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t node_id[2] = {0};
     node_id[0] = rand();
@@ -121,7 +121,7 @@ bool test_cfpacket_set_nodeid(void *arg)
 bool test_cfpacket_get_nodeid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t node_id[2] = {0};
     node_id[0] = rand();
@@ -140,7 +140,7 @@ bool test_cfpacket_get_nodeid(void *arg)
 bool test_cfpacket_set_destinationid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
@@ -156,7 +156,7 @@ bool test_cfpacket_set_destinationid(void *arg)
 bool test_cfpacket_get_destinationid(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t destination_id[2] = {0};
     destination_id[0] = rand();
@@ -177,7 +177,7 @@ bool test_cfpacket_get_destinationid(void *arg)
 bool test_cfpacket_get_packet_bytestring(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     uint64_t node_id[2] = {0};
     uint64_t destination_id[2] = {0};
@@ -250,7 +250,7 @@ bool test_cfpacket_get_packet_bytestring(void *arg)
 bool test_cfpacket_construct_packet_from_bytestring(void *arg)
 {
     struct cfpacket_data *data = (struct cfpacket_data *)arg;
-    CFPacket_t * cfpkt = data->cfpkt;
+    CFPacket_t *cfpkt = &data->cfpkt;
 
     ARRAY byteString;
 #ifdef __LINUX__
@@ -323,8 +323,6 @@ void executeTestsCF(void)
 {
     cUnit_t *tests;
     struct cfpacket_data data;
-    CFPacket_t cfpkt;
-    data.cfpkt = &cfpkt;
 
     cunit_init(&tests, &setup_cfpacket, &teardown_cfpacket, (void *)&data);
 
