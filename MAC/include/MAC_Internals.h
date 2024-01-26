@@ -64,9 +64,9 @@ typedef struct MAC_Internals
     netdev_t *netdev;
 #endif
     // Packets used by the protocol
-    ControlPacket_t SINGLE_POINTER ctrlpkt;
-    ControlPacket_t SINGLE_POINTER ctrlpkt_recv;
-    Frame_t         SINGLE_POINTER frame;
+    ControlPacket_t ctrlpkt;
+    ControlPacket_t ctrlpkt_recv;
+    Frame_t         frame;
     // Status variables
     uint8_t         selectedSlot;
     uint32_t        transmitChannel;
@@ -101,7 +101,7 @@ typedef struct MAC_Internals
     uint16_t        _number_packets_received;
 }MAC_Internals_t;
 
-void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac, 
+void MAC_internals_init(MAC_Internals_t *mac, 
 #ifdef __LINUX__
     uint8_t *radio
 #endif
@@ -109,7 +109,8 @@ void MAC_internals_init(MAC_Internals_t DOUBLE_POINTER mac,
     netdev_t *netdev
 #endif
 );
+
 void MAC_internals_clear(MAC_Internals_t *mac);
-void MAC_internals_destroy(MAC_Internals_t DOUBLE_POINTER mac);
+void MAC_internals_destroy(MAC_Internals_t *mac);
 
 #endif  // MAC_INTERNALS_H

@@ -5,6 +5,8 @@
 #include <time.h>
 
 #include "MAC_Internals.h"
+#include "ControlPacket.h"
+#include "Frame.h"
 
 #include "cUnit.h"
 
@@ -12,8 +14,9 @@
 #include "net/netdev.h"
 #endif
 
+/* Data structure for testing */
 struct mac_internals_data {
-    MAC_Internals_t SINGLE_POINTER mac;
+    MAC_Internals_t mac;
 #ifdef __LINUX__
     uint8_t *radio;
 #endif
@@ -64,7 +67,7 @@ void teardown_mac_internal(void *arg)
 bool test_MAC_internals_init(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
-    MAC_Internals_t *mac = REFERENCE data->mac;
+    MAC_Internals_t *mac = &data->mac;
 
     bool passed = true;
 #ifdef __LINUX__
@@ -110,7 +113,7 @@ bool test_MAC_internals_destroy(void *arg)
 bool test_MAC_internals_clear(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
-    MAC_Internals_t *mac = REFERENCE data->mac;
+    MAC_Internals_t *mac = &data->mac;
 
     MAC_internals_clear(mac);
     bool passed = true;
