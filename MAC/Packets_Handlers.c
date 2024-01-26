@@ -5,34 +5,18 @@
 
 #include "MCLMAC.h"
 
-#ifdef NATIVE
 /* Stub functions for testing with native. */
 bool _cf_packet_detected_native(MCLMAC_t *mclmac);
 void _receive_ctrlpkt_sync_native(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt);
 bool _receive_cf_message_native(MCLMAC_t *mclmac);
 void _receive_control_packet_native(MCLMAC_t *mclmac);
 void _receive_data_packet_native(MCLMAC_t *mclmac, ARRAY *byteString);
-#endif
 
 void mclmac_start_packet_detection(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-
-#if defined __RIOT__ && !defined NATIVE
-    uint16_t channel = (uint16_t)mclmac->mac.cfChannel;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
-                                    (void *)&channel, sizeof(uint16_t));
-    /* Due to implementation details on the RIOT side, it is not possible
-    to transit from STANDBY -> RX, directly. We have to set the radio to
-    SLEEP, before going to RX. To gurantee an appropiate transition, set
-    radio to sleep state.*/
-    netopt_state_t state = NETOPT_STATE_SLEEP;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-    state = NETOPT_STATE_RX;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-#endif
+    (void) mclmac;
+    return;
 }
 
 /**
@@ -43,21 +27,8 @@ void mclmac_start_packet_detection(MCLMAC_t *mclmac)
 bool mclmac_cf_packet_detected(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#if defined NATIVE
+
     return _cf_packet_detected_native(mclmac);
-#elif defined __RIOT__
-    int retries = 0;
-    while (retries < MAX_RETRIES) {
-        int size = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
-        if (size != NRF24L01P_NG_MAX_PAYLOAD_WIDTH + 5) {
-            retries++;
-        }
-        else {
-            return true;
-        }
-    }
-#endif
-    return false;
 }
 
 void mclmac_send_cf_message(MCLMAC_t *mclmac)
@@ -72,35 +43,6 @@ void mclmac_send_cf_message(MCLMAC_t *mclmac)
     CFPacket_t *pkt = &mclmac->mac._cf_messages[0];
     ARRAY byte_string;
     cfpacket_get_packet_bytestring(pkt, &byte_string);
-#if defined __RIOT__ && !defined NATIVE
-    uint8_t packet[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-    for (int i = 0; i < NRF24L01P_NG_MAX_PAYLOAD_WIDTH; i++)
-    {
-        packet[i] = READ_ARRAY(REFERENCE byte_string, i);
-    }
-    uint64_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-    iolist_t data = {
-        .iol_next = NULL,
-        .iol_base = packet,
-        .iol_len = sizeof(packet)
-    };
-    iolist_t list = {
-        .iol_next = &data,
-        .iol_base = (void *)addr,
-        .iol_len = sizeof(addr)
-    };
-    int res;
-    /*while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0)
-    {
-        if (res == -EAGAIN) {
-            continue;
-        }
-        else if (res == -EBUSY) {
-            continue;
-        }
-        break;
-    }*/
-#endif
     // Return radio to rx
     mclmac_set_radio_standby(mclmac);
     // Sleep for a while before returning
@@ -114,217 +56,24 @@ void mclmac_send_cf_message(MCLMAC_t *mclmac)
 #endif
 }
 
-bool _recv_first_32_bytes(MCLMAC_t *mclmac, int type, int32_t *remaining_bytes, int *pos, uint8_t *out_buf,
-#ifdef __LINUX__
-int timer
-#endif
-#ifdef __RIOT__
-uint32_t timer
-#endif
-)
-{
-    if (timer == TIMEOUT_SET_ERROR) {
-        return false;
-    }
-#ifdef __LINUX__
-    (void) mclmac;
-    (void) type;
-    (void) remaining_bytes;
-    (void) pos;
-    (void) out_buf;
-#endif
-    bool recv = true;
-    while (recv)
-    {
-#ifdef __RIOT__
-        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-        // Get the number of bytes on the radio
-        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
-        if (len != NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-        {
-            if (timeout_passed(timer) == 1)
-            {
-                timeout_unset(timer);
-                return false;
-            }
-            continue;
-        }
-        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
-        if (len < 0) {
-            return false;
-        }
-        if (buf[0] != type)
-        {
-            if (timeout_passed(timer) == 1)
-            {
-                timeout_unset(timer);
-                return false;
-            }
-            continue;
-        }
-        // We have the first 32 bytes, which correpspond to the expected packet.
-        memcpy(out_buf, buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
-        *pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        *remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-#endif
-        recv = false;
-    }
-    return true;
-}
-
-bool _recv_remaining_packet(MCLMAC_t *mclmac, int32_t *remaining_bytes, int *pos, int max_recv, uint8_t *out_buf)
-{
-#ifdef __LINUX__
-    (void) mclmac;
-    (void) remaining_bytes;
-    (void) pos;
-    (void) max_recv;
-    (void) out_buf;
-#endif
-    bool recv = true;
-    do
-    {
-#ifdef __RIOT__
-        int len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
-        int min_number_bytes = (*remaining_bytes < len ? *remaining_bytes : len);
-        if (len < min_number_bytes)
-        {
-            if (timeout_passed(mclmac->mac.frame.slot_timer) == 1) {
-                return false;
-            }
-            if ((max_recv--) == 0) {
-                return false;
-            }
-            continue;
-        }
-        uint8_t buf[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-        len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *)buf, len, NULL);
-        if (len < 0) {
-            return false;
-        }
-        memcpy(&out_buf[*pos], buf, NRF24L01P_NG_MAX_PAYLOAD_WIDTH);
-        *pos += NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        *remaining_bytes -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
-        if (*remaining_bytes > 0) {
-            continue;
-        }
-#endif
-        recv = false;
-    } while (recv);
-
-    return true;
-}
-
 bool mclmac_receive_ctrlpkt_sync(MCLMAC_t *mclmac, ControlPacket_t *ctrlpkt)
 {
     assert(mclmac != NULL);
     assert(ctrlpkt != NULL);
 
-#ifdef NATIVE
-#ifdef TESTING
     if (mclmac->_state_ctrl == 1) {
         return false;
     }
-#endif
     _receive_ctrlpkt_sync_native(mclmac, ctrlpkt);
-#else
 
-    ARRAY byteString;
-#ifdef __LINUX__
-    byteString = (uint8_t *)malloc(PACKET_SIZE_MAC * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&byteString, PACKET_SIZE_MAC);
-#endif
-    int pos = 0;
-    int32_t remaining_bytes = PACKET_SIZE_MAC;
-    uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
-    // Limit the time for hearing the control packet to 5% of the slot duration.
-#ifdef __LINUX__
-    int timer;
-    double secs = 0.05 * mclmac->mac.frame->slot_duration;
-#endif
-#ifdef __RIOT__
-    uint32_t timer;
-    uint32_t secs = 0.05 *mclmac->mac.frame->slot_duration;
-#endif
-    timer = timeout_set(secs);
-    // Receive the first 32 byres.
-    bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
-    if (!ret) {
-        return false;
-    }
-    // Receive the rest of the packet.
-    int max_recv = 0;
-#ifdef __LINUX__
-    max_recv = MAX_RETRIES;
-#endif
-#ifdef __RIOT__
-    max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
-#endif
-    ret = _recv_remaining_packet(mclmac, &remaining_bytes, &pos, max_recv, bytes_pkt);
-    if (!ret) {
-        return false;
-    }
-    // Check whether the packet type is the expected
-    if (bytes_pkt[0] != 1) {
-        return false;
-    }
-    //  Copy the bytes to the bytestring.
-    for (int i = 0; i < PACKET_SIZE_MAC; i++)
-    {
-        WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
-    }
-    controlpacket_construct_packet_from_bytestring(ctrlpkt, &byteString);
-#ifdef __LINUX__
-    free(byteString);
-#endif
-#ifdef __RIOT__
-    free_array(&byteString);
-#endif
-#endif
     return true;
 }
 
 bool mclmac_receive_cf_message(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef NATIVE
-    return _receive_cf_message_native(mclmac);
-#elif defined __RIOT__
-    int frame_len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, NULL, 1, NULL);
-    mclmac->mac._cf_message_receive = false;
-    if (frame_len == 0) {
-        return false;
-    }
-    else if (frame_len > 0 && frame_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH) {
-        return false;
-    }
-    else if (frame_len == NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-    {
-        uint8_t frame[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-        frame_len = mclmac->mac.netdev->driver->recv(mclmac->mac.netdev, (void *) frame,
-                                                        frame_len, NULL);
-        if (frame_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-            return false;
-        mclmac->mac._cf_message_received = true;
-        // Verify the received packet is equal to 0 (cf_message type)
-        if (frame[0] != 0) {
-            return 0;
-        }
-        array_t byte_string;
-        create_array(&byte_string, frame_len);
-        for (int i = 0; i < frame_len; i++)
-        {
-            write_element(&byte_string, frame[i], i);
-        }
-        cfpacket_construct_from_bytestring(pkt, byte_string);
-        free_array(&byte_string);
-    }
-#endif
 
-    return mclmac->mac._cf_message_received;
+    return _receive_cf_message_native(mclmac);
 }
 
 void mclmac_create_control_packet(MCLMAC_t *mclmac)
@@ -362,44 +111,6 @@ void mclmac_send_control_packet(MCLMAC_t *mclmac)
     ARRAY byteStr;
 
     controlpacket_get_packet_bytestring(pkt, &byteStr);
-    /*uint8_t ctrl_pkt[PACKET_SIZE_MAC];
-    size_t total_len = PACKET_SIZE_MAC;
-    // Copy the data to a static array
-    for (int i = 0; i < PACKET_SIZE_MAC; i++)
-    {
-        ctrl_pkt[i] = READ_ARRAY(REFERENCE byteStr, i);
-    }*/
-#if defined __RIOT__ && !defined NATIVE
-    // Set the address to the broadcast address, so other joining nodes can access the packet
-    //uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-    // Iterate over all the string, and send the packet in chunks of 32 bytes.
-    /*for (int i = 0; i < PACKET_SIZE_MAC; i += NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-    {
-        uint8_t *ptr = &ctrl_pkt[i];
-        total_len -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        iolist_t data = {
-            .iol_next = NULL,
-            .iol_base = (void *)ptr,
-            .iol_len = (0 < total_len && total_len < 32 ? total_len : NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-        };
-        iolist_t list = {
-            .iol_next = &data,
-            .iol_base = addr,
-            .iol_len = NRF24L01P_NG_ADDR_WIDTH
-        };
-        int res;
-        while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0)
-        {
-            if (res == -EAGAIN) {
-                continue;
-            }
-            if (res == -EBUSY) {
-                continue;
-            }
-            break;
-        }
-    }*/
-#endif
 
     controlpacket_clear(pkt);
 
@@ -414,62 +125,7 @@ void mclmac_send_control_packet(MCLMAC_t *mclmac)
 bool mclmac_receive_control_packet(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#ifdef NATIVE
-#ifdef TESTING
-    if (mclmac->_state_ctrl == 7) {
-        return false;
-    }
-#endif
     _receive_control_packet_native(mclmac);
-#else
-    ARRAY byteString;
-#ifdef __LINUX__
-    byteString = (uint8_t *)malloc(MAX_MESSAGE_SIZE * sizeof(uint8_t));
-#endif
-#ifdef __RIOT__
-    create_array(&byteString, MAX_MESSAGE_SIZE);
-#endif
-#ifdef __RIOT__
-    int pos = 0;
-    int32_t remaining_bytes = PACKET_SIZE_MAC;
-    uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
-    // Limit the time for hearing the control packet to 5% of the slot duration.
-#ifdef __LINUX__
-    int timer;
-    double secs = 0.05 * mclmac->mac.frame->slot_duration;
-#endif
-#ifdef __RIOT__
-    uint32_t timer;
-    uint32_t secs = 0.05 * mclmac->mac.frame->slot_duration;
-#endif
-    timer = timeout_set(secs);
-    // Receive the first 32 byres.
-    bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
-    if (!ret) {
-        return false;
-    }
-    // Receive the rest of the packet.
-    int max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
-    ret = _recv_remaining_packet(mclmac, &remaining_bytes, &pos, max_recv, bytes_pkt);
-    if (!ret) {
-        return false;
-    }
-    //  Copy the bytes to the bytestring.
-    for (int i = 0; i < PACKET_SIZE_MAC; i++)
-    {
-        WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
-    }
-#endif
-    ControlPacket_t *pkt = mclmac->mac.ctrlpkt_recv;
-    controlpacket_construct_packet_from_bytestring(pkt, &byteString);
-#ifdef __LINUX__
-    free(byteString);
-#endif
-#ifdef __RIOT__
-    free_array(&byteString);
-#endif
-
-#endif      // NATIVE
 
     return true;
 }
@@ -494,39 +150,7 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
         // Get the byte string
         ARRAY byteString;
         datapacket_get_packet_bytestring(pkt, &byteString);
-#if defined __RIOT__ && !defined NATIVE
-        uint8_t pkt_bytes[PACKET_SIZE_MAC] = {0};
-        for (int i = 0; i < PACKET_SIZE_MAC; i++) {
-            pkt_bytes[i] = READ_ARRAY(REFERENCE byteString, i);
-        }
-        size_t total_len = PACKET_SIZE_MAC;
-        for (int i = 0; i < PACKET_SIZE_MAC; i += 32)
-        {
-            uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-            uint8_t *ptr = &pkt_bytes[i];
-            iolist_t data = {
-                .iol_next = NULL,
-                .iol_base = (void *)ptr,
-                .iol_len = (0 < total_len && total_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH ? total_len : NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-            };
-            iolist_t list = {
-                .iol_next = &data,
-                .iol_base = addr,
-                .iol_len = NRF24L01P_NG_ADDR_WIDTH
-            };
-            int res;
-            /*while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0) {
-                if (res == -EAGAIN) {
-                    continue;
-                }
-                else if (res == -EBUSY) {
-                    continue;
-                }
-                break;
-            }*/
-            total_len -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        }
-#endif
+
         datapacket_clear(pkt);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
         mclmac->mac._first_send_control = first_send;
@@ -547,39 +171,6 @@ void mclmac_send_data_packet(MCLMAC_t *mclmac)
         // Get the byte string
         ARRAY byteString;
         datapacket_get_packet_bytestring(pkt, &byteString);
-#if defined __RIOT__ && !defined NATIVE
-        uint8_t pkt_bytes[PACKET_SIZE_MAC] = {0};
-        for (int i = 0; i < PACKET_SIZE_MAC; i++) {
-            pkt_bytes[i] = READ_ARRAY(REFERENCE byteString, i);
-        }
-        size_t total_len = PACKET_SIZE_MAC;
-        for (int i = 0; i < PACKET_SIZE_MAC; i += 32)
-        {
-            uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-            uint8_t *ptr = &pkt_bytes[i];
-            iolist_t data = {
-                .iol_next = NULL,
-                .iol_base = (void *)ptr,
-                .iol_len = (0 < total_len && total_len < NRF24L01P_NG_MAX_PAYLOAD_WIDTH ? total_len : NRF24L01P_NG_MAX_PAYLOAD_WIDTH)
-            };
-            iolist_t list = {
-                .iol_next = &data,
-                .iol_base = addr,
-                .iol_len = NRF24L01P_NG_ADDR_WIDTH
-            };
-            int res;
-            /*while ((res = mclmac->mac.netdev->driver->send(mclmac->mac.netdev, &list)) < 0) {
-                if (res == -EAGAIN) {
-                    continue;
-                }
-                else if (res == -EBUSY) {
-                    continue;
-                }
-                break;
-            }*/
-            total_len -= NRF24L01P_NG_MAX_PAYLOAD_WIDTH;
-        }
-#endif
         datapacket_clear(pkt);
         first_send = (first_send + 1) % MAX_NUMBER_DATA_PACKETS;
         mclmac->mac._first_send_message = first_send;
@@ -605,39 +196,7 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
     create_array(&byteString, PACKET_SIZE_MAC);
 #endif
     int pos = 0;
-#ifdef NATIVE
     _receive_data_packet_native(mclmac, &byteString);
-#else
-    // Receive the first 32 bytes
-    /*int32_t remaining_bytes = PACKET_SIZE_MAC;
-    uint8_t bytes_pkt[PACKET_SIZE_MAC] = {0};
-    // Limit the time for hearing the control packet to 5% of the slot duration.
-#ifdef __LINUX__
-    int timer;
-    double secs = 0.05 * ARROW(mclmac->mac.frame)slot_duration;
-#endif
-#ifdef __RIOT__
-    uint32_t timer;
-    uint32_t secs = 0.05 * ARROW(mclmac->mac.frame)slot_duration;
-#endif
-    timer = timeout_set(secs);
-    // Receive the first 32 byres.
-    bool ret = _recv_first_32_bytes(mclmac, 1, &pos, &remaining_bytes, bytes_pkt, timer);
-    if (!ret) {
-        return false;
-    }
-    // Receive the rest of the packet.
-    int max_recv = NRF24L01P_NG_MAX_RETRANSMISSIONS;
-    ret = _recv_remaining_packet(mclmac, &remaining_bytes, &pos, max_recv, bytes_pkt);
-    if (!ret) {
-        return false;
-    }
-    //  Copy the bytes to the bytestring.
-    for (int i = 0; i < PACKET_SIZE_MAC; i++)
-    {
-        WRITE_ARRAY(REFERENCE byteString, bytes_pkt[i], i);
-    }*/
-#endif
     pos = mclmac->mac._last_received;
     DataPacket_t *pkt = &mclmac->mac._packets_received[pos];
     datapacket_construct_from_bytestring(pkt, &byteString);
@@ -653,9 +212,6 @@ bool mclmac_receive_data_packet(MCLMAC_t *mclmac)
     return true;
 }
 
-
-/*-----------------------NATIVE---------------------------------------------------------*/
-#ifdef NATIVE
 bool _cf_packet_detected_native(MCLMAC_t *mclmac)
 {
 #ifdef __LINUX__
@@ -1048,4 +604,3 @@ void _receive_data_packet_native(MCLMAC_t *mclmac, ARRAY *byteString)
         WRITE_ARRAY(SINGLE_POINTER byteString, rand(), i);
     }
 }
-#endif

@@ -4,24 +4,13 @@
 
 #include "MCLMAC.h"
 
-void MCLMAC_init(MCLMAC_t *mclmac, 
-#ifdef __LINUX__
-    uint8_t *radio
-#endif
-#ifdef __RIOT__
-    netdev_t *netdev
-#endif
-)
+void MCLMAC_init(MCLMAC_t *mclmac)
 {
     memset(mclmac, 0, sizeof(MCLMAC_t));
 
     MAC_Internals_t *mac = &mclmac->mac;
-#ifdef __LINUX__
-    MAC_internals_init(mac, radio);
-#endif
-#ifdef __RIOT__
-    MAC_internals_init(mac, netdev);
-#endif
+    MAC_internals_init(mac);
+
     uint64_t id[2] = UUID;
     mclmac->_node_id[0] = id[0];
     mclmac->_node_id[1] = id[1];
@@ -403,22 +392,6 @@ int32_t mclmac_write_queue_element(MCLMAC_t *mclmac)
 void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#if defined __RIOT__ && !defined NATIVE
-    assert(mclmac->mac.netdev != NULL);
-#endif
-
-#if defined __RIOT__ && !defined NATIVE
-    uint16_t channel = mclmac->mac.cfChannel;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL, 
-                                    (void *)&channel, sizeof(uint16_t));
-    /* Only for the nrf24l01p radio. */
-    uint8_t broadcast_addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_ADDRESS,
-                                    (void *)broadcast_addr, NRF24L01P_NG_ADDR_WIDTH);
-    netopt_state_t state = NETOPT_STATE_STANDBY;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE, 
-                                    (void *)&state, sizeof(state));
-#endif
 
     // Change frequency to cf channel
     // Change the radio state to standby
@@ -428,18 +401,10 @@ void mclmac_change_cf_channel(MCLMAC_t *mclmac)
 void mclmac_start_cf_phase(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#if defined __RIOT__ && !defined NATIVE
-    assert(mclmac->mac.netdev != NULL);
-#endif
-
     // Change the channel
     mclmac_change_cf_channel(mclmac);
     // Change the radio state to rx
-#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_RX;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE, 
-                                    (void *)&state, sizeof(state));
-#endif
+
     // Reset the cf counter to zero
     mclmac_set_current_cf_slot(mclmac, 0);
 }
@@ -451,56 +416,20 @@ int32_t mclmac_start_split_phase(MCLMAC_t *mclmac, PowerMode_t state)
     if (state != TRANSMIT && state != RECEIVE)
         return -1;
 
-#if defined __RIOT__ && !defined NATIVE
-    uint16_t channel = 0;
-    netopt_state_t net_state = NETOPT_STATE_OFF;
-    if (state == TRANSMIT)
-    {
-        channel = mclmac->mac.transmitChannel;
-        net_state = NETOPT_STATE_TX;
-    }
-    else if (state == RECEIVE)
-    {
-        channel = mclmac->mac.receiveChannel;
-        net_state = NETOPT_STATE_RX;
-    }
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_CHANNEL,
-                                    (void *)&channel, sizeof(uint16_t));
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&net_state, sizeof(netopt_state_t));
-    ControlPacket_t *pkt;
-    pkt = &mclmac->mac.ctrlpkt;
-    controlpacket_clear(pkt);
-#endif
     return 1;
 }
 
 void mclmac_set_radio_sleep(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_SLEEP;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-#endif
 }
 
 void mclmac_set_radio_standby(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_STANDBY;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));    
-#endif
 }
 
 void mclmac_set_radio_rx(MCLMAC_t *mclmac)
 {
     assert(mclmac != NULL);
-#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_RX;
-    mclmac->mac.netdev->driver->set(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-#endif
 }

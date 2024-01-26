@@ -10,48 +10,22 @@
 
 #include "cUnit.h"
 
-#ifdef __RIOT__
-#include "net/netdev.h"
-#endif
-
 struct powermode_data
 {
     MCLMAC_t mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
-#endif
-#ifdef __RIOT__
-    nrf24l01p_ng_t *radio;
-    nrf24l01p_ng_t *radio_test;
-    netdev_t *netdev;
-    netdev_t *netdev_test;
-#endif
 };
 
 void setup_powermode(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
-#ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, data->radio);
-#endif
-#ifdef __RIOT__
-#ifndef NATIVE
-    netopt_state_t state = NETOPT_STATE_STANDBY;
-    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
-#endif
-    MCLMAC_init(&data->mclmac, data->netdev);
-#endif
+
+    MCLMAC_init(&data->mclmac);
 }
 
 void teardown_powermode(void *arg)
 {
     struct powermode_data *data = (struct powermode_data *) arg;
-#ifdef __RIOT__
-#ifndef NATIVE
-    netopt_state_t state = NETOPT_STATE_SLEEP;
-    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
-#endif
-#endif
+
     MCLMAC_destroy(&data->mclmac);
 }
 
@@ -1201,55 +1175,6 @@ void executetests_mac_powermode_statemachine(void)
 
     cUnit_t *tests;
     struct powermode_data data;
-#if defined __RIOT__ && !defined NATIVE
-    nrf24l01p_ng_t radio, radio_test;
-    nrf24l01p_ng_params_t params = {
-        .spi = SPI_DEV(0),
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = GPIO5,
-        .pin_ce = GPIO17,
-        .pin_irq = GPIO21,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    nrf24l01p_ng_params_t params_test = {
-        .spi = SPI_DEV(1),
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = GPIO15,
-        .pin_ce = GPIO2,
-        .pin_irq = GPIO4,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    data.radio = &radio;
-    data.radio_test = &radio_test;
-    nrf24l01p_ng_setup(data.radio, &params, 2);
-    nrf24l01p_ng_setup(data.radio_test, &params_test, 2);
-    // Setup netdev
-    data.netdev = &data.radio->netdev;
-    data.netdev_test = &data.radio_test->netdev;
-    data.radio->netdev.driver->init(data.netdev);
-    data.radio_test->netdev.driver->init(data.netdev_test);
-#elif defined _RIOT__ && defined NATIVE
-    data.netdev = NULL;
-    data.netdev_test = NULL;
-    data.radio = NULL;
-    data.radio_test = NULL;
-#elif defined __LINUX__
-    data.radio = NULL;
-#endif
 
     cunit_init(&tests, &setup_powermode, &teardown_powermode, (void *)&data);
 

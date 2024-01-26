@@ -10,52 +10,16 @@
 
 #include "cUnit.h"
 
-#ifdef __RIOT__
-#include "net/netdev.h"
-#endif
-
 /* Data structure for testing */
 struct mac_internals_data {
     MAC_Internals_t mac;
-#ifdef __LINUX__
-    uint8_t *radio;
-#endif
-#ifdef __RIOT__
-    nrf24l01p_ng_t radio;
-    netdev_t *netdev;
-#endif
 };
 
 void setup_mac_internals(void *arg)
 {
     struct mac_internals_data *data = (struct mac_internals_data *)arg;
-#ifdef __LINUX__
-    MAC_internals_init(&data->mac, data->radio);
-#endif
-#ifdef __RIOT__
-#ifndef NATIVE
-    // Setup the radio
-    nrf24l01p_ng_params_t params = {
-        .spi = NRF24L01P_NG_PARAM_SPI,
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = NRF24L01P_NG_PARAM_CS,
-        .pin_ce = NRF24L01P_NG_PARAM_CE,
-        .pin_irq = NRF24L01P_NG_PARAM_IRQ,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    int ret = nrf24l01p_ng_setup(&data->radio, &params, 2);
-    data->netdev = &data->radio.netdev;
-    data->radio.netdev.driver->init(data->netdev);
-#endif
-    MAC_internals_init(&data->mac, data->netdev);
-#endif
+
+    MAC_internals_init(&data->mac);
 }
 
 void teardown_mac_internal(void *arg)
@@ -97,16 +61,8 @@ bool test_MAC_internals_destroy(void *arg)
 
     MAC_internals_destroy(&data->mac);
     bool passed = true;
-#ifdef __LINUX__
-    passed = passed && (data->mac == NULL);
-#endif
-#ifdef __LINUX__
-    MAC_internals_init(&data->mac, data->radio);
-#endif
-#ifdef __RIOT__
-    MAC_internals_init(&data->mac, data->netdev);
-#endif
 
+    // So the teardown function does not break
     return passed;
 }
 

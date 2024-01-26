@@ -24,21 +24,6 @@
 #include "memory.h"
 #include "memory_macros.h"
 
-#ifdef __RIOT__
-#include "net/netdev.h"
-#include "net/netopt.h"
-
-// Header files for the nRF24l01+
-#include "nrf24l01p_ng.h"
-#include "nrf24l01p_ng_communication.h"
-#include "nrf24l01p_ng_constants.h"
-#include "nrf24l01p_ng_diagnostics.h"
-#include "nrf24l01p_ng_netdev.h"
-#include "nrf24l01p_ng_params.h"
-#include "nrf24l01p_ng_registers.h"
-#include "nrf24l01p_ng_states.h"
-#endif
-
 /**
  * @brief Use this data structure within the MEDIUM_ACCESS state.
  *          It contains:
@@ -55,14 +40,6 @@
  */
 typedef struct MAC_Internals
 {
-    // Physical device
-#ifdef __LINUX__
-    uint8_t *radio;
-    /* TODO: Add an implementation that runs the radio from a common computer */
-#endif
-#ifdef __RIOT__
-    netdev_t *netdev;
-#endif
     // Packets used by the protocol
     ControlPacket_t ctrlpkt;
     ControlPacket_t ctrlpkt_recv;
@@ -101,14 +78,7 @@ typedef struct MAC_Internals
     uint16_t        _number_packets_received;
 }MAC_Internals_t;
 
-void MAC_internals_init(MAC_Internals_t *mac, 
-#ifdef __LINUX__
-    uint8_t *radio
-#endif
-#ifdef __RIOT__
-    netdev_t *netdev
-#endif
-);
+void MAC_internals_init(MAC_Internals_t *mac);
 
 void MAC_internals_clear(MAC_Internals_t *mac);
 void MAC_internals_destroy(MAC_Internals_t *mac);

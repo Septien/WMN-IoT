@@ -117,14 +117,7 @@ typedef struct MCLMAC
 #endif
 }MCLMAC_t;
 
-void MCLMAC_init(MCLMAC_t *mclmac, 
-#ifdef __LINUX__
-    uint8_t *radio
-#endif
-#ifdef __RIOT__
-    netdev_t *netdev
-#endif
-);
+void MCLMAC_init(MCLMAC_t *mclmac);
 
 void MCLMAC_destroy(MCLMAC_t *mclmac);
 void MCLMAC_clear(MCLMAC_t *mclmac);

@@ -110,25 +110,12 @@ QUIET ?= 1
 INCLUDES += -I$(CURDIR)/include
 
 USEMODULE += memarray
-USEMODULE += netdev
-USEMODULE += nrf24l01p_ng
-USEMODULE += nrf24l01p_ng_diagnostics
-
-# Features (mcu architecure, peripherals, sensors, etc.)
-ifeq ($(BOARD), esp32-wroom-32)
-FEATURES_REQUIRED += arch_esp32
-endif
-FEATURES_REQUIRED += periph_gpio
-FEATURES_REQUIRED += periph_spi
 
 include WMN-IoT.include
 
 CFLAGS += -Wno-unused-variable
 CFLAGS += -Wno-unused-parameter
 CFLAGS += -D__RIOT__
-ifeq ($(BOARD), native)
-CFLAGS += -DNATIVE
-endif
 
 include $(RIOTBASE)/Makefile.include
 

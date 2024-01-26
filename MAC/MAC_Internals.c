@@ -2,24 +2,11 @@
 #include <assert.h>
 #include <string.h>
 
-void MAC_internals_init(MAC_Internals_t *mac,
-#ifdef __LINUX__
-    uint8_t *radio
-#endif
-#ifdef __RIOT__
-    netdev_t *netdev
-#endif
-)
+void MAC_internals_init(MAC_Internals_t *mac)
 {
     memset(mac, 0, sizeof(MAC_Internals_t));
-#ifdef __LINUX__
-    mac->radio = radio;
-#endif
     memset(&mac->frame, 0, sizeof(Frame_t));
 
-#ifdef __RIOT__
-    mac->netdev = netdev;
-#endif
     mac->cfChannel = CF_FREQUENCY;
 
     // Initialize the Control packet

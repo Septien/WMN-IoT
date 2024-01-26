@@ -9,48 +9,22 @@
 
 #include "cUnit.h"
 
-#ifdef __RIOT__
-#include "net/netdev.h"
-#endif
-
 
 struct packethandlers_data{
     MCLMAC_t mclmac;
-#ifdef __LINUX__
-    uint8_t *radio;
-#endif
-#ifdef __RIOT__
-    nrf24l01p_ng_t *radio;
-    nrf24l01p_ng_t *radio_test;
-    netdev_t *netdev;
-    netdev_t *netdev_test;
-#endif
 };
 
 void setup_packet_handlers(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
-#ifdef __LINUX__
-    MCLMAC_init(&data->mclmac, data->radio);
-#endif
-#ifdef __RIOT__
-#ifndef NATIVE
-    netopt_state_t state = NETOPT_STATE_STANDBY;
-    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
-#endif
-    MCLMAC_init(&data->mclmac, data->netdev);
-#endif
+
+    MCLMAC_init(&data->mclmac);
 }
 
 void teardown_packet_handlers(void *arg)
 {
     struct packethandlers_data *data = (struct packethandlers_data *) arg;
-#ifdef __RIOT__
-#ifndef NATIVE
-    netopt_state_t state = NETOPT_STATE_SLEEP;
-    data->netdev->driver->set(data->netdev, NETOPT_STATE, (void *)&state, sizeof(state));
-#endif
-#endif
+
     MCLMAC_destroy(&data->mclmac);
 }
 
@@ -66,22 +40,6 @@ bool test_mclmac_start_packet_detection(void *arg)
      */
     bool passed = true;
     mclmac_start_packet_detection(mclmac);
-#if defined __RIOT__ && !defined NATIVE
-    uint16_t cf_channel = (uint16_t) mclmac->mac.cfChannel;
-    printf("Setting channel to cf frequency: %d\n", cf_channel);
-    uint16_t radio_channel = 0;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_CHANNEL,
-                                    (void *)&radio_channel, sizeof(uint16_t));
-    printf("Retrieved channel: %d\n", radio_channel);
-    passed = passed && (radio_channel == cf_channel);
-    printf("Channel successfully set.\n");
-    printf("Setting state to RX.\n");
-    netopt_state_t radio_state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&radio_state, sizeof(netopt_state_t));
-    passed = passed && (radio_state == NETOPT_STATE_RX);
-    printf("RX state successfully set.\n");
-#endif
 
     return passed;
 }
@@ -103,92 +61,7 @@ bool test_mclmac_cf_packet_detected(void *arg)
 #ifdef __LINUX__
     (void) mclmac;
 #endif
-#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_STANDBY;
-    data->netdev_test->driver->set(data->netdev_test, NETOPT_STATE, (void *)&state, sizeof(state));
-    uint16_t channel = mclmac->mac.cfChannel;
-    data->netdev_test->driver->set(data->netdev_test, NETOPT_CHANNEL, (void *)&channel, sizeof(channel));
-    printf("\nTest radio state:\n");
-    nrf24l01p_ng_diagnostics_print_dev_info(data->radio_test);
-    printf("Configuring radio to start packet detection.\n");
-    mclmac_start_packet_detection(mclmac);
-    printf("\nMain radio state:\n");
-    nrf24l01p_ng_diagnostics_print_dev_info(data->radio);
 
-    printf("Case 0: No packet detected.\nNo packets are send with the test radio.\n");
-    bool detected = mclmac_cf_packet_detected(mclmac);
-    passed = passed && (!detected);
-    printf("No packet was detected.\n");
-
-    printf("Test case 1: A packet is received, but its size is less than 32 bytes.\n");
-    size_t size = 24;
-    uint8_t packet[size];
-    printf("Sending packet with test radio:\n");
-    for (uint i = 0; i < size; i++) {
-        packet[i] = i + 1;
-        printf("%d", packet[i]);
-    }
-    printf("\n");
-    uint8_t addr[NRF24L01P_NG_ADDR_WIDTH] = NRF24L01P_NG_BROADCAST_ADDR;
-    iolist_t data_r = {
-        .iol_next = NULL,
-        .iol_base = (void *)packet,
-        .iol_len = size
-    };
-    iolist_t list = {
-        .iol_next = &data_r,
-        .iol_base = (void *)addr,
-        .iol_len = NRF24L01P_NG_ADDR_WIDTH
-    };
-    int ret = 0;
-    while ((ret = data->netdev_test->driver->send(data->netdev_test, &list)) < 0) {
-        if (ret == -EAGAIN) {
-            continue;
-        }
-        if (ret == -EBUSY) {
-            continue;
-        }
-        break;
-    }
-    printf("\nPacket sent.\nReceiving packet with main radio:\n");
-    //detected = mclmac_cf_packet_detected(mclmac);
-    passed = passed && (!detected);
-    printf("Packet detected, but discarded.\n");
-    
-    /*printf("Test case 2: A packet is sent and is the corresponding size.\n");
-    uint8_t packet_full[NRF24L01P_NG_MAX_PAYLOAD_WIDTH] = {0};
-    printf("Sending packet:\n");
-    for (uint i = 0; i < NRF24L01P_NG_MAX_PAYLOAD_WIDTH; i++) {
-        packet_full[i] = i * 2;
-        printf("%d ", packet_full[i]);
-    }
-    printf("\n");
-    iolist_t data_f = {
-        .iol_next = NULL,
-        .iol_base = (void *)packet_full,
-        .iol_len = NRF24L01P_NG_MAX_PAYLOAD_WIDTH
-    };
-    iolist_t list_f = {
-        .iol_next = &data_f,
-        .iol_base = (void *)addr,
-        .iol_len = NRF24L01P_NG_ADDR_WIDTH
-    };
-    while ((ret = data->netdev_test->driver->send(data->netdev_test, &list_f)) < 0) {
-        if (ret == -EAGAIN) {
-            continue;
-        }
-        if (ret == -EBUSY) {
-            continue;
-        }
-        break;
-    }
-    printf("\nMain radio state:\n");
-    nrf24l01p_ng_diagnostics_print_dev_info(data->radio);
-    printf("Packet sent.\nReceiving packet with main radio.\n");
-    detected = mclmac_cf_packet_detected(mclmac);
-    passed = passed && (detected);
-    printf("Packet successfully detected.\n");*/
-#endif
     return passed;
 }
 
@@ -223,13 +96,6 @@ bool test_mclmac_receive_ctrlpkt_sync(void *arg)
     passed = passed && (ctrlpkt_p->currentSlot == mclmac->mac.frame.current_slot);
     passed = passed && (ctrlpkt_p->currentFrame == mclmac->mac.frame.current_frame);
     passed = passed && (memcmp(ctrlpkt_p->occupied_slots, mclmac->_occupied_frequencies_slots, sizeof(mclmac->_occupied_frequencies_slots)) == 0);
-
-/*#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                        (void *)&state, sizeof(netopt_state_t));
-    passed = passed && (state == NETOPT_STATE_RX);
-#endif*/
 
     controlpacket_destroy(&ctrlpkt_p);
 
@@ -292,15 +158,6 @@ bool test_mclmac_send_cf_message(void *arg)
     mclmac_send_cf_message(mclmac);
     CFPacket_t *pkt = &mclmac->mac._cf_messages[0];
     bool passed = true;
-#ifdef __LINUX__
-    (void) pkt;
-#endif
-#ifdef __RIOT__
-    /*netopt_state_t radio_state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&radio_state, sizeof(netopt_state_t));
-    passed = passed && (radio_state == NETOPT_STATE_STANDBY);*/
-#endif
 
     return passed;
 }
@@ -313,12 +170,6 @@ bool test_mclmac_receive_cf_message(void *arg)
     bool ret = mclmac_receive_cf_message(mclmac);
     bool passed = true;
     passed = passed && ret;
-#ifdef __RIOT__
-    /*netopt_state_t state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-    passed = passed && (state == NETOPT_STATE_RX);*/
-#endif
 
     return passed;
 }
@@ -355,12 +206,6 @@ bool test_mclmac_send_control_packet(void *arg)
     passed = passed && (pkt->hopCount == 0);
     passed = passed && (pkt->networkTime == 0);
     passed = passed && (pkt->initTime == 0);
-#if defined __RIOT__ && !defined NATIVE
-    /*netopt_state_t state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-    passed = passed && (state == NETOPT_STATE_TX);*/
-#endif
 
     return passed;
 }
@@ -492,12 +337,6 @@ bool test_mclmac_receive_control_packet(void *arg)
     passed = passed && (ctrlpkt->hopCount != mclmac->_hopCount);
     passed = passed && (ctrlpkt->networkTime != mclmac->_networkTime);
     passed = passed && (ctrlpkt->initTime != mclmac->_initTime);
-/*#if defind __RIOT__ && !defind NATIVE
-    netopt_state_t state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *) &state, sizeof(netopt_state_t));
-    passed = passed && (state == NETOPT_STATE_RX);
-#endif*/
 
     return passed;
 }
@@ -639,12 +478,6 @@ bool test_mclmac_receive_data_packet(void *arg)
         passed = passed && (pkt->data.size > 0);
 #endif
     }
-/*#if defined __RIOT__ && !defined NATIVE
-    netopt_state_t state = NETOPT_STATE_OFF;
-    mclmac->mac.netdev->driver->get(mclmac->mac.netdev, NETOPT_STATE,
-                                    (void *)&state, sizeof(netopt_state_t));
-    passed = passed && (state == NETOPT_STATE_RX);
-#endif*/
 
     return passed;
 }
@@ -656,55 +489,6 @@ void executetests_packets_handlers(void)
 
     cUnit_t *tests;
     struct packethandlers_data data;
-#if defined __RIOT__ && !defined NATIVE
-    nrf24l01p_ng_t radio, radio_test;
-    nrf24l01p_ng_params_t params = {
-        .spi = SPI_DEV(0),
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = GPIO5,
-        .pin_ce = GPIO17,
-        .pin_irq = GPIO21,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    nrf24l01p_ng_params_t params_test = {
-        .spi = SPI_DEV(1),
-        .spi_clk = NRF24L01P_NG_PARAM_SPI_CLK,
-        .pin_cs = GPIO15,
-        .pin_ce = GPIO2,
-        .pin_irq = GPIO4,
-        .config = {
-            .cfg_crc = NRF24L01P_NG_PARAM_CRC_LEN,
-            .cfg_tx_power = NRF24L01P_NG_PARAM_TX_POWER,
-            .cfg_data_rate = NRF24L01P_NG_PARAM_DATA_RATE,
-            .cfg_channel = NRF24L01P_NG_PARAM_CHANNEL,
-            .cfg_max_retr = NRF24L01P_NG_PARAM_MAX_RETRANSM,
-            .cfg_retr_delay = NRF24L01P_NG_PARAM_RETRANSM_DELAY,
-        }
-    };
-    data.radio = &radio;
-    data.radio_test = &radio_test;
-    nrf24l01p_ng_setup(data.radio, &params, 2);
-    nrf24l01p_ng_setup(data.radio_test, &params_test, 2);
-    // Setup netdev
-    data.netdev = &radio.netdev;
-    data.netdev_test = &radio_test.netdev;
-    data.radio->netdev.driver->init(data.netdev);
-    data.radio_test->netdev.driver->init(data.netdev_test);
-#elif defined _RIOT__ && defined NATIVE
-    data.netdev = NULL;
-    data.netdev_test = NULL;
-    data.radio = NULL;
-    data.radio_test = NULL;
-#elif defined __LINUX__
-    data.radio = NULL;
-#endif
 
     cunit_init(&tests, &setup_packet_handlers, &teardown_packet_handlers, (void *)&data);
 
